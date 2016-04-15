@@ -6,7 +6,7 @@ email: lwenkun666@gmail.com
 description: "安卓学习与开发 | 代码爱好者 | 软件工程专业" 
 keyword: "李文坤, lwenkun, Lwenkun, 志难酬, 互联网, 安卓, android, android development, java, @lwenkun, lwenkun's blog, 李文坤的博客, 冰岩"
 url: "http://lwenkun.github.io"              # your host, for absolute URL
-baseurl: "\blog"                             # for example, '/blog' if your blog hosted on 'host/blog'
+baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
 
 
