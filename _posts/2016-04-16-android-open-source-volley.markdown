@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      "网络通信框架——Volley"
-subtitle:   "vollay学习总结"
+title:      "Volley"
+subtitle:   "volley学习总结"
 date:       2016-04-16
 author:     "lwenkun"
 header-img: "img/post-bg-js-version.jpg"
@@ -54,6 +54,7 @@ StringRequest stringRequest = new StringRequest(Method.POST, url,  listener, err
 };
 </pre>
 我们重写了 `StringRequest` 的方法中 `getParams` 方法，在这里我们构造参数表。
+
 ### 2.JsonObjectRequest&amp;JsonArrayRequest的用法
 <pre>
 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest("http://m.weather.com.cn/data/101010100.html", null, new Response.Listener&lt;JsonObject&gt;() {
@@ -72,6 +73,7 @@ JsonObjectRequest jsonObjectRequest = new JsonObjectRequest("http://m.weather.co
 mRequest.add(jsonObjectRequest);
 </pre>
 `JsonArrrayRequest` 的用法类似。
+
 ### 3.ImageRequest的用法
 <pre>
 ImageRequest imageRequest = new ImageRequest("http://developer.android.com/images/home/aw_dac.png", new Response.Listener&lt;Bitmap&gt;() {
