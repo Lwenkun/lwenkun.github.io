@@ -18,7 +18,7 @@ Volley 是谷歌提供的 android 网络通信框架。在安卓中，谷歌提�
 
 > 用法
 
-###1.StringRequest的用法
+### 1.StringRequest的用法
 <pre>
 RequestQueue mQueue = Volley.newRequestQueue(context);
 StringRequest stringReuqest = new StirngRequest("http://www.baidu.com", new Response.Listener&lt;String&gt;() {
@@ -54,7 +54,7 @@ StringRequest stringRequest = new StringRequest(Method.POST, url,  listener, err
 };
 </pre>
 我们重写了 `StringRequest` 的方法中 `getParams` 方法，在这里我们构造参数表。
-###2.JsonObjectRequest&amp;JsonArrayRequest的用法
+### 2.JsonObjectRequest&amp;JsonArrayRequest的用法
 <pre>
 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest("http://m.weather.com.cn/data/101010100.html", null, new Response.Listener&lt;JsonObject&gt;() {
    @Override
@@ -72,7 +72,7 @@ JsonObjectRequest jsonObjectRequest = new JsonObjectRequest("http://m.weather.co
 mRequest.add(jsonObjectRequest);
 </pre>
 `JsonArrrayRequest` 的用法类似。
-###3.ImageRequest的用法
+### 3.ImageRequest的用法
 <pre>
 ImageRequest imageRequest = new ImageRequest("http://developer.android.com/images/home/aw_dac.png", new Response.Listener&lt;Bitmap&gt;() {
    @Override
