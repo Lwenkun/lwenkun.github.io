@@ -5,7 +5,7 @@ header-img: img/home-bg.jpg
 email: lwenkun666@gmail.com
 description: ""
 keyword: ""
-url: "http://huangxuan.me"              # your host, for absolute URL
+url: "http://lwenkun.github.io"              # your host, for absolute URL
 baseurl: "/blog"         # for example, '/blog' if your blog hosted on 'host/blog'
 
 
@@ -82,8 +82,8 @@ featured-condition-size: 1              # A tag will be featured if the size of 
 # Friends
 friends: [
     {
-        title: "Hux Blog",
-        href: "http://huangxuan.me"
+        title: "Lwenkun's Blog",
+        href: "http://lwenkun.github.io"
     },{
         title: "Foo",
         href: "#"
