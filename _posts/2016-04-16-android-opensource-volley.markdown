@@ -6,9 +6,9 @@ date:       2016-04-16
 author:     "lwenkun"
 header-img: "img/post-bg-unix-linux.jpg"
 tags:
-    - OS
-    - Unix
-    - Linux
+    - android
+    - View
+    - ViewPager
 ---
 
 
@@ -38,6 +38,7 @@ mQueue.add(stringRequest);
 运行之后，在 logcat 中我们就可以看到一长串的 html 代码了。这就是百度返回给我们的结果。
 
 默认的是发送 `get` 请求，但是我们如果要发送其他的请求，我们就要用到`StringRequest`类的构造方法的重载，如我们要发送 `post` 请求：
+
 ```java
 StringRequest stringRequest = new StringRequest(Method.POST, url, listener, errorListener);
 ```
