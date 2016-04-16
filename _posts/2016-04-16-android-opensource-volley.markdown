@@ -42,6 +42,7 @@ mQueue.add(stringRequest);
 StringRequest stringRequest = new StringRequest(Method.POST, url, listener, errorListener);
 ```
 `post` 请求我们知道参数不能直接写在 url 中，那我们应该怎样发送参数呢？Easy! 看下面的代码：
+
 ```java
 StringRequest stringRequest = new StringRequest(Method.POST, url,  listener, errorListener) {  
     @Override  
@@ -70,6 +71,7 @@ JsonObjectRequest("http://m.weather.com.cn/data/101010100.html", null, new Respo
       });
 ```
 然后将这个加入请求队列中:
+
 ```java
 mRequest.add(jsonObjectRequest);
 ```
