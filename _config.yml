@@ -68,7 +68,7 @@ ga_domain: lwenkun.github.io
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "学会忍受孤独和寂寞"
+sidebar-about-description: "standing loneliness, standing out"
 sidebar-avatar: /img/avatar-hux.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
