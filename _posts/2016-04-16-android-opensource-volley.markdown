@@ -56,8 +56,9 @@ StringRequest stringRequest = new StringRequest(Method.POST, url,  listener, err
 我们重写了 `StringRequest` 的方法中 `getParams` 方法，在这里我们构造参数表。
 
 ### 2.JsonObjectRequest&amp;JsonArrayRequest的用法
-<pre>
-JsonObjectRequest jsonObjectRequest = new JsonObjectRequest("http://m.weather.com.cn/data/101010100.html", null, new Response.Listener&lt;JsonObject&gt;() {
+```java
+JsonObjectRequest jsonObjectRequest = new
+JsonObjectRequest("http://m.weather.com.cn/data/101010100.html", null, new Response.Listener&lt;JsonObject&gt;() {
    @Override
    public void onResponse(JsonObject response) {
       Log.d("tag", response.toString());
@@ -67,7 +68,7 @@ JsonObjectRequest jsonObjectRequest = new JsonObjectRequest("http://m.weather.co
             log.d("tag", response.toString();
          }
       });
-</pre>
+```
 然后将这个加入请求队列中:
 <pre>
 mRequest.add(jsonObjectRequest);
