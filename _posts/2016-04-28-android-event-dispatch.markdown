@@ -12,7 +12,7 @@ tags:
 ---
 # 安卓事件传递机制的理解 #
 
-##事件产生的源头以及预处理##
+## 事件产生的源头以及预处理 ##
 
 当我们的手指点击（滑动）屏幕时，我们的手指就可能触发了一系列的事件，这些事件队列的排列顺序可以这样表示：{ `ACTION_DOWN`, `ACTION_MOVE`, `ACTION_MOVE`, `ACTION_MOVE`, ... , `ACTION_UP` }，这样表示最开始我们触发的事件是`ACTION_DOWN`，然后是一至多个`ACTION_MOVE`事件（其实点击时也会触发`ACTION_MOVE`事件，因为屏幕很灵敏），当手指离开屏幕的瞬间，触发了一个 `ACTION_UP` 事件。
 
@@ -22,7 +22,7 @@ tags:
 
 在 `deliverPointerEvent()` 中，会进行一些转换，包括物理像素到逻辑像素的转换和屏幕坐标到视图坐标的转换，这都是为消息的派发做好准备。
 
-##事件的传递##
+## 事件的传递 ##
 
 执行了转换后，我们的事件即event便开始了漫长的旅途。
 
@@ -32,7 +32,7 @@ tags:
 
 太抽象笼统了是吧？那我们便来细细分析，你可以泡上一杯茶或咖啡，跟随 event 看看他在漫长旅途中发生的了那些有趣的事。
 
-###事件在进入View树之前的传递###
+### 事件在进入View树之前的传递 ###
 
 根视图内部的消息派发：
 
@@ -55,7 +55,7 @@ tags:
 
 现在开始才是 event 真正的旅途了，它进入了视图树这个庞大的王国之中，各种有趣的事即将发生。
 
-###事件在View树中的传递
+### 事件在View树中的传递 ###
  
 我们知道 `DecorView` 是一个 `ViewGroup`，所以我们从 `ViewGroup` 分析。
 
@@ -312,8 +312,7 @@ public boolean onTouchEvent(MotionEvent event) {
 
 需要注意的是，在 `ViewGroup` 的 `dispatchTouchEvent()` 方法中，我们能够知道，如果当事件  `ACTION_DOWN` 没有找到目标子视图（可能原因是没有点击到任何子视图或者虽然有子视图被点击但是该子视图没有消耗该事件，即子视图的 `dispatchTouchEvent()` 方法返回 `false`）时，`ViewGroup` 会将事件交给自己处理，并且之后的 `ACTION_MOVE` 和 `ACTION_UP` 事件都不会交给任何子视图处理，也是全交给自己处理，也即前面讲的交给 `super.dispatchTouchEvent()` 来处理。
 
-最后说明一下：
-
+## 说明 ##
 
 **1. 一个视图是否消耗该事件，表现在 `dispatchTouchEvent()` 的返回值上，如返回 `true` 表示消耗 `false` 表示未消耗；而一个消息处理方法（指的是 `ouTouch()` 和 `onEventTouch()`，不包括  `onInterceptTouchEvent()`)是否消耗该事件表现在该方法的返回值上，例如 `onTouch()` 方法返回 `true` 表示消耗 `false` 表示未消耗。**
 
