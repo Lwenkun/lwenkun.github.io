@@ -34,8 +34,6 @@ tags:
 
 ### 事件在进入View树之前的传递 ###
 
-根视图内部的消息派发：
-
 前面说了 event 的第一站便是 `mView.dispatchTouchEvent()`，该函数是在`ViewRoot`（注意 `ViewRoot` 不是 `View` 类，而是继承 `Handle` 类，用于对整个视图数的控制）中调用的，`mView` 有两种类型，对于应用窗口来说，`mView` 是一个 `PhoneWindow` 的 `DecorView` 类型，对于非应用窗口而言，`mView` 是一般的 `ViewGroup` 类型。
 
 在 `DecorView` 中，会判断是否存在 `Callback` 对象，这个 `Callback` 对象是谁呢？哈哈，竟然是 `Activity`，其实不奇怪，我们看源码就可以知道 `Activity` 实现了 `Window.Callback` 这个回调接口。如果不存在 `Callback` 对象的话，那么就直接调用 `DecorView` 父类 `ViewGroup` 中的 `dispatchTouchEvent()` 方法。
@@ -51,9 +49,9 @@ tags:
 
 `Window` 类的 `superDispatchEvent()` 方法中，会调用 `mDecor` 的 `superDispatchTouchEvent()` 方法，这个方法又会调用 `super.dispatchTouchEvent()`，即调用自己父类的 `dispatchTouchEvent()` 方法。看到这里我们猛然回头发现这是到了 `DecorView` 中如果不存在 `Callback` 对象时要走的另一条支路。
 
-为什么要这样做呢？很明显，这是让 event 在视图树中旅行之前给 `Activity` 一个处理它的机会。
+为什么要这样做呢？很明显，这是让 event 在视图树中旅行之前给 `Activity` 一个处理它的机会。很明显，这一阶段虽然 event 已经进入 `View` 树的根视图中了，但是主要还是在 `Activity` 中被处理，所以还是把这阶段归结为在 `Activity` 中的传递
 
-现在开始才是 event 真正的旅途了，它进入了视图树这个庞大的王国之中，各种有趣的事即将发生。
+之后开始才是 event 真正在视图树中的旅途了，它进入了视图树这个庞大的王国之中，各种有趣的事即将发生。
 
 ### 事件在View树中的传递 ###
  
@@ -205,9 +203,9 @@ public boolean dispatchTouchEvent(MotionEvent event) {
 }
 ```
 
-安卓5.0之后该方法的实现略带复杂，但是基本思想还是一样的，我们不妨就拿这个简单的来分析。在这个方法中会判断这个 `View` 的 `OnTouchListener` 回调接口是否存在，`View` 是不是 `ENABLE` 状态，是的话就会继续执行到第三个条件，第三个条件其实执行了 `OnTouchListener` 的 `onTouch()` 方法，这个方法是我们调用 `view.setOnTouchListener()` 时实现的。如果这个方法返回了 true， 那么 `dispatchEvent()` 方法也返回 `true`，`dispatchEvent()` 方法执行完毕；如果回调接口不存在，或者这个 `View` 是 `DISABLE` 状态，或者 `onTouch()` 返回 `false`（即 `onTouch()` 未消耗该 event）时， 便会执行 `onTouchEvent()` 方法。如果 `onTouchEvent()` 返回 `false` （即这个方法也未消耗event)时，`dispatchTouchEvent()` 返回 `false`，从而表明 `View` 未消耗这个事件；反之 `onTouchEvent()` 返回 `true` 即消耗了这个事件时，`dispatchTouchEvent()` 也返回 `true`，表明 `View` 消耗了该事件。
+安卓5.0之后该方法的实现略带复杂，但是基本思想还是一样的，我们不妨就拿这个简单的来分析。在这个方法中会判断这个 `View` 的 `OnTouchListener` 回调接口是否存在，`View` 是不是 `ENABLE` 状态，是的话就会继续执行到第三个条件，第三个条件其实执行了 `OnTouchListener` 的 `onTouch()` 方法，这个方法是我们调用 `view.setOnTouchListener()` 时实现的。如果这个方法返回了 true， 那么 `dispatchEvent()` 方法也返回 `true`，`dispatchEvent()` 方法执行完毕；如果回调接口不存在，或者这个 `View` 是 `DISABLE` 状态，或者 `onTouch()` 返回 `false`（即 `onTouch()` 未消耗该 event）时， 便会执行 `onTouchEvent()` 方法。如果 `onTouchEvent()` 返回 `false` （即这个方法也未消耗 event)时，`dispatchTouchEvent()` 返回 `false`，从而表明 `View` 未消耗这个事件；反之 `onTouchEvent()` 返回 `true` 即消耗了这个事件时，`dispatchTouchEvent()` 也返回 `true`，表明 `View` 消耗了该事件。
 
-从上面的分析，我们可以看出，一个 event 在 `View` 中，首先会被 `dispatchTouchEvent()` 派发给 `onTouch()` 处理，如果 `onTouch()` 返回 `true`（消耗了该event），event 在 `View` 中的旅程就结束了，`dispatchTouchEvent()`返回 `true`；如果没消耗就会继续派发给  `onTouchEvent()` 来处理，`dispatchTouchEvent()` 会将 `onTouchEvent()` 的返回值作为自己的返回值。
+从上面的分析，我们可以看出，一个 event 在 `View` 中，首先会被 `dispatchTouchEvent()` 派发给 `onTouch()` 处理，如果 `onTouch()` 返回 `true`（消耗了该 event），event 在 `View` 中的旅程就结束了，`dispatchTouchEvent()`返回 `true`；如果没消耗就会继续派发给  `onTouchEvent()` 来处理，`dispatchTouchEvent()` 会将 `onTouchEvent()` 的返回值作为自己的返回值。
 
 接下来我们自然想知道，event 在 `onTouchEvent()` 方法中会发生什么呢，我们看看源码：
 
