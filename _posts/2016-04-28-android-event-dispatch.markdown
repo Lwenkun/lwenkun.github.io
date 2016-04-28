@@ -10,7 +10,6 @@ tags:
     - View
     - 事件传递机制
 ---
-
 # 安卓事件传递机制的理解 #
 
 ##事件产生的源头以及预处理##
@@ -311,12 +310,12 @@ public boolean onTouchEvent(MotionEvent event) {
 
 如果 `disallowIntercept` 为 `false` 并且 `ViewGroup` 没有拦截 event（即返回 `false` ），或者 `disallowIntercept` 为 `true`，那么事件就会传给 `ViewGroup` 中被点击的那个子视图（这里包括前面所讲的子/父视图都包括 `View` 和 `ViewGroup`），这样就回到了事件在 `View` 或者 `ViewGroup` 的传递过程了，我们就可以按照前面的分析用递归思想理解后续的过程。
 
-需要注意的是，在 `ViewGroup` 的 `dispatchTouchEvent()` 方法中，我们能够知道，如果当事件  `ACTION_DOWN` 没有找到目标子视图（可能原因是没有点击到任何子视图或者虽然有子视图被点击但是该子视图没有消耗该事件，即子视图的 `dispatchTouchEvent()` 方法返回 `false`）时，`ViewGroup` 会将事件交给自己处理，并且之后的 `ACTION_UP` 和 `ACTION_UP` 事件都不会交给任何子视图处理，也是全交给自己处理，也即前面讲的交给 `super.dispatchTouchEvent()` 来处理。
+需要注意的是，在 `ViewGroup` 的 `dispatchTouchEvent()` 方法中，我们能够知道，如果当事件  `ACTION_DOWN` 没有找到目标子视图（可能原因是没有点击到任何子视图或者虽然有子视图被点击但是该子视图没有消耗该事件，即子视图的 `dispatchTouchEvent()` 方法返回 `false`）时，`ViewGroup` 会将事件交给自己处理，并且之后的 `ACTION_MOVE` 和 `ACTION_UP` 事件都不会交给任何子视图处理，也是全交给自己处理，也即前面讲的交给 `super.dispatchTouchEvent()` 来处理。
 
 最后说明一下：
 
 
-**1. 一个视图是否消耗该事件，表现在 `dispatchTouchEvent()` 的返回值上，如返回 `true` 表示消耗 `false` 表示未消耗；而一个消息处理方法（指的是ouTouch()和 `onEventTouch()`，不包括  `onInterceptTouchEvent()`)是否消耗该事件表现在该方法的返回值上，例如 `onTouch()` 方法返回 `true` 表示消耗 `false` 表示未消耗。**
+**1. 一个视图是否消耗该事件，表现在 `dispatchTouchEvent()` 的返回值上，如返回 `true` 表示消耗 `false` 表示未消耗；而一个消息处理方法（指的是 `ouTouch()` 和 `onEventTouch()`，不包括  `onInterceptTouchEvent()`)是否消耗该事件表现在该方法的返回值上，例如 `onTouch()` 方法返回 `true` 表示消耗 `false` 表示未消耗。**
 
 **2. 如果某个视图的某个消息处理方法消耗该事件，会使得该视图的 `dispatchTouchEvent()` 方法返回 `true`，即该视图消耗了该事件；如果某个视图的所有消息处理方法都返回 `false`，那么这个视图的 `dispatchTouchEvent()` 方法返回 `false`，即该视图没有消耗该事件。**
 
