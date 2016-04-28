@@ -205,7 +205,7 @@ public boolean dispatchTouchEvent(MotionEvent event) {
 
 安卓5.0之后该方法的实现略带复杂，但是基本思想还是一样的，我们不妨就拿这个简单的来分析。在这个方法中会判断这个 `View` 的 `OnTouchListener` 回调接口是否存在，`View` 是不是 `ENABLE` 状态，是的话就会继续执行到第三个条件，第三个条件其实执行了 `OnTouchListener` 的 `onTouch()` 方法，这个方法是我们调用 `view.setOnTouchListener()` 时实现的。如果这个方法返回了 true， 那么 `dispatchEvent()` 方法也返回 `true`，`dispatchEvent()` 方法执行完毕；如果回调接口不存在，或者这个 `View` 是 `DISABLE` 状态，或者 `onTouch()` 返回 `false`（即 `onTouch()` 未消耗该 event）时， 便会执行 `onTouchEvent()` 方法。如果 `onTouchEvent()` 返回 `false` （即这个方法也未消耗 event)时，`dispatchTouchEvent()` 返回 `false`，从而表明 `View` 未消耗这个事件；反之 `onTouchEvent()` 返回 `true` 即消耗了这个事件时，`dispatchTouchEvent()` 也返回 `true`，表明 `View` 消耗了该事件。
 
-从上面的分析，我们可以看出，一个 event 在 `View` 中，首先会被 `dispatchTouchEvent()` 派发给 `onTouch()` 处理，如果 `onTouch()` 返回 `true`（消耗了该 event），event 在 `View` 中的旅程就结束了，`dispatchTouchEvent()`返回 `true`；如果没消耗就会继续派发给  `onTouchEvent()` 来处理，`dispatchTouchEvent()` 会将 `onTouchEvent()` 的返回值作为自己的返回值。
+从上面的分析，我们可以看出，一个 event 在 `View` 中，首先会被 `dispatchTouchEvent()` 派发给 `onTouch()` 处理（前提是注册了 `onTouch()` 事件），如果 `onTouch()` 返回 `true`（消耗了该 event），event 在 `View` 中的旅程就结束了，`dispatchTouchEvent()`返回 `true`；如果没消耗就会继续派发给  `onTouchEvent()` 来处理，`dispatchTouchEvent()` 会将 `onTouchEvent()` 的返回值作为自己的返回值。
 
 接下来我们自然想知道，event 在 `onTouchEvent()` 方法中会发生什么呢，我们看看源码：
 
