@@ -17,24 +17,24 @@ tags:
 <table border="0px">
 <tbody>
 <tr>
-<td><a href="http://115.159.67.125/wp-content/uploads/2016/04/ViewPager-e1459760693712.png" rel="attachment wp-att-123"><img class="alignnone wp-image-123" src="http://115.159.67.125/wp-content/uploads/2016/04/ViewPager-169x300.png" alt="ViewPager" width="112" height="198" /></a></td>
-<td><a href="http://115.159.67.125/wp-content/uploads/2016/04/Screenshot_2016-04-04-17-00-18.png" rel="attachment wp-att-127"><img class="alignnone wp-image-127" src="http://115.159.67.125/wp-content/uploads/2016/04/Screenshot_2016-04-04-17-00-18-169x300.png" alt="Screenshot_2016-04-04-17-00-18" width="114" height="203" /></a></td>
-<td><a href="http://115.159.67.125/wp-content/uploads/2016/04/Screenshot_2016-04-04-17-00-28.png" rel="attachment wp-att-126"><img class="alignnone wp-image-126" src="http://115.159.67.125/wp-content/uploads/2016/04/Screenshot_2016-04-04-17-00-28-169x300.png" alt="Screenshot_2016-04-04-17-00-28" width="113" height="200" /></a></td>
-<td><a href="http://115.159.67.125/wp-content/uploads/2016/04/Screenshot_2016-04-04-16-59-21-e1459760801861.png" rel="attachment wp-att-128"><img class="alignnone wp-image-128" src="http://115.159.67.125/wp-content/uploads/2016/04/Screenshot_2016-04-04-16-59-21-169x300.png" alt="Screenshot_2016-04-04-16-59-21" width="112" height="199" /></a></td>
+<td><a href="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_1.png" rel="attachment wp-att-123"><img class="alignnone wp-image-123" src="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_1.png" alt="ViewPager" width="112" height="198" /></a></td>
+<td><a href="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_2.png" rel="attachment wp-att-127"><img class="alignnone wp-image-127" src="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_2.png" alt="Screenshot_2016-04-04-17-00-18" width="114" height="203" /></a></td>
+<td><a href="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_3.png" rel="attachment wp-att-126"><img class="alignnone wp-image-126" src="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_3.png" alt="Screenshot_2016-04-04-17-00-28" width="113" height="200" /></a></td>
+<td><a href="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_4.png" rel="attachment wp-att-128"><img class="alignnone wp-image-128" src="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_4.png" alt="Screenshot_2016-04-04-16-59-21" width="112" height="199" /></a></td>
 </tr>
 </tbody>
 </table>
 
-如图，白色矩形区域就是我们的 `ViewPager`，正如我们所熟悉的，`ViewPager` 通常会配合 `Tab` 使用，什么是 `Tab`？就是“网易新闻，网易体育，网易财经，网易女人”（page title) 这四个标题所在的那个区域，每个 page title 代表着一个 `Tab` 。这个区域再上面一点就是 `ToolBar` 了。 `Tab` 的实现方法有很多种，但现在最受欢迎并且最美观的就是谷歌MD提供的 `TabLayout` 了。现在我们主要讲下 `TabLayout` + `ViewPager` 的实现和使用吧。
+如图，白色矩形区域就是我们的 `ViewPager`，正如我们所熟悉的，`ViewPager` 通常会配合 `tab` 使用，什么是 `tab`？就是“网易新闻，网易体育，网易财经，网易女人”（page title) 这四个标题所在的那个区域，每个 page title 代表着一个 `tab` 。这个区域再上面一点就是 `ToolBar` 了。 `tab` 的实现方法有很多种，但现在最受欢迎并且最美观的就是谷歌MD提供的 `TabLayout` 了。现在我们主要讲下 `TabLayout` + `ViewPager` 的实现和使用吧。
 
 <strong>布局文件</strong>：
 
 ```xml
-android.support.design.widget.TabLayout
+<android.support.design.widget.TabLayout
         android:id="@+id/tabs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:tabIndicatorColor="#ffffff"
+        app:tabIndicatorColor="#ffffff" 
         app:tabSelectedTextColor="#ffffff"
         app:tabTextColor="#aaffffff"
         app:tabBackground="@drawable/tab_ripple"/>
@@ -69,7 +69,7 @@ android.support.design.widget.TabLayout
     }
 ```
 
-在代码中找到这两个空控件之后，我们就要给他们添加数据了。总不能两个两个控件都是空内容吧。对于 `TabLayout` 来说，我们要给它添加的数据当然就是page title了；而对于 `ViewPager` 来说， `ViewPager` 是一个 `ViewGroup` 类，我们需要给他添加的数据就是添加四个子 `View`，这四个子`View`对应的就是我们的四个页面。怎么添加呢？继续看。
+在代码中找到这两个控件之后，我们就要给他们添加数据了。总不能两个控件都是空内容吧。对于 `TabLayout` 来说，我们要给它添加的数据当然就是page title了；而对于 `ViewPager` 来说， `ViewPager` 是一个 `ViewGroup` 类，我们需要给他添加的数据就是添加四个子 `View`，这四个子`View`对应的就是我们的四个页面。怎么添加呢？继续看。
 
 对于 `TabLayout`，我们可以将数据源放在一个 `ArrayList` 中：
 
@@ -226,6 +226,6 @@ tabs.setupWithViewPager(pager);
 pager.addOnPageChangeListener(new   TabLayout.TabLayoutOnPagerChangeListener(tabs));
 ```
 
-也不用写了，但是有一点要记住这个方法一定要是在 `ViewPager `设置`PagerAdapter` 之后调用，否则程序运行时会崩溃。
+也不用写了，但是有一点要记住这个方法一定要是在 `ViewPager ` 设置 `PagerAdapter` 之后调用，否则程序运行时会崩溃。
 
 如果你的手机是安卓5.0以上，你的页面可能会出现神奇的 "bug"，不要着急，这里或许有你要的答案：
