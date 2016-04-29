@@ -191,7 +191,7 @@ public boolean dispatchTouchEvent(MotionEvent ev) {
 
 结合官方文档和源码我解释一下：
 
-如果 `disallowIntercept` 为 `false` （默认是 `false`，子视图通过 `requestDisallowInterceptTouchEvent(true)` 可不允许父视图拦截消息），并且 `onInterceptTouchEvent()` 返回 `true`，那么 `ViewGroup` 就会拦截事件，事件不会给子视图处理，而是交由自己父类的 `dispatchTouchEvent()` 来处理，即 `View` 的 `diapatchTouchEvent()` 来处理，这也就相当与ViewGroup将事件交给了自己来处理。`View` 的 `dispatchTouchEvent()` 长什么样呢？我们看看源码：
+**1.** 如果 `disallowIntercept` 为 `false` （默认是 `false`，子视图通过 `requestDisallowInterceptTouchEvent(true)` 可不允许父视图拦截消息），并且 `onInterceptTouchEvent()` 返回 `true`，那么 `ViewGroup` 就会拦截事件，事件不会给子视图处理，而是交由自己父类的 `dispatchTouchEvent()` 来处理，即 `View` 的 `diapatchTouchEvent()` 来处理，这也就相当与ViewGroup将事件交给了自己来处理。`View` 的 `dispatchTouchEvent()` 长什么样呢？我们看看源码：
 
 ```java
 public boolean dispatchTouchEvent(MotionEvent event) {  
@@ -306,7 +306,7 @@ public boolean onTouchEvent(MotionEvent event) {
 
 在 `onTouchEvent()` 方法中我们看到，如果这个 `View` 是可点击的，那么对于 `ACTOIN_UP` 事件，我们就发送一个异步消息来处理点击事件，如果异步消息没有发送成功，那么就会立即执行点击事件，在源码中也就是 `performClick()` 方法，`performClick()` 方法是怎样的呢，如果你看了源码就知道则个方法里执行的是我们 `View` 注册点击事件，即 `OnClickListener的onClick()` 方法。当然 `ACTOIN_UP` 有还有可能会触发长按事件 `onLongClick()`，这里就不详细介绍了。
 
-如果 `disallowIntercept` 为 `false` 并且 `ViewGroup` 没有拦截 event（即返回 `false` ），或者 `disallowIntercept` 为 `true`，那么事件就会传给 `ViewGroup` 中被点击的那个子视图（这里包括前面所讲的子/父视图都包括 `View` 和 `ViewGroup`），这样就回到了事件在 `View` 或者 `ViewGroup` 的传递过程了，我们就可以按照前面的分析用递归思想理解后续的过程。
+**2.** 如果 `disallowIntercept` 为 `false` 并且 `ViewGroup` 没有拦截 event（即返回 `false` ），或者 `disallowIntercept` 为 `true`，那么事件就会传给 `ViewGroup` 中被点击的那个子视图（这里包括前面所讲的子/父视图都包括 `View` 和 `ViewGroup`），这样就回到了事件在 `View` 或者 `ViewGroup` 的传递过程了，我们就可以按照前面的分析用递归思想理解后续的过程。
 
 需要注意的是，在 `ViewGroup` 的 `dispatchTouchEvent()` 方法中，我们能够知道，如果当事件  `ACTION_DOWN` 没有找到目标子视图（可能原因是没有点击到任何子视图或者虽然有子视图被点击但是该子视图没有消耗该事件，即子视图的 `dispatchTouchEvent()` 方法返回 `false`）时，`ViewGroup` 会将事件交给自己处理，并且之后的 `ACTION_MOVE` 和 `ACTION_UP` 事件都不会交给任何子视图处理，也是全交给自己处理，也即前面讲的交给 `super.dispatchTouchEvent()` 来处理。
 
