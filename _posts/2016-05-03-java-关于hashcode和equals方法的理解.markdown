@@ -77,17 +77,17 @@ java 文档对这两个方法的重写要求是：
 
 如果我们要重写这两个方法，应该首先重写前者。因为 `hashcode()` 方法的实现应该与 `equals()` 方法的“核心条件”涉及的变量有关且只能与这些变量有关（注意：应该至少与其中的一个变量有关）。就拿 `String` 来说，两个字符串是否相等的核心条件是这两个字符串的内容是否相等，所以字符串的 `hashcode` 应该是关于这个字符串内容的“函数”（数学意义上的概念），也就是说如果这两个字符串的内容相等，那么我们就应该让这两个字符串有相等的 `hashcode`，也即 `hashcode()` 的返回值相等。`String` 的 `hashcode()` 就满足这个条件，因为如果两个 `String` 的内容相同，那么他们的所有字符的加权和一定相等，`hashcode` 也就相等，这里 `hashcode` 可以看作是 `String` 的内容的函数，自变量是 `String` 的内容。
 
-又例如，定义一个类“人”，该类有两个对象甲和乙，这个类的 `equals()` 方法的“核心实现”是他们的名字相等，那么 `equals()` 方法的代码可以这样实现：
+又例如，定义一个类 `People`，该类有两个对象 `a` 和 `b`，这个类的 `equals()` 方法的“核心实现”是他们的名字相等，那么 `equals()` 方法的代码可以这样实现：
 
 ```java
 public boolean equals(Object other) {
-  if (! other instanceof 人） {
+  if (! other instanceof People) {
 
-         if(甲.hashcode() != 乙.hashcode()) {
+         if(a.hashcode() != b.hashcode()) {
                return false;
         }
     
-        if(甲.name.euqals( 乙.name)) {
+        if(a.name.euqals( b.name)) {
             return true;
         }  
        
@@ -120,7 +120,9 @@ public int hashcode() {
 
 ```java
 public int hashcode() {
-   return fun(var) //fun() 是关于hometown自变量var的函数，并且var不是name 的函数，fun(var)的返回值是int 类型
+   //fun() 是关于hometown自变量var的函数，并且var不是name 的函
+   //数，fun(var)的返回值是int 类型
+   return fun(var);
 } 
 ```
 
@@ -133,12 +135,12 @@ public int hashcode() {
 ```java
 public boolean equals(Object other) {
 
-   if(other instanceof 人) {
-        if(! 甲.hashcode == 乙.hashcode()) {
+   if(other instanceof People) {
+        if(! a.hashcode == b.hashcode()) {
              return false;
         }
         
-        if(甲.name.equals(乙.name) && 甲.hometown.equals(乙.hometown)) {
+        if(a.name.equals(b.name) && a.hometown.equals(b.hometown)) {
              return true;
        }
 
@@ -183,7 +185,8 @@ public int hashcode() {
 
 ```java
 public int hashcode() {
-   return fun1(hometown) + fun2(age);//fun1()是关于hometown的函数，fun2()是关于fun2的函数
+   //fun1()是关于hometown的函数，fun2()是关于fun2的函数
+   return fun1(hometown) + fun2(age);
 }
 ```
 
