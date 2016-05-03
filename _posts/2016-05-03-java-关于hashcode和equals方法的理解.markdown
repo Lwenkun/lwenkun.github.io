@@ -92,8 +92,9 @@ public boolean equals(Object other) {
         }  
        
         return false;
-} else {
+  } else {
      return false
+  }
 }
 ```
 
