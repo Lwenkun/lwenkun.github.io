@@ -4,11 +4,11 @@ title:      "hashcode() 和 equals() 的理解"
 subtitle:   "hashcode() & equals()"
 date:       2016-05-03
 author:     "lwenkun"
-header-img: "img/post_java_equals_and_hashcode/bg.jpg"
+header-img: "img/in-post/post_java_equals_and_hashcode/bg.jpg"
 tags:
     - java
 ---
-
+#hashcode() 和 equals() 的理解
 `equals()` 默认的实现是两个对象的引用指向，也即两个引用其实都是同一个对象的引用，换句话说也就是两个引用指向同一内存地址。
 `hashcode()` 默认实现是一个和 `native` 方法相关的，我们可以不管他们，我的猜测是和这两个引用的所指对象的地址相关，事实上的确是这样，为什么我的猜测会是正确的呢，后面我会说原因。
 java 文档对这两个方法的重写要求是：
