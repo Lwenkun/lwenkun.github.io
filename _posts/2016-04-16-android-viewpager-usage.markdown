@@ -230,7 +230,7 @@ pager.addOnPageChangeListener(new   TabLayout.TabLayoutOnPagerChangeListener(tab
 
 如果你的手机是安卓5.0以上，你的页面可能会出现下图这种情况：
 
-![](/img/in-post/post_android_viewpager_usage/android_viewpager_usage_5.png)
+<a href="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_5.png" rel="attachment wp-att-123"><img class="alignnone wp-image-123" src="/img/in-post/post_android_viewpager_usage/android_viewpager_usage_5.png" alt="ViewPager" width="112" height="198" /></a>
 
 在 `ToolBar` 和 `TabLayout` 之间出现了一条阴影，这是因为 `Toolbar` 在安卓5.0以上默认 `elevation` 是不为零的，而 `TabLayout` 的高度为零，所以在 `TabLayout` 上造成了阴影，解决办法是将 `TabLayout` 放进 `AppBarLayout` 这个容器里，如下：
 
