@@ -228,4 +228,35 @@ pager.addOnPageChangeListener(new   TabLayout.TabLayoutOnPagerChangeListener(tab
 
 也不用写了，但是有一点要记住这个方法一定要是在 `ViewPager ` 设置 `PagerAdapter` 之后调用，否则程序运行时会崩溃。
 
-如果你的手机是安卓5.0以上，你的页面可能会出现神奇的 "bug"，不要着急，这里或许有你要的答案：
+如果你的手机是安卓5.0以上，你的页面可能会出现下图这种情况：
+
+![](/img/in-post/post_android_viewpager_usage/android_viewpager_usage_5.png)
+
+在 `ToolBar` 和 `TabLayout` 之间出现了一条阴影，这是因为 `Toolbar` 在安卓5.0以上默认 `elevation` 是不为零的，而 `TabLayout` 的高度为零，所以在 `TabLayout` 上造成了阴影，解决办法是将 `TabLayout` 放进 `AppBarLayout` 这个容器里，如下：
+
+```java
+<android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+        <android.support.design.widget.TabLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:tabIndicatorColor="#ffffff"
+            app:tabSelectedTextColor="#ffffff"
+            app:tabTextColor="#aaffffff"
+            app:tabBackground="@drawable/tab_ripple"/>
+
+</android.support.design.widget.AppBarLayout>
+```
+
+这样就不会出现那条难看的阴影了。
