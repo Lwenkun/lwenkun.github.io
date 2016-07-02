@@ -1,4 +1,9 @@
-# HuxBlog Boilerplate
+# Welcome to lwenkun's blog. You can also visit my blog via <a href="www.liwenkun.xyz">www.liwenkun.xyz"</a>
+
+
+# Information about boilerplate for this blog:
+
+## HuxBlog Boilerplate
 
 ##### This is the boilerplate of [Hux Blog](https://github.com/Huxpro/huxpro.github.io), all documents is over there!
 
