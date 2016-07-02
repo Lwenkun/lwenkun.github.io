@@ -1,4 +1,4 @@
-# Welcome to lwenkun's blog. You can also visit my blog via <a href="www.liwenkun.xyz">www.liwenkun.xyz"</a>
+# Welcome to lwenkun's blog. You can also visit my blog via <a href="www.liwenkun.xyz">www.liwenkun.xyz</a>
 
 
 # Information about boilerplate for this blog:
