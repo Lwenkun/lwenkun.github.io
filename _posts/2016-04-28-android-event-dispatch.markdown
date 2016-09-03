@@ -4,7 +4,7 @@ title:      "安卓事件传递机制的理解"
 subtitle:   "安卓事件传递机制"
 date:       2016-04-28
 author:     "lwenkun"
-header-img: "img/post-bg-unix-linux.jpg"
+header-img: "img/post-bg-unix-linux.jpg" 
 tags:
     - android
     - View
@@ -318,7 +318,8 @@ public boolean onTouchEvent(MotionEvent event) {
 
 到了这里安卓事件的传递就应该结束了，但我在这之中省略了对 `ViewGroup` 是如何找到被点击的子视图的的分析，这个我会在之后分享。以上便是我对安卓 `View` 的事件传递机制的理解，有什么疏漏或者错误的地方欢迎大家指出。
 
-参考文章：[http://blog.csdn.net/guolin_blog/article/details/9097463](http://blog.csdn.net/guolin_blog/article/details/9097463 "郭霖的博客")、[http://blog.csdn.net/guolin_blog/article/details/9153761](http://blog.csdn.net/guolin_blog/article/details/9153761 "郭霖的博客")
+参考文章：<br/>
+[http://blog.csdn.net/guolin_blog/article/details/9097463](http://blog.csdn.net/guolin_blog/article/details/9097463 "郭霖的博客")、[http://blog.csdn.net/guolin_blog/article/details/9153761](http://blog.csdn.net/guolin_blog/article/details/9153761 "郭霖的博客")
 
 参考书籍：《Android 内核剖析》柯元旦 著
 
