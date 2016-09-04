@@ -105,7 +105,7 @@ public interface Func1<T, R> extends Function {
 ```
 
 ```java
-／/这个类用来将一种 Subscriber 转换成另一种 Subscriber，可以
+//这个类用来将一种 Subscriber 转换成另一种 Subscriber，可以
 //用来将实际的订阅者转换成一个隐式的订阅者向上游的被观察者进行订阅
 public interface Operator<R, T> extends Func1<Subscriber<? super R>, Subscriber<? super T>> {
         // cover for generics insanity
@@ -113,7 +113,7 @@ public interface Operator<R, T> extends Func1<Subscriber<? super R>, Subscriber<
 ```
 
 ```java
-/／这个类的作用相当是一张存储在被观察者中的计划表，用来对观察者进
+//这个类的作用相当是一张存储在被观察者中的计划表，用来对观察者进
 //行一系列的操作，一般的实现是调用观察者的 onNext() 方法多次，最
 //后调用该观察者 onError() 或者 onComplete()一次
 public interface OnSubscribe<T> extends Action1<Subscriber<? super T>> {
