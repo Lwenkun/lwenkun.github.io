@@ -87,7 +87,7 @@ Observable.from(folders)
 
 简单解释下这段代码：
 
-观察者发出数据源，然后对数据源进行三次数据类型变换，之后指定被观察者和订阅者所在线程，最后对观察者进行订阅。如果对 java 8 引入的 <a href="https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/">Stream</a> 熟悉的话，就会发现这与对 ｀Stream｀ 的操作很像，从
+观察者发出数据源，然后对数据源进行三次数据类型变换，之后指定被观察者和订阅者所在线程，最后对观察者进行订阅。如果对 java 8 引入的 <a href="https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/">Stream</a> 熟悉的话，就会发现这与对 `Stream` 的操作很像，从
 `flatMap()` 到 `observeOn()` 的操作相当于对流的 Intermediate 操作，而最后的 `subscribe()` 相当是对流的 Terminal 操作。而且前面的操作也都是惰性化(lazy)的，最后的订阅才会触发前面一系列的变换操作（其实 `subscribeOn()` 和 `observeOn()` 这两个方法也是基于变换的）。怎么理解呢，就相当于 rxjava 库将这些操作先 “缓存” 起来了，直到最后的订阅观察者才将那些操作执行，怎么 “缓存” 是库做的事，逻辑上我们可以把那些操作看作是从上到下按顺序执行的。
 
 学习过 rxjava 的人会觉的 rxjava 很神奇，自然就会对其内部实现感兴趣，我也曾对 rxjava 的源码进行过一些粗浅的研究，配合网上的文章，对其原理有了大概的了解（线程切换机制方面还没有涉及）。
@@ -98,34 +98,30 @@ Observable.from(folders)
 首先有几个类（接口）很重要：
 
 ```java
-/**
- * 这个类是很多变换的基础，它将 T 类型的数据转换成 R 类型的数据
- *／
+//这个类是很多变换的基础，它将 T 类型的数据转换成 R 类型的数据
 public interface Func1<T, R> extends Function {
     R call(T t);
 }
 ```
 
 ```java
-／**
-  * 这个类用来将一种 Subscriber 转换成另一种 Subscriber，可以用来将实际的订阅
-  * 者转换成一个隐式的订阅者向上游的被观察者进行订阅
-  * /
+／/这个类用来将一种 Subscriber 转换成另一种 Subscriber，可以
+//用来将实际的订阅者转换成一个隐式的订阅者向上游的被观察者进行订阅
 public interface Operator<R, T> extends Func1<Subscriber<? super R>, Subscriber<? super T>> {
         // cover for generics insanity
 }
 ```
 
 ```java
-/**
- * 这个类的作用相当是一张存储在被观察者中的计划表，用来对观察者进行一系列的操作，一般的实  
- * 现是调用观察者的 onNext() 方法多次，最后调用该观察者 onError() 或者 onComplete()
- * 一次
- * /
+/／这个类的作用相当是一张存储在被观察者中的计划表，用来对观察者进
+//行一系列的操作，一般的实现是调用观察者的 onNext() 方法多次，最
+//后调用该观察者 onError() 或者 onComplete()一次
 public interface OnSubscribe<T> extends Action1<Subscriber<? super T>> {
         // cover for generics insanity
 }
 ```
+
+### map  变换 ###
 先将一种比较简单的变换吧，就是 `map()` 操作，它将一种类型的数据源转换成另外一种数据源，比如我们想将 `int` 类型的图片资源 id 转换成 `Bitmap` 类型的对象并将其设置给一个  `ImageView` ，我们可以这样做：
 
 ```java
@@ -163,7 +159,7 @@ public final class OnSubscribeMap<T, R> implements OnSubscribe<R> {
     //在变换流中由 rxjava 库隐式创建的 Obsevable。 
     final Observable<T> source;
     
-    //这是我们传入的 Func1 对象，它的名字很好的体现了它的作用——变换器
+    //这是我们传入的 Func1 对象，它的名字很好的体现了它的作用——转换器
     final Func1<? super T, ? extends R> transformer;
 
     public OnSubscribeMap(Observable<T> source, Func1<? super T, ? extends R> transformer) {
@@ -247,24 +243,24 @@ public final class OnSubscribeMap<T, R> implements OnSubscribe<R> {
 
 因为代码比较少，我还是全部贴上来，便于大家理解。
 
-说明：在 `map()` 中做的事有：<br>
+<b>说明：<br>
+在 `map()` 中做的事有：<br>
 1.创建新的 `Observable` 订阅下游观察者(在 `map()` 的调用链中创建)；<br>
 2.创建新的 `Subscriber` 供上游被观察者订阅（新创建的 `Observable` 订阅下游观察者这个动作执行后创建，即在 `subscribe()` 的调用链中创建）；<br>
 3.在上面的基础上实现建立起上游被观察者和下游观察者之间的一条桥梁。
-
+</b><br/>
 可能这样理解会有些困难，上图：
 
 <center><img src="/img/in-post/post_rxjava/map.jpg" width="500" height="100"/></center>
 
 有了图应该就好理解多了吧。
 
-让我们再从代码执行顺序将整个流程来走一遍吧：
-先是由 `just()` 方法创建了 `Observable` 对象，然后经过 `map()` 方法创建了隐式的 `Observable`，当我们最终调用隐式的 `Observable` 的 `subscribe()` 对下游的 `subscriber` 订阅时，隐式的 `Observable` 会根据计划表创建一个隐式的 `Subscriber` 对上游 `Observable` 进行订阅，触发上游 `Observable` 将数据传给隐式的 `Subscriber` 的 `onNext(int resourceId)` 方法，在这个 `onNext(int resourceId)` 方法中，会使用转换器将上游数据类型转换成下游数据类型并传入下游 `Subscriber` 的 `onNext(Bitmap bitmap)` 方法中， 从而成功将上游原始类型（int）数据转换成了下游观察者所需类型（Bitmap）的数据。
+<b>让我们再从代码执行顺序将整个流程来走一遍吧：<br/>
+先是由 `just()` 方法创建了 `Observable` 对象，然后经过 `map()` 方法创建了隐式的 `Observable`，当我们最终调用隐式的 `Observable` 的 `subscribe()` 对下游的 `subscriber` 订阅时，隐式的 `Observable` 会根据计划表创建一个隐式的 `Subscriber` 对上游 `Observable` 进行订阅，触发上游 `Observable` 将数据传给隐式的 `Subscriber` 的 `onNext(int resourceId)` 方法，在这个 `onNext(int resourceId)` 方法中，会使用转换器将上游数据类型转换成下游数据类型并传入下游 `Subscriber` 的 `onNext(Bitmap bitmap)` 方法中， 从而成功将上游原始类型（int）数据转换成了下游观察者所需类型（Bitmap）的数据。</b>
 
-注意：<br>
+<b>注意：<br/>
 1.隐式的 `Observable` 和隐式的 `Subscriber` 之间并没有发生订阅关系;<br>
-2.这个隐式 `Observabel` 的作用是创建一个隐式的 `Subsrciber`，并将其订阅给上游的 `Observable` 从而触发上游数据的发送；<br>
-3.隐式的 `Subscriber` 像是做了下游 `Subscriber` 的代理，它借助转换器完成了数据转换的工作然后将数据交由下游`Subscriber` 处理，这两个 `Subscriber` 直接进行了接触。
+2.这个隐式 `Observable` 的作用是创建一个隐式的 `Subsrciber`，并将其订阅给上游的 `Observable` 从而触发上游数据的发送；<br>
+3.隐式的 `Subscriber` 像是做了下游 `Subscriber` 的代理，它借助转换器完成了数据转换的工作然后将数据交由下游`Subscriber` 处理，这两个 `Subscriber` 直接进行了接触，隐式的 `Subscriber` 中的三个回调方法会调用下游 `Subscriber` 的同名回调方法。</b>
 
-
-
+多个 map() 操作也是同样的道理，读者应该自己能明白，这里就不赘述了。
