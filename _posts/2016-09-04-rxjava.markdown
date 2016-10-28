@@ -105,7 +105,7 @@ public interface Func1<T, R> extends Function {
 ```
 
 ```java
-／/这个类用来将一种 Subscriber 转换成另一种 Subscriber，可以
+//这个类用来将一种 Subscriber 转换成另一种 Subscriber，可以
 //用来将实际的订阅者转换成一个隐式的订阅者向上游的被观察者进行订阅
 public interface Operator<R, T> extends Func1<Subscriber<? super R>, Subscriber<? super T>> {
         // cover for generics insanity
@@ -113,7 +113,7 @@ public interface Operator<R, T> extends Func1<Subscriber<? super R>, Subscriber<
 ```
 
 ```java
-/／这个类的作用相当是一张存储在被观察者中的计划表，用来对观察者进
+//这个类的作用相当是一张存储在被观察者中的计划表，用来对观察者进
 //行一系列的操作，一般的实现是调用观察者的 onNext() 方法多次，最
 //后调用该观察者 onError() 或者 onComplete()一次
 public interface OnSubscribe<T> extends Action1<Subscriber<? super T>> {
@@ -121,8 +121,8 @@ public interface OnSubscribe<T> extends Action1<Subscriber<? super T>> {
 }
 ```
 
-### map  变换 ###
-先将一种比较简单的变换吧，就是 `map()` 操作，它将一种类型的数据源转换成另外一种数据源，比如我们想将 `int` 类型的图片资源 id 转换成 `Bitmap` 类型的对象并将其设置给一个  `ImageView` ，我们可以这样做：
+### map 变换 ###
+先将一种比较简单的变换吧，就是 `map()` 变换，它将一种类型的数据源转换成另外一种数据源，比如我们想将 `int` 类型的图片资源 id 转换成 `Bitmap` 类型的对象并将其设置给一个  `ImageView` ，我们可以这样做：
 
 ```java
 Observble.just(R.id.img_example)
@@ -263,4 +263,4 @@ public final class OnSubscribeMap<T, R> implements OnSubscribe<R> {
 2.这个隐式 `Observable` 的作用是创建一个隐式的 `Subsrciber`，并将其订阅给上游的 `Observable` 从而触发上游数据的发送；<br>
 3.隐式的 `Subscriber` 像是做了下游 `Subscriber` 的代理，它借助转换器完成了数据转换的工作然后将数据交由下游`Subscriber` 处理，这两个 `Subscriber` 直接进行了接触，隐式的 `Subscriber` 中的三个回调方法会调用下游 `Subscriber` 的同名回调方法。</b>
 
-多个 map() 操作也是同样的道理，读者应该自己能明白，这里就不赘述了。
+多个 map 变换也是同样的道理，读者应该自己能明白，这里就不赘述了。
