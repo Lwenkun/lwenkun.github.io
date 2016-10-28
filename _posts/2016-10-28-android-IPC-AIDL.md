@@ -237,8 +237,8 @@ public void addBook(net.bingyan.library.Book book) throws android.os.RemoteExcep
             _data.recycle();
        }
 }
-```
-```java
+ ```
+ ```java
 @Override
 public java.util.List<net.bingyan.library.Book> getBookList() throws android.os.RemoteException {
        android.os.Parcel _data = android.os.Parcel.obtain();
@@ -255,7 +255,7 @@ public java.util.List<net.bingyan.library.Book> getBookList() throws android.os.
        }
        return _result;
 }
-```
+ ```
 
  它们是编译器自动实现的，这两个方法有很多类似之处，可以现在这里透露下：这两个方法就是客户端进程调用服务端进程的窗口。在这两个方法的开始，它们都定义了两个 `Parcel`（中文译名：包裹）对象。`Parcel` 这个类我们看上去很眼熟，是的，`Book` 类中的 `writeToParcel()` 和 `CREATOR` 中的 `createFromParcel()` 的参数就是 `Parcel` 类型的，关于这个类文档中解释如下：
 
@@ -289,6 +289,7 @@ public java.util.List<net.bingyan.library.Book> getBookList() throws android.os.
  到此，客户端的 `Proxy` 讲解完了，下面我们看看服务端的 Stub。
 
 - `Stub` 中实现了 `IBookManager` 的其中一个方法，这个很简单，就是简单的将自身返回，因为 `Stub` 本身就继承自 `Binder`，而 `Binder` 继承自 `IBinder`，所以没有任何问题。你会问：还有两个方法没实现呢？这两个方法就是我们定义的接口方法，它们留给服务端进程去实现，也就是说，到时候我们在服务端进程中需要定义一个 `Stub` 的实现者。下面对 `Stub` 中的两个重要方法进行分析：
+
   - `IBookManager asInterface(IBinder obj)`
   
      ```java
@@ -309,7 +310,7 @@ public static net.bingyan.library.IBookManager asInterface(android.os.IBinder ob
      
    - `onTransact(int code, Parcel data, Parcel reply, int flags)`
   
-      ```java
+   ```java
 @Override
 public boolean onTransact(int code, android.os.Parcel data, android.os.Parcel reply, int flags) throws android.os.RemoteException {
            switch (code) {
