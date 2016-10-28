@@ -69,17 +69,17 @@ inteface IBookManager {
 
 - `IBookManager`
 
-```java
+ ```java
 public interface IBookManager extends android.os.IInterface {
 
     public void addBook(net.bingyan.library.Book book) throws android.os.RemoteException;
 
     public java.util.List<net.bingyan.library.Book> getBookList() throws android.os.RemoteException;
 }
-```
+ ```
 - `Stub`
 
-```java
+ ```java
 public static abstract class Stub extends android.os.Binder implements net.bingyan.library.IBookManager {
         private static final java.lang.String DESCRIPTOR = "net.bingyan.library.IBookManager";
 
@@ -142,10 +142,10 @@ public static abstract class Stub extends android.os.Binder implements net.bingy
             return super.onTransact(code, data, reply, flags);
         }
 }
-```
+ ```
 - `Proxy`
 
-```java
+ ```java
 private static class Proxy implements net.bingyan.library.IBookManager {
             private android.os.IBinder mRemote;
 
@@ -203,7 +203,7 @@ private static class Proxy implements net.bingyan.library.IBookManager {
                 return _result;
             }
        }
-```
+ ```
 
 对生成的这三个类的说明如下：
 
@@ -257,7 +257,7 @@ public java.util.List<net.bingyan.library.Book> getBookList() throws android.os.
 }
  ```
 
- 它们是编译器自动实现的，这两个方法有很多类似之处，可以现在这里透露下：这两个方法就是客户端进程调用服务端进程的窗口。在这两个方法的开始，它们都定义了两个 `Parcel`（中文译名：包裹）对象。`Parcel` 这个类我们看上去很眼熟，是的，`Book` 类中的 `writeToParcel()` 和 `CREATOR` 中的 `createFromParcel()` 的参数就是 `Parcel` 类型的，关于这个类文档中解释如下：
+  它们是编译器自动实现的，这两个方法有很多类似之处，可以现在这里透露下：这两个方法就是客户端进程调用服务端进程的窗口。在这两个方法的开始，它们都定义了两个 `Parcel`（中文译名：包裹）对象。`Parcel` 这个类我们看上去很眼熟，是的，`Book` 类中的 `writeToParcel()` 和 `CREATOR` 中的 `createFromParcel()` 的参数就是 `Parcel` 类型的，关于这个类文档中解释如下：
 
  >Container for a message (data and object references) that can
   be sent through an IBinder.  A Parcel can contain both flattened data
@@ -292,7 +292,7 @@ public java.util.List<net.bingyan.library.Book> getBookList() throws android.os.
 
   - `IBookManager asInterface(IBinder obj)`
   
-     ```java
+   ```java
 public static net.bingyan.library.IBookManager asInterface(android.os.IBinder obj) {
             if ((obj == null)) {
                 return null;
@@ -303,10 +303,10 @@ public static net.bingyan.library.IBookManager asInterface(android.os.IBinder ob
             }
             return new net.bingyan.library.IBookManager.Stub.Proxy(obj);
         }
-       ```
-这个方法的作用是将 `Stub` 类转换成 `IBookManager` 这个接口，方法中有个判断：如果我们的服务端进程和客户端进程是同一进程，那么就直接将 `Stub` 类通过类型转换转成 `IBookManager`；如果不是同一进程，那么就通过代理类 `Proxy` 将 `Stub` 转换成 `IBookManager`。为什么这么做，我们知道如果服务端进程和客户端进程不是同一进程，那么它们的内存就不能共享，就不能通过一般的方式进行通信，但是我们如果自己去实现进程间通信方式，对于普通开发者来说成本太大，因此编译器帮我们生成了一个封装了了进程间通信的工具，也就是这个 `Proxy`，这个类对底层的进程通信机制进行了封装只同时暴露出接口方法，客户端只需要调用这两个方法实现进程间通信（其实就是方法的远程调用）而不需要了解其中的细节。
+    ```
+  这个方法的作用是将 `Stub` 类转换成 `IBookManager` 这个接口，方法中有个判断：如果我们的服务端进程和客户端进程是同一进程，那么就直接将 `Stub` 类通过类型转换转成 `IBookManager`；如果不是同一进程，那么就通过代理类 `Proxy` 将 `Stub` 转换成 `IBookManager`。为什么这么做，我们知道如果服务端进程和客户端进程不是同一进程，那么它们的内存就不能共享，就不能通过一般的方式进行通信，但是我们如果自己去实现进程间通信方式，对于普通开发者来说成本太大，因此编译器帮我们生成了一个封装了了进程间通信的工具，也就是这个 `Proxy`，这个类对底层的进程通信机制进行了封装只同时暴露出接口方法，客户端只需要调用这两个方法实现进程间通信（其实就是方法的远程调用）而不需要了解其中的细节。
    
-     有了这个方法，我们在客户端可以借助其将一个 `IBinder` 类型的变量转换成我们定义的接口 `IBookManager`，它的使用场景我们会在后面的实例中进行讲解。
+   有了这个方法，我们在客户端可以借助其将一个 `IBinder` 类型的变量转换成我们定义的接口 `IBookManager`，它的使用场景我们会在后面的实例中进行讲解。
      
    - `onTransact(int code, Parcel data, Parcel reply, int flags)`
   
@@ -340,24 +340,24 @@ public boolean onTransact(int code, android.os.Parcel data, android.os.Parcel re
            }
            return super.onTransact(code, data, reply, flags);
 }
-```
-这个方法我们是不是也很熟悉呢？我们在 `Proxy` 中也看到一个类似得方法 `transact(int, Parcel, Parcel, int)`，它们的参数一样，而且它们都是 `Binder` 中的方法，那么它们有什么联系呢？
+   ```
+   这个方法我们是不是也很熟悉呢？我们在 `Proxy` 中也看到一个类似得方法 `transact(int, Parcel, Parcel, int)`，它们的参数一样，而且它们都是 `Binder` 中的方法，那么它们有什么联系呢？
 
-      前面说了，`transact()` 执行了一个远程调用，如果说 `transact()` 是远程调用的发起，那么 `onTransact()` 就是远程调用的响应。真实过程是客户端发器远程方法调用，android 系统通过底层代码对这个调用进行响应和处理，之后回调服务端的 `onTransact()` 方法，从数据包裹中取出方法参数，交给服务端实现的同名方法调用，最后将返回值打包返回给客户端。
+   前面说了，`transact()` 执行了一个远程调用，如果说 `transact()` 是远程调用的发起，那么 `onTransact()` 就是远程调用的响应。真实过程是客户端发器远程方法调用，android 系统通过底层代码对这个调用进行响应和处理，之后回调服务端的 `onTransact()` 方法，从数据包裹中取出方法参数，交给服务端实现的同名方法调用，最后将返回值打包返回给客户端。
       
-      需要注意的是 `onTransact()` 是在服务端进程的 `Binder` 线程池中进行的，这就意味着如果我们的要在 `onTransact()` 方法的中更新 UI，就必须借助 `Handler`。
+   需要注意的是 `onTransact()` 是在服务端进程的 `Binder` 线程池中进行的，这就意味着如果我们的要在 `onTransact()` 方法的中更新 UI，就必须借助 `Handler`。
       
-      这两个方法的第一个参数的含义是 AIDL 接口方法的标识码，在 `Stub` 中，定义了两个常量作为这两个方法的标示：
+   这两个方法的第一个参数的含义是 AIDL 接口方法的标识码，在 `Stub` 中，定义了两个常量作为这两个方法的标示：
       
-      ```java
-      static final int TRANSACTION_addBook = (android.os.IBinder.FIRST_CALL_TRANSACTION + 0);
-        static final int TRANSACTION_getBookList = (android.os.IBinder.FIRST_CALL_TRANSACTION + 1);
-      ```
-      如果 `code == TRANSACTION_addBook`，那么说明客户端调用的是 `addBook()`；如果 `code == TRANSACTION_getBookList`，那么客户端调用的是 `getBookList()`，然后交由相应的服务端方法处理。
+   ```java
+   static final int TRANSACTION_addBook = (android.os.IBinder.FIRST_CALL_TRANSACTION + 0);
+   static final int TRANSACTION_getBookList = (android.os.IBinder.FIRST_CALL_TRANSACTION + 1);
+   ```
+   如果 `code == TRANSACTION_addBook`，那么说明客户端调用的是 `addBook()`；如果 `code == TRANSACTION_getBookList`，那么客户端调用的是 `getBookList()`，然后交由相应的服务端方法处理。
 用一张图来表示整个通信过程：
 ![](/img/in-post/post-android-IPC-AIDL/IPC_2.png)
 
-     了解了 AIDL 的整个过程，接下来就是 AIDL 在安卓程序中的应用了。
+   了解了 AIDL 的整个过程，接下来就是 AIDL 在安卓程序中的应用了。
 
 ## AIDL 的使用 ##
 
