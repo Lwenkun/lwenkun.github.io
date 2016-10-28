@@ -69,17 +69,18 @@ inteface IBookManager {
 
 - `IBookManager`
 
- ```java
+```java
 public interface IBookManager extends android.os.IInterface {
 
     public void addBook(net.bingyan.library.Book book) throws android.os.RemoteException;
 
     public java.util.List<net.bingyan.library.Book> getBookList() throws android.os.RemoteException;
 }
- ```
+```
+
 - `Stub`
 
- ```java
+```java
 public static abstract class Stub extends android.os.Binder implements net.bingyan.library.IBookManager {
         private static final java.lang.String DESCRIPTOR = "net.bingyan.library.IBookManager";
 
@@ -142,10 +143,11 @@ public static abstract class Stub extends android.os.Binder implements net.bingy
             return super.onTransact(code, data, reply, flags);
         }
 }
- ```
+```
+
 - `Proxy`
 
- ```java
+```java
 private static class Proxy implements net.bingyan.library.IBookManager {
             private android.os.IBinder mRemote;
 
@@ -203,7 +205,7 @@ private static class Proxy implements net.bingyan.library.IBookManager {
                 return _result;
             }
        }
- ```
+```
 
 对生成的这三个类的说明如下：
 
@@ -216,6 +218,7 @@ private static class Proxy implements net.bingyan.library.IBookManager {
 - `IBookManager` 这个类没什么好说的，它只是简单继承了 `asInterface` 这个接口，作用就是将 `IBookManager` 转换成 `IBinder`。
 
 - `Proxy` 这个类上面已经提到过了，它就是进程间通信机制的一个封装类，他的内部实现机制就是 `Binder`，通过构造方法我们也容易看出来。它的构造方法接受一个 `IBinder` 类型的参数，参数名为 `remote`，显然，它代表着服务端。我们看看这个类中的方法 `addBook()` 和 `getBookList()`：
+
 
 ```java
 @Override
