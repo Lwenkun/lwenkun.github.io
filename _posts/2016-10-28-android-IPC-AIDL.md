@@ -486,7 +486,7 @@ public class Client extends AppCompatActivity {
 
 现在我们看看程序的运行效果：
 
-<center>![](/img/in-post/post-android-IPC-AIDL/AIDL.gif)</center>
+<center> <img href="/img/in-post/post-android-IPC-AIDL/AIDL.gif"/> </center>
 
 每当我们点击按钮，我们就成功的向服务端添加了一本书，说明我们通过 AIDL 跨进程通信成功了。
 
