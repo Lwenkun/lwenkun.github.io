@@ -100,12 +100,12 @@ Main-Class: xyz.lwenkun.Example
 
 这样我们的属性就能追加到默认的清单文件中了，如果有相同名称的属性，那么就会将默认的属性覆盖掉。
 
-我们的项目没有依赖包，所以不需要声明依赖库路径这个属性。那假如在项目的根目录，也就是包所在目录 `/Users/lwenkun/desktop` 下有一个目录 `lib`，它下面有两个名称分别为 `lib1.jar` 和 `lib2.jar `的包作为我们的依赖库，那么我们的清单内容就应该是这样的：
+我们的项目没有依赖包，所以不需要声明依赖库路径这个属性。那假如在项目的根目录，也就是包所在目录 `/Users/lwenkun/desktop` 下有一个目录 `lib`，它下面有三个名称分别为 `lib1.jar`、`lib2.jar` 和 `lib3.jar` 的包作为我们的依赖库，那么我们的清单内容就应该是这样的：
 
 ```
 Main-Class: xyz.lwenkun.Example
 Class-Path: lib/lib1.jar lib/lib2.jar
- lib/jar
+ lib/lib3.jar
 
 
 ```
