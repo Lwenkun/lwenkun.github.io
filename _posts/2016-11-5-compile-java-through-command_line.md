@@ -4,7 +4,7 @@ title:      "命令行编译、打包并运行一个 java 程序"
 subtitle:   "compile java through command line"
 date:       2016-11-05
 author:     "lwenkun"
-header-img: "img/post-bg-compile-java-through-command-line.jpg"
+header-img: "img/post-bg-compile-java-through-command-line.png"
 tags:
 - java
 ---
@@ -79,8 +79,8 @@ hello world
 
 打包要完成的工作就是将我们的项目打包成一个可执行的 jar 包，常见的 jar 包有两种：一种作为其他程序的依赖库，没有主类；另一种是做为可执行程序，有主类，用鼠标点击就可以运行。我们的项目包含主类，因此我们把它打包成可执行的 jar 包。关于 jar 包更深入的分析可以看看[这篇文章](https://www.ibm.com/developerworks/cn/java/j-jar/)。jar 文件构大致如下：
 
- ![structure_of_jar](img/in-post/post_compile_java_through_command_line/structure_of_jar.png)
- 
+ ![](/img/in-post/post_compile_java_through_command_line/structure_of_jar.png)
+
 不管是哪种 jar 包，它们都有一个 `MEAT-INF` 目录，下面有一个 `MANIFEST.MF` 文件，这个文件一个清单，记录着 jar 包相关的一些属性，如主类、依赖库的路径，不过作为依赖库的 jar 包没有主类属性。如果打包时我们不指明清单文件那么打包工具会生成一个默认的清单：
 
 ```
