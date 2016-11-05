@@ -31,7 +31,7 @@ public class Example {
 源码准备好后，就开始编译工作了，编译源码需要用到 `javac` 命令，使用方法是 
 
 ```
-javac /Users/lwenkun/desktop/HelloWorld／xyz/lwenkun/Example.java
+javac /Users/lwenkun/desktop/HelloWorld/xyz/lwenkun/Example.java
 ```
 或者在源码文件所在目录执行 
 
@@ -52,7 +52,7 @@ javac Example.java
 java -cp classpath main-class
 ```
 
-`classpath` 是类路径的意思，java 虚拟机的系统类加载器加载类时就要用到这个变量来搜索目标类，从而将其加载到内存中，关于 `classpath` 的解释，可以看看这篇文章。`main-class` 代表的是程序的主类，它是 java 程序的入口，必须要是类的全限定名，比如我们的实例类的全限定名为 `xyz.lwenkun.Example`。
+`classpath` 是类路径的意思，java 虚拟机的系统类加载器加载类时就要用到这个变量来搜索目标类，从而将其加载到内存中，关于 `classpath` 的解释，可以看看[这篇文章](http://developer.51cto.com/art/201209/357217.htm)。`main-class` 代表的是程序的主类，它是 java 程序的入口，必须要是类的全限定名，比如我们的示例类的全限定名为 `xyz.lwenkun.Example`。
 
 那么我们怎么运行我们的程序呢？
 
@@ -60,7 +60,7 @@ java -cp classpath main-class
 java -cp /Users/lwenkun/desktop/HelloWorld/xyz/lwenkun xyz.lwenkun.Example
 ```
 
-嗯，看上去对了，但是如果你自己动手试了的话会发现会报错。我们明明就是按照命令格式来做的啊。原因就是 `classpath` 的理解问题，`classpath` 是类的搜索路径，其实严格来说就是类所在包的目录。它只需要指定类包所在文件夹，在我们的例子中就是项目根目录 `／User/lwenkun/desktop/HelloWorld`。
+嗯，看上去对了，但是如果你自己动手试了的话会发现会报错。我们明明就是按照命令格式来做的啊。原因就是 `classpath` 的理解问题，`classpath` 是类的搜索路径，其实严格来说就是类所在包的目录。它只需要指定类包所在文件夹，在我们的例子中就是项目根目录 `/User/lwenkun/desktop/HelloWorld`。
 
 所以正确的写法是
 
@@ -126,16 +126,16 @@ jar cmf MANIFEST.txt helloworld.jar /Users/lwenkun/desktop/HelloWorld/xyz
 
 其中 `output-file` 是打包后的 .jar 文件，`package-dir` 就是我们的包的根目录，可以指定多个，在这里我们只有一个包（[更多 jar 相关命令](http://www.jianshu.com/p/61cfa1347894)）。
 
-这样后我们就在当前目录下(假设是桌面)生成了一个 `helloworld.jar`，我们用命令行运行这个程序：
+这样后我们就在当前目录下(假设是项目根目录)生成了一个 `helloworld.jar`，我们用命令行运行这个程序：
 
 ```
-java -jar /Users/lwenkun/desktop/helloworld.jar
+java -jar /Users/lwenkun/desktop/HelloWorld／helloworld.jar
 ```
 
 如果我们打包时忘记了添加 `Main-Class` 这个属性怎么办呢？当然最好的方式是重新打包。当然你说你就不想重新打包，那也行，那么执行方式就是这样的了：
 
 ```
-java -cp /Users/lwenkun/desktop/helloworld.jar xyz.lwenkun.Example
+java -cp /Users/lwenkun/desktop/HelloWorld/helloworld.jar xyz.lwenkun.Example
 ```
 
 这里把 jar 包的路径作为 `classpath`，然后在后面指明主类。前面说了 `classpath` 指明的是包所在目录，当然也可以是打包后的包所在的目录，这里可以把 `helloworld.jar` 看作是包所在目录，它的地位确实像个目录。
@@ -145,6 +145,14 @@ java -cp /Users/lwenkun/desktop/helloworld.jar xyz.lwenkun.Example
 ```
 hello world
 ```
+
+如果我们的程序有依赖库(`/Users/lwenkun/desktop/HelloWorld/lib/lib.jar`)而你又忘记添加 `Class-Path` 属性又该怎么办？可能你已经猜到方法了：
+
+```
+java -cp /Users/lwenkun/desktop/HelloWorld/helloworld.jar;/Users/lwenkun/desktop/HelloWorld/lib/lib.jar xyz.lwenkun.Example
+```
+
+我们可以把依赖库的路径添加到 `classpath` 中，这样的话，虽然 jar 包没有声明我们程序的依赖库路径，JVM 照样能够找到我们的依赖库。
 
 参考资料：
 
