@@ -118,7 +118,7 @@ Class-Path: lib/lib1.jar lib/lib2.jar
  - 每行一个属性，但是如果我们依赖的库太多了，可以转行，但是行首要加个空格（如上）
  - 最后，也是最容易忽视的一点，最后一个属性写完后要连续回车两次作为结束。否则，最后一行属性会被丢弃
 
-如果我们没有额外添加 MANIFEST 属性，我们可以用 `jar cf output-file application-dir` 命令来打包；如果需要额外添加 MANIFEST 属性，打包命令就是 `jar cmf manifest-file  output-file pakage-dir1 package-dir2 ...`。当然，在这里我们额外添加了 MANIFEST 属性，所以我们打包所用的命令就是：
+如果我们没有额外添加 MANIFEST 属性，我们可以用 `jar cf output-file package-dir1 package-dir2 ...` 命令来打包；如果需要额外添加 MANIFEST 属性，打包命令就是 `jar cmf manifest-file  output-file pakage-dir1 package-dir2 ...`。当然，在这里我们额外添加了 MANIFEST 属性，所以我们打包所用的命令就是：
 
 ```
 jar cmf MANIFEST.txt helloworld.jar /Users/lwenkun/desktop/HelloWorld/xyz
