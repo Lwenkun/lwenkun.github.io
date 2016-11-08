@@ -11,7 +11,7 @@ tags:
 
 # 命令行编译、打包并运行一个 java 程序 #
 
-很多同学一开始学 java 都是用 Eclipse、intellij 等 IDE 来写 java 程序的，这些 IDE 极大的简化了开发流程，很多工作都在不知不觉中帮我们做好了。出于好奇，在网上查阅各种资料后，决定自己动手用最原始的方式————命令行，编译并打包一个 hello world。
+和很多同学一样，一开始学 java 都是用 Eclipse、intellij 等 IDE 来写 java 程序的，这些 IDE 极大的简化了开发流程，很多工作都在不知不觉中帮我们做好了。出于好奇，在网上查阅各种资料后，决定自己动手用最原始的方式————命令行，编译并打包一个 hello world。
 
 ## 第一步：编写源代码 ##
 因为是一个 hello world，用记事本来写也没任何问题。
@@ -19,9 +19,24 @@ tags:
 
 ```java
 package xyz.lwenkun;
-//example.java
+
+import com.lib;
+//Example.java
 public class Example {
    public static void main(String[] args) {
+      Lib lib = new Lib();
+      lib.print();
+   }
+}
+```
+
+同时在桌面新建一个包 ”com.lib“，在里面编写 `Lib.java` 作为我们 HelloWorld 要依赖的类： 
+
+```java
+package com.lib
+//Lib.java
+public class Lib {
+   public void print() {
       System.out.println("hello world");
    }
 }
@@ -31,57 +46,60 @@ public class Example {
 源码准备好后，就开始编译工作了，编译源码需要用到 `javac` 命令，使用方法是 
 
 ```
-javac /Users/lwenkun/desktop/HelloWorld/xyz/lwenkun/Example.java
-```
-或者在源码文件所在目录执行 
-
-```
-javac Example.java
+javac <options> <source-files>
 ```
 
-执行完后会在源文件所在位置生成 java 字节码文件 `Example.class`。
-然后我们把源文件移除，只留下 `Example.class`。
-
-## 第三步：打包 ##
-
-在介绍打包前，我先来说说如何直接运行编译后的 class 文件，这里面有几个值得注意的问题。
-
-直接运行 java 字节码文件的命令是
+因为我们的项目依赖于 `Lib` 这个类，所以我们首先把这个类编译好：
 
 ```
-java -cp classpath main-class
+javac /Users/lwenkun/desktop/com/lib/Lib.java
 ```
 
-`classpath` 是类路径的意思，java 虚拟机的系统类加载器加载类时就要用到这个变量来搜索目标类，从而将其加载到内存中，关于 `classpath` 的解释，可以看看[这篇文章](http://developer.51cto.com/art/201209/357217.htm)。`main-class` 代表的是程序的主类，它是 java 程序的入口，必须要是类的全限定名，比如我们的示例类的全限定名为 `xyz.lwenkun.Example`。
-
-那么我们怎么运行我们的程序呢？
+然后再编译主类：
 
 ```
-java -cp /Users/lwenkun/desktop/HelloWorld/xyz/lwenkun xyz.lwenkun.Example
+javac -cp /Users/lwenkun/desktop /Users/lwenkun/desktop/HelloWorld/xyz/lwenkun/Example.java
 ```
 
-嗯，看上去对了，但是如果你自己动手试了的话会发现会报错。我们明明就是按照命令格式来做的啊。原因就是 `classpath` 的理解问题，`classpath` 是类的搜索路径，其实严格来说就是类所在包的目录。它只需要指定类包所在文件夹，在我们的例子中就是项目根目录 `/User/lwenkun/desktop/HelloWorld`。
-
-所以正确的写法是
+不同于编译 `Lib` 类，这里我们用到了 `-cp` 选项。其中 `-cp` 是 `-classpath` 的简写，`-classpath` 后面指定的一般是要引用的类所属类包所在的目录或者所在 jar 包的路径，编译时或者运行时的 java 虚拟机的**系统类加载器**就要用到这个变量来搜索目标类。注意是类所属**类包所在的目录**或者**所在 jar 包的路径**而不是**具体类的路径**。比如我要引用一个类 `Lib1`，它在类包 `com.example` 中，而这个类包又在 `/Users/lwenkun/desktop` 目录下 ，那么我只需指定 `classpath` 为 `/Users/lwenkun/desktop` 就可以了。当然实际情况时一个类引用到的类有很多，如果它们在同一个包下或者它们所属类包在同一目录下自然 `classpath` 为同一个值，那就不需要重复指定了。但是如果它们在不同的包里而且这些类包位于不同的目录下，比如我还要引用一个类 `Lib2`，它在一个名为 `com.example2` 的类包下，这个类包又位于 `/Users/lwenkun/desktop/package` 目录下，那么就要指定多个 `classpath` 了，这多个 `classpath` 之间用 : （macOSx、Linux、Unix）或者 ; （Windows）隔开，如：
 
 ```
-java -cp /Users/lwenkun/desktop/HelloWorld xyz.lwenkun.Example
+javac -cp /Users/lwenkun/desktop:/Users/lwenkun/desktop/package ClassToBeCompiled.java
 ```
 
-这样就会在终端输出：
+关于 `classpath` 的更多解释，可以看看[这篇文章](http://developer.51cto.com/art/201209/357217.htm)。要注意的是：如果不指定的话，classpath 的默认值是 `.`，代表的就是当前的用户目录；如果用户指定了那这个默认值就会被清除。
+
+在我们的项目中，我们只用到了 `com.lib` 包中的 `Lib` 类，所以我们指定的目录当然是 `／Users/lwenkun/desktop` 了。
+
+执行完后这两个编译命令后会分别在各自源文件所在目录生成 java 字节码文件 `Example.class` 和 `Lib.class`。源文件现在已经没用了，我们把源文件移除，只留下 `Example.class` 和 `Lib.class`。
+
+实际上编译完之后就可以运行了，运行 java 字节码的命令是
+
+```
+java <options>  <main-class> [args...]
+```
+
+这里我们运行的命令是：
+
+```
+java -cp /Users/lwenkun/desktop:/Users/lwenkun/desktop/HelloWorld xyz.lwenkun.Example
+```
+
+发现和编译时格式差不多，`-cp` 在这里指定的是运行时的 `classpath`, 虚拟机此时会根据这个值查找目标类。要注意的就是后面的类名是主类的全限定名，比如我们的主类的全限定名为 `xyz.lwenkun.Example`。系统查找类会根据类包所在目录结合类的全限定名来定位具体的类。来说下这条命令做了些什么：首先当然是启动 java 虚拟机，然后查找指定的主类，依据什么来查找呢？当然就是前面指定的 `classpath`，先在第一个目录下找，根据全限定名，类的位置应该是 `/Users/lwenkun/desktop/xyz/lwenkun/Example`，发现找不到，再用同样的方法在第二个目录中找，发现找到了，那么就加载这个类并执行这个类的 `mian()` 方法。这个方法中又用到了 `Lib` 这个类，它在 `Example` 中的声明是 `com.lib.Lib`，类加载器又用类似方法开始查找 `Lib` 类，发现在第一个目录中找到了那么就把加载到内存中了。这里省略了很多细节，关于系统是如何查找类的，可以看看[这篇文章](http://docs.oracle.com/javase/6/docs/technotes/tools/findingclasses.html)。
+
+命令的运行结果是：
 
 ```
 hello world
 ```
 
+## 第三步：打包 ##
 
-现在我们来讲如何打包。
-
-打包要完成的工作就是将我们的项目打包成一个可执行的 jar 包，常见的 jar 包有两种：一种作为其他程序的依赖库，没有主类；另一种是做为可执行程序，有主类，用鼠标点击就可以运行。我们的项目包含主类，因此我们把它打包成可执行的 jar 包。关于 jar 包更深入的分析可以看看[这篇文章](https://www.ibm.com/developerworks/cn/java/j-jar/)。jar 文件构大致如下：
+打包就是我们的项目打包成 jar 包，jar 包是一种 zip 格式的文件，从结构上来看我们可以简单的理解为 jar 包就是把几个类包压缩在一起。常见的 jar 包有两种：一种作为其他程序的依赖库，没有主类；另一种是作为可执行的程序，有主类，用鼠标点击就可以运行。我们的项目包含主类，因此我们把它打包成可执行的 jar 包。关于 jar 包更深入的分析可以看看[这篇文章](https://www.ibm.com/developerworks/cn/java/j-jar/)。jar 文件构大致如下：
 
  ![](/img/in-post/post_compile_java_through_command_line/structure_of_jar.png)
-
-不管是哪种 jar 包，它们都有一个 `MEAT-INF` 目录，下面有一个 `MANIFEST.MF` 文件，这个文件一个清单，记录着 jar 包相关的一些属性，如主类、依赖库的路径，不过作为依赖库的 jar 包没有主类属性。如果打包时我们不指明清单文件那么打包工具会生成一个默认的清单：
+ 
+ 不管是哪种 jar 包，它们都有一个 `META-INF` 目录，下面有一个 `MANIFEST.MF` 文件，这个文件是个清单，记录着 jar 包相关的一些属性，常用的如 `Main-Class` 和 `Class-Path`，前者指定主类，也就是程序的入口点，后者的作用和命令行中的 `-cp` 差不多，用来指定引用到的类所属类包所在的目录或者所在的 jar 包。如果打包时我们不指明清单文件那么打包工具会生成一个默认的清单添加到 jar 包中：
 
 ```
 Manifest-Version: 1.0
@@ -90,7 +108,7 @@ Created-By: 1.8.0_101 (Oracle Corporation)
 
 ```
 
-默认是没有主类信息和依赖库属性，所以我们必须手动添加。我们在桌面新建一个 `MANIFEST.txt` 文件(文件名和后缀不重要)，用文本编辑器打开，在里面添加主类属性：
+默认的清单中没有 `Main-Class` 和 `Class-Path` 属性，所以我们需要自己添加。我们在桌面新建一个 `MANIFEST.txt` 文件(文件名和后缀不重要)，用文本编辑器打开，在里面添加 `Main-Class` 属性：
 
 ```
 Main-Class: xyz.lwenkun.Example
@@ -98,9 +116,56 @@ Main-Class: xyz.lwenkun.Example
 
 ```
 
-这样我们的属性就能追加到默认的清单文件中了，如果有相同名称的属性，那么就会将默认的属性覆盖掉。
+到时候这样我们的属性就能追加到默认的清单文件中了，如果有相同名称的属性，那么就会将默认的属性覆盖掉。
 
-我们的项目没有依赖包，所以不需要声明依赖库路径这个属性。那假如在项目的根目录，也就是包所在目录 `/Users/lwenkun/desktop` 下有一个目录 `lib`，它下面有三个名称分别为 `lib1.jar`、`lib2.jar` 和 `lib3.jar` 的包作为我们的依赖库，那么我们的清单内容就应该是这样的：
+打包用到的命令是：
+
+```
+jar {ctxui}[vfmn0PMe] [jar-file] [manifest-file] [entry-point] [-C dir] files ...
+```
+
+其中 `jar-file` 是输出的 jar 包的文件名，`manifest-file` 是清单文件的名称（如果有的话），`files...` 是指若干要打包的 Class 文件。
+
+介绍几种比较简单的打包方式（[更多 jar 相关命令](http://www.jianshu.com/p/61cfa1347894)）：
+
+- 使用默认清单文件和几个类包创建一个 jar 文件
+
+```
+jar cf class.jar package-root-dirs...
+```
+
+- 使用现有清单文件和几个类包创建一个 jar 文件
+
+```
+jar cfm class.jar mainfest-file package-root-dirs...
+```
+
+- 使用现有的清单文件并用 `foo/` 目录中的所有包到 创建一个 jar 文件
+
+```
+jar cvfm classes.jar manifest-file -C foo/ .
+```
+
+其中，`package-root-dir` 指的是包的根目录，例如，在我们的项目中就是 `／Users/lwenkun/desktop/HelloWorld/xyz`。`foo` 就是包所在的目录，在我们的项目中就是 `／Users/lwenkun/desktop/HelloWorld`。
+
+我们先将依赖类所在包的打成 `lib.jar` ：
+
+```
+jar cf lib.jar /Users/lwenkun/desktop/com
+```
+
+然后把生成的 `lib.jar` 放在 `HelloWorld` 文件夹的 `lib` 文件夹中。
+
+对于主项目，因为我们的项目有主类，所以要声明 `Main-Class` 属性；又因为我们的项目有要依赖的类，并且我们要依赖的类的类包没有和我们的主项目的类包在同一目录下，所以要声明 `Class-Path` 属性。因此我们要创建包含如下内容的清单文件 `MANIFEST.txt`（文件名和后缀不重要，只要是文本类型的）：
+
+```
+Main-Class: xyz.lwenkun.Example
+Class-Path: lib/lib.jar
+
+
+```
+
+当然，如果要依赖类所属类包或者所在 jar 包与我们的主项目的类包在同一目录下，或者没有要依赖的类，就不需要声明 `Main-Class` 这个属性。又如果我们的项目依赖的类分别处于三个不同的 jar 包中，它们位于 `lib` 目录下，名称分别为 `lib1.jar`、`lib2.jar` 和 `lib3.jar`，那么我们的清单内容就应该是这样的：
 
 ```
 Main-Class: xyz.lwenkun.Example
@@ -110,27 +175,26 @@ Class-Path: lib/lib1.jar lib/lib2.jar
 
 ```
 
-
 注意几点：
 
- - MANIFEST 清单的格式是 `key: value`，冒号后面还有一个空格
+ - `MANIFEST` 清单的格式是 `key: value`，冒号后面还有一个空格（如上）
  - 依赖库之间通过空格来分隔
  - 每行一个属性，但是如果我们依赖的库太多了，可以转行，但是行首要加个空格（如上）
  - 最后，也是最容易忽视的一点，最后一个属性写完后要连续回车两次作为结束。否则，最后一行属性会被丢弃
 
-如果我们没有额外添加 MANIFEST 属性，我们可以用 `jar cf output-file package-dir1 package-dir2 ...` 命令来打包；如果需要额外添加 MANIFEST 属性，打包命令就是 `jar cmf manifest-file  output-file pakage-dir1 package-dir2 ...`。当然，在这里我们额外添加了 MANIFEST 属性，所以我们打包所用的命令就是：
+现在我们打包主项目中的类包：
 
 ```
-jar cmf MANIFEST.txt helloworld.jar /Users/lwenkun/desktop/HelloWorld/xyz
+jar cfm helloworld.jar MANIFEST.txt /Users/lwenkun/desktop/HelloWorld/xyz
 ```
 
-其中 `output-file` 是打包后的 .jar 文件，`package-dir` 就是我们的包的根目录，可以指定多个，在这里我们只有一个包（[更多 jar 相关命令](http://www.jianshu.com/p/61cfa1347894)）。
-
-这样后我们就在当前目录下(假设是项目根目录)生成了一个 `helloworld.jar`，我们用命令行运行这个程序：
+这样后我们就在当前目录下(假设是项目根目录 `HelloWorld`)生成了一个 `helloworld.jar`。把类包打包后，类包对于我们来说已经没用了，可以都移除掉。现在我们用命令行运行这个程序：
 
 ```
 java -jar /Users/lwenkun/desktop/HelloWorld／helloworld.jar
 ```
+
+这里是通过 jar 包来执行我们的程序，因为 jar 包中指定了 `Main-Class`，所以 JVM 就能找到相应的类并执行；同时在 `MANIFEST.MF` 中我们指定了 `Class-Path`，把我们依赖的 jar 包的相对路径添加进去了，所以要用到依赖类的时候，JVM 也能根据这个 jar 路径包和依赖类的全限定名定位到这个类。
 
 如果我们打包时忘记了添加 `Main-Class` 这个属性怎么办呢？当然最好的方式是重新打包。当然你说你就不想重新打包，那也行，那么执行方式就是这样的了：
 
@@ -138,7 +202,7 @@ java -jar /Users/lwenkun/desktop/HelloWorld／helloworld.jar
 java -cp /Users/lwenkun/desktop/HelloWorld/helloworld.jar xyz.lwenkun.Example
 ```
 
-这里把 jar 包的路径作为 `classpath`，然后在后面指明主类。前面说了 `classpath` 指明的是包所在目录，当然也可以是打包后的包所在的目录，这里可以把 `helloworld.jar` 看作是包所在目录，它的地位确实像个目录。
+这里把主项目的 jar 包的路径添加进 `classpath`，然后在后面指明主类。前面说了 `classpath` 指明的是类包所在目录，也可以是类所在 jar 包的路径。其实也可以把 `helloworld.jar` 理解成包所在目录，它们都是装包的容器。
 
 输出：
 
@@ -149,10 +213,10 @@ hello world
 如果我们的程序有依赖库(`/Users/lwenkun/desktop/HelloWorld/lib/lib.jar`)而你又忘记添加 `Class-Path` 属性又该怎么办？可能你已经猜到方法了：
 
 ```
-java -cp /Users/lwenkun/desktop/HelloWorld/helloworld.jar;/Users/lwenkun/desktop/HelloWorld/lib/lib.jar xyz.lwenkun.Example
+java -cp /Users/lwenkun/desktop/HelloWorld/helloworld.jar:/Users/lwenkun/desktop/HelloWorld/lib/lib.jar xyz.lwenkun.Example
 ```
 
-我们可以把依赖库的路径添加到 `classpath` 中，这样的话，虽然 jar 包没有声明我们程序的依赖库路径，JVM 照样能够找到我们的依赖库。
+我们可以把依赖类所在 jar 包的路径添加到 `classpath` 中，这样的话，虽然 `MANIFEST.MF` 中没有声明我们程序的依赖的 jar 包路径，JVM 照样能够根据 `-cp` 指定的路径找到我们的依赖类。
 
 参考资料：
 
