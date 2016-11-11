@@ -92,7 +92,7 @@ public BaseDexClassLoader(String dexPath, File optimizedDirectory, String librar
 说下这个构造方法几个参数：
 
 - 第一个参数指的是我们要加载的 dex 文件的路径，它有可能是多个 dex 路径，取决于我们要加载的 dex 文件的个数，多个路径之间用 `:` 隔开。
-- 第二个参数指的是优化后的 dex 存放目录。实际上，dex 其实还并不能被虚拟机直接加载，它需要系统的优化工具优化后才能真正被利用。优化之后的 dex 文件我们把它叫做 odex （optimized dex，说明这是被优化后的 dex）文件。其实从 class 到 dex 也算是经历了一次优化，这种优化的是机器无关的优化，也就是说不管将来运行在什么机器上，这种优化都是遵循固定模式的，因此这种优化发生在 apk 编译。而从 dex 文件到 odex 文件，是机器相关的优化，它使得 odex 适配于特定的硬件环境，不同机器这一步的优化可能有所不同，所以这一步需要在应用安装等运行时期由机器来完成。
+- 第二个参数指的是优化后的 dex 存放目录。实际上，dex 其实还并不能被虚拟机直接加载，它需要系统的优化工具优化后才能真正被利用。优化之后的 dex 文件我们把它叫做 odex （optimized dex，说明这是被优化后的 dex）文件。其实从 class 到 dex 也算是经历了一次优化，这种优化的是机器无关的优化，也就是说不管将来运行在什么机器上，这种优化都是遵循固定模式的，因此这种优化发生在 apk 编译。而从 dex 文件到 odex 文件，是机器相关的优化，它使得 odex 适配于特定的硬件环境，不同机器这一步的优化可能有所不同，所以这一步需要在应用安装等运行时期由机器来完成。需要注意的是，在较早版本的系统中，这个目录可以指定为外部存储中的目录，较新版本的系统为了安全只允许其为应用程序私有存储空间（`/data/data/apk-package-name/`）下的目录，一般我们可以通过 `Context#getDir(String dirName)` 得到这个目录。
 - 第三个参数的意义是库文件的的搜索路径，一般来说是 `.so` 库文件的路径，也可以指明多个路径。
 - 第四个参数就是要传入的父加载器，一般情况我们可以通过 `Context#getClassLoader()` 得到应用程序的类加载器然后把它传进去。
 
@@ -459,7 +459,13 @@ private static Class defineClass(String name, ClassLoader loader, Object cookie,
 
 ![](/img/in-post/post_android_load_class_dynamically/android-load-class-dynamically-2.png)
 
-对这个模型
+对这个模型作一下说明：
+
+- `BootClassLoader` 是顶级的类加载器，这个类加载器在系统启动时就已经建立了，整个系统只有一个实例，它用来加载安卓核心类库。
+
+- `PathClassLoader` 是每个应用进程的 Dalvik 虚拟机私有的类加载器，在应用启动时创建。它的 `DexPathList` 的 dex 加载路径是 `/data/app/apk-package-name-x/base.apk`（android M），用来加载我们已安装应用的 apk 中的 dex 文件。我们在应用中编写的的类默认是委托此类加载。
+
+- Custom ClassLoader，这是开发人员自己实现的类加载器，通常是继承自 `PathClassLoader` 或者 `DexClassLoader`。如果继承自前者通常用来加载已经安装过的插件 apk 中的 dex 文件，如果继承自后者通常用来加载 `.dex` 文件以及包含 dex 的 `.jar`、`.zip` 和 未安装的 `.apk` 文件。
 
 相信现在大家对安卓的类加载机制有了大概的了解，为了避免文章篇幅过长，我打算把动态加载在安卓中的应用放在下一篇博客当中，感谢大家的阅读。
 
