@@ -61,15 +61,15 @@ javac /Users/lwenkun/desktop/com/lib/Lib.java
 javac -cp /Users/lwenkun/desktop /Users/lwenkun/desktop/HelloWorld/xyz/lwenkun/Example.java
 ```
 
-不同于编译 `Lib` 类，这里我们用到了 `-cp` 选项。其中 `-cp` 是 `-classpath` 的简写，`-classpath` 后面指定的一般是要引用的类所属类包所在的目录或者所在 jar 包的路径，编译时或者运行时的 java 虚拟机的**系统类加载器**就要用到这个变量来搜索目标类。注意是类所属**类包所在的目录**或者**所在 jar 包的路径**而不是**具体类的路径**。比如我要引用一个类 `Lib1`，它在类包 `com.example` 中，而这个类包又在 `/Users/lwenkun/desktop` 目录下 ，那么我只需指定 `classpath` 为 `/Users/lwenkun/desktop` 就可以了。当然实际情况时一个类引用到的类有很多，如果它们在同一个包下或者它们所属类包在同一目录下自然 `classpath` 为同一个值，那就不需要重复指定了。但是如果它们在不同的包里而且这些类包位于不同的目录下，比如我还要引用一个类 `Lib2`，它在一个名为 `com.example2` 的类包下，这个类包又位于 `/Users/lwenkun/desktop/package` 目录下，那么就要指定多个 `classpath` 了，这多个 `classpath` 之间用 : （macOSx、Linux、Unix）或者 ; （Windows）隔开，如：
+不同于编译 `Lib` 类，这里我们用到了 `-cp` 选项。其中 `-cp` 是 `-classpath` 的简写，`-classpath` 后面指定的一般是要引用的类所属类包所在的目录或者所在 jar 包的路径（我们称其为  `classpath`），编译时或者运行时 JVM 的**系统类加载器**就要用到这个变量来搜索目标类。注意这个变量指明的是类所属**类包所在的目录**或者**所在 jar 包的路径**而不是**具体类的路径**。比如在编译某个类时要引用另一个类 `Lib1`，这个类在类包 `com.example1` 中，而这个类包又在 `/Users/lwenkun/desktop/package-dir1` 目录下 ，那么我只需指定 `classpath` 为 `/Users/lwenkun/desktop` 就可以了。当然在实际情况中一个类引用到的类有很多，如果这些被引用的类在同一个包下或者它们所属类包在同一目录下或者在同一 jar 包内，`classpath` 自然就为同一个值，那就不需要重复指定了。但是如果它们在不同的包里而且这些类包位于不同的目录下或者在不同的 jar 包内，比如我还要引用一个类 `Lib2`，它在一个名为 `com.example2` 的类包下，这个类包又位于 `/Users/lwenkun/desktop/package-dir2` 目录下，那么就要指定多个 `classpath` 了，这多个 `classpath` 之间用 `:` （macOSx、Linux、Unix）或者 `;` （Windows）隔开，如：
 
 ```
-javac -cp /Users/lwenkun/desktop:/Users/lwenkun/desktop/package ClassToBeCompiled.java
+javac -cp /Users/lwenkun/desktop/package-dir1:/Users/lwenkun/desktop/package-dir 2 ClassToBeCompiled.java
 ```
 
 关于 `classpath` 的更多解释，可以看看[这篇文章](http://developer.51cto.com/art/201209/357217.htm)。要注意的是：如果不指定的话，classpath 的默认值是 `.`，代表的就是当前的用户目录；如果用户指定了那这个默认值就会被清除。
 
-在我们的项目中，我们只用到了 `com.lib` 包中的 `Lib` 类，所以我们指定的目录当然是 `／Users/lwenkun/desktop` 了。
+在我们的 HelloWorld 项目中，我们用到了位于桌面的 `com.lib` 包中的 `Lib` 类，所以我们需要指定的 `classpath` 当然是 `／Users/lwenkun/desktop` 了。
 
 执行完后这两个编译命令后会分别在各自源文件所在目录生成 java 字节码文件 `Example.class` 和 `Lib.class`。源文件现在已经没用了，我们把源文件移除，只留下 `Example.class` 和 `Lib.class`。
 
