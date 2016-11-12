@@ -322,7 +322,7 @@ or a plain {@code .dex} file (with no possibility of associated
 resources).</br>This class also contains methods to use these lists to look up
 classes and resources.
 
-大概的意思就是 `DexPathList` 的作用和 JVM 中的 `classpath` 的作用类似，JVM 根据 `classpath` 来查找类，而 Dalvik 利用 DexPathList 来查找并加载类。`DexPathList` 包含的路径可以是 `.dex `文件的路径，也可以是包含了 dex 的 `.jar` 和 `.zip` 文件的路径。
+大概的意思就是 `DexPathList` 的作用和 JVM 中的 `classpath` 的作用类似，JVM 根据 `classpath` 来查找类，而 Dalvik 利用 `DexPathList` 来查找并加载类。`DexPathList` 包含的路径可以是 `.dex `文件的路径，也可以是包含了 dex 的 `.jar` 和 `.zip` 文件的路径。
 
 对于类加载器的分析先到这里，现在我们看看 `BaseDexClassLoader` 是如何加载类的。
 
@@ -373,7 +373,7 @@ protected Class<?> findClass(String name) throws ClassNotFoundException {
 }
 ```
 
-这个方法的重点就是 `Class c = pathList.findClass(name, suppressedException)`，`pathList` 很熟悉对不对？它就是前面分析的 `BaseDexClassLoader` 中的 `DexPathList` 对象。这里 `BaseClassLoader` 把查找类的人物委托给了 `pathList`。
+这个方法的重点就是 `Class c = pathList.findClass(name, suppressedException)`，`pathList` 很熟悉对不对？它就是前面分析的 `BaseDexClassLoader` 中的 `DexPathList` 对象。这里 `BaseClassLoader` 把查找类的任务委托给了 `pathList`。
 
 我们看看 `DexPathList` 的 `findClass()` 对象做了哪些事：
 
