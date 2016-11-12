@@ -286,8 +286,9 @@ private static Element[] makeElements(List<File> files, File optimizedDirectory,
 - 第二个判断是，如果文件是一个目录，那么直接把这个目录传入 `Element` 的构造方法构造一个 `Element`；如果不是就进行下一个判断。
 
 - 第三个判断中又有两个判断：
- - 根据后缀看它是不是 dex 文件，如果是，那么就通过 `loadDexFile()` 来加载一个 [DexFile](http://androidxref.com/7.0.0_r1/xref/libcore/dalvik/src/main/java/dalvik/system/DexFile.java) 对象（这个 `DexFile` 是什么我们等下再讲，你可以把它理解为一个对应着一个 dex 文件的对象）。如果成功加载了，那么就把它传入 `Element` 构造方法构造一个 `Element`。
- - 如果不是 dex 文件，那么不管它什么后缀名，都把它看作是一个 zip，前提是它必须是一个 zip 格式的文件（如 zip，jar，apk），并且这个 zip 格式的文件必须要包含一个 dex 文件，同时这个文件须位于 zip 内部的根目录下。然后又会利用这个 zip 文件加载一个 `DexFile` 对象。最后将这个 zip 和连同加载出来的 `DexFile` 对象一起传入 `Element` 的构造方法构造一个 `Element` 对象。
+
+  - 根据后缀看它是不是 dex 文件，如果是，那么就通过 `loadDexFile()` 来加载一个 [DexFile](http://androidxref.com/7.0.0_r1/xref/libcore/dalvik/src/main/java/dalvik/system/DexFile.java) 对象（这个 `DexFile` 是什么我们等下再讲，你可以把它理解为一个对应着一个 dex 文件的对象）。如果成功加载了，那么就把它传入 `Element` 构造方法构造一个 `Element`。
+  - 如果不是 dex 文件，那么不管它什么后缀名，都把它看作是一个 zip，前提是它必须是一个 zip 格式的文件（如 zip，jar，apk），并且这个 zip 格式的文件必须要包含一个 dex 文件，同时这个文件须位于 zip 内部的根目录下。然后又会利用这个 zip 文件加载一个 `DexFile` 对象。最后将这个 zip 和连同加载出来的 `DexFile` 对象一起传入 `Element` 的构造方法构造一个 `Element` 对象。
 
 `Element` 数组的构造我们大概理解清楚了。现在看下 `loadDexFile()` 怎样加载 `DexFile` 的：
 
@@ -463,9 +464,9 @@ private static Class defineClass(String name, ClassLoader loader, Object cookie,
 
 - 我们可以做如下类比：
 
- - 把 **Dalvik** 类比于 **JVM**
- - 把 **dex** 文件 类比于 **class** 文件
- - 把 **类加载路径（`classpath`）** 类比于 **dex 文件的路径（`DexPathList`）** 。
+  - 把 **Dalvik** 类比于 **JVM**
+  - 把 **dex** 文件 类比于 **class** 文件
+  - 把 **类加载路径（`classpath`）** 类比于 **dex 文件的路径（`DexPathList`）** 。
 
 相信现在大家对安卓的类加载机制有了大概的了解，为了避免文章篇幅过长，我打算把动态加载在安卓中的应用放在下一篇博客当中，感谢大家的阅读。
 
