@@ -29,9 +29,9 @@ JVM 的类加载机制是双亲委派模型，但是这个“双亲”感觉有�
 
 结合这张图说明几点：
 
-- `BootStrapClassLoader` 是顶级的类加载器，它是唯一一个不继承自 `ClassLoader` 中的类加载器，它高度集成于 JVM，是 `ExtensionClassLoader` 的父加载器，它的类加载路径是 `JDK\jre\lib` 和 用户指定的虚拟机参数 `-Xbootclasspath` 的值。
+- `BootStrapClassLoader` 是顶级的类加载器，它是唯一一个不继承自 `ClassLoader` 的类加载器，它高度集成于 JVM，是 `ExtensionClassLoader` 的父加载器，它的类加载路径是 `JDK\jre\lib` 和 用户指定的虚拟机参数 `-Xbootclasspath` 的值。
 - `ExtensionClassLoader` 是 `BootStrapClassLoader` 的子加载器，同时是 `SystemClassLoader` （有的地方称 `AppClassLoader`）的父加载器，它的类加载路径是 `JDK\jre\lib\ext` 和系统属性 `java.ext.dirs` 的值。
-- `SystemClassLoader` 是 `ExtensionClassLoader` 的子加载器，同时是我们的应用程序的类加载器，我们在应用程序中编写的类一般情况下（如果没有到动态加载技术的话）都是通过这个类加载加载的。它的类加载路径是环境变量 `CLASSPATH` 的值或者用户通过命令行可选项 `-cp (-classpath)` 指定的值。
+- `SystemClassLoader` 是 `ExtensionClassLoader` 的子加载器，同时是我们的应用程序的类加载器，我们在应用程序中编写的类一般情况下（如果没有用到动态加载技术的话）都是通过这个类加载加载的。它的类加载路径是环境变量 `CLASSPATH` 的值或者用户通过命令行可选项 `-cp (-classpath)` 指定的值。
 - 类加载器由于父子关系形成树形结构，开发人员可以开发自己的类加载器从而实现动态加载功能，但必须给这个类加载器指定树上的一个节点作为它的父加载器。
 - 因为类加载器是通过包名和类名（或者说类的全限定名），所以由于委派式加载机制的存在，全限定名相同的类不会在有 **祖先—子孙** 关系的类加载器上分别加载一次，不管这两个类的实现是否一样。
 - 不同的类加载器加载的类一定是不同的类，即使它们的全限定名一样。如果全限定名一样，那么根据上一条，这两个类加载器一定没有 **祖先-子孙** 的关系。这样来看，可以通过自定义类加载器使得相同全限定名但实现不同的类存在于同一 JVM 中，也就是说，类加载器相当于给类在包名之上又加了个命名空间。
@@ -83,7 +83,7 @@ public BaseDexClassLoader(String dexPath, File optimizedDirectory, String librar
 }
 ```
 
-说下这个构造方法几个参数：
+说下这个构造方法的几个参数：
 
 - 第一个参数指的是我们要加载的 dex 文件的路径，它有可能是多个 dex 路径，取决于我们要加载的 dex 文件的个数，多个路径之间用 `:` 隔开。
 - 第二个参数指的是优化后的 dex 存放目录。实际上，dex 其实还并不能被虚拟机直接加载，它需要系统的优化工具优化后才能真正被利用。优化之后的 dex 文件我们把它叫做 odex （optimized dex，说明这是被优化后的 dex）文件。其实从 class 到 dex 也算是经历了一次优化，这种优化的是机器无关的优化，也就是说不管将来运行在什么机器上，这种优化都是遵循固定模式的，因此这种优化发生在 apk 编译。而从 dex 文件到 odex 文件，是机器相关的优化，它使得 odex 适配于特定的硬件环境，不同机器这一步的优化可能有所不同，所以这一步需要在应用安装等运行时期由机器来完成。需要注意的是，在较早版本的系统中，这个目录可以指定为外部存储中的目录，较新版本的系统为了安全只允许其为应用程序私有存储空间（`/data/data/apk-package-name/`）下的目录，一般我们可以通过 `Context#getDir(String dirName)` 得到这个目录。
