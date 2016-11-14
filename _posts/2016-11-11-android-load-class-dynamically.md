@@ -460,13 +460,13 @@ private static Class defineClass(String name, ClassLoader loader, Object cookie,
 
 - `PathClassLoader` 是每个应用进程的 Dalvik 虚拟机私有的类加载器，在应用启动时创建。它的 `DexPathList` 的 dex 加载路径是 `/data/app/apk-package-name-x/base.apk`（android M），用来加载我们已安装应用的 apk 中的 dex 文件。我们在应用中编写的的类默认是委托此类加载。
 
-- Custom ClassLoader，这是开发人员自己实现的类加载器，通常是继承自 `PathClassLoader` 或者 `DexClassLoader`。如果继承自前者通常用来加载已经安装过的插件 apk 中的 dex 文件，如果继承自后者通常用来加载 `.dex` 文件以及包含 dex 的 `.jar`、`.zip` 和 未安装的 `.apk` 文件。
+- Custom ClassLoader，这是开发人员自己实现的类加载器，通常是 `PathClassLoader` 或者 `DexClassLoader`。如果使用前者通常用来加载已经安装过的插件 apk 中的 dex 文件，如果使用后者通常用来加载 `.dex` 文件以及包含 dex 的 `.jar`、`.zip` 和 未安装的 `.apk` 文件。
 
 - 我们可以做如下类比：
 
   - 把 **Dalvik** 类比于 **JVM**
   - 把 **dex** 文件 类比于 **class** 文件
-  - 把 **类加载路径（`classpath`）** 类比于 **dex 文件的路径（`DexPathList`）** 。
+  - 把 **dex 文件的路径（`DexPathList`）** 类比于 **类加载路径（`classpath`）** 。
 
 相信现在大家对安卓的类加载机制有了大概的了解，为了避免文章篇幅过长，我打算把动态加载在安卓中的应用放在下一篇博客当中，感谢大家的阅读。
 
