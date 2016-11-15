@@ -260,7 +260,7 @@ public java.util.List<net.bingyan.library.Book> getBookList() throws android.os.
 }
 ```
 
-  它们是编译器自动实现的，这两个方法有很多类似之处，可以现在这里透露下：这两个方法就是客户端进程调用服务端进程的窗口。在这两个方法的开始，它们都定义了两个 `Parcel`（中文译名：包裹）对象。`Parcel` 这个类我们看上去很眼熟，是的，`Book` 类中的 `writeToParcel()` 和 `CREATOR` 中的 `createFromParcel()` 的参数就是 `Parcel` 类型的，关于这个类文档中解释如下：
+  它们是编译器自动实现的，这两个方法有很多类似之处，可以先在这里透露下：这两个方法就是客户端进程调用服务端进程的窗口。在这两个方法的开始，它们都定义了两个 `Parcel`（中文译名：包裹）对象。`Parcel` 这个类我们看上去很眼熟，是的，`Book` 类中的 `writeToParcel()` 和 `CREATOR` 中的 `createFromParcel()` 的参数就是 `Parcel` 类型的，关于这个类文档中解释如下：
 
  >Container for a message (data and object references) that can
   be sent through an IBinder.  A Parcel can contain both flattened data
@@ -287,7 +287,7 @@ public java.util.List<net.bingyan.library.Book> getBookList() throws android.os.
 
  - `List<Book> getBookList()` 需要借助 `_reply` 从服务端接收返回值 `List<Book>:books`，方法中的做法是将 `Book` 中的 `CREATOR` 这个静态字段作为参数传入 `_reply` 的 `createTypedArrayList()` 方法中，还记得 `Book` 中的 `CREATOR` 吗？当时你是不是好奇这个静态字段应该怎么用呢？现在一切明了了，我们需要靠这个对象（便于理解我们可以叫它”反序列化器“）来对服务端的数据反序列化从而重新生成可序列化的对象或者对象数组。很明显 `CREATOR` 借助 `_reply` 生成了 `List<Book>:books`。
 
- 当然这两个方法中的 `_data` 和 `_reply` 不仅传递了对象，还传递了一些校验信息，这个我们可以不必深究，但应注意的是，`Parcel` 打包顺序和解包顺序要严格对应。例如，第一个打包的是 `int:i`，那么第一解包的也应该是这个整型值。也即打包时第一次调用的如果是 `Parcel.writeInt(int)`，解包时第一次调用的应该是 `Parcel.readInt()`。
+ 当然这两个方法中的 `_data` 和 `_reply` 不仅传递了对象，还传递了一些校验信息，这个我们可以不去深究，但应注意的是，`Parcel` 打包顺序和解包顺序要严格对应。例如，第一个打包的是 `int:i`，那么第一解包的也应该是这个整型值。也即打包时第一次调用的如果是 `Parcel.writeInt(int)`，解包时第一次调用的应该是 `Parcel.readInt()`。
  
  到此，客户端的 `Proxy` 讲解完了，下面我们看看服务端的 Stub。
 
@@ -348,7 +348,7 @@ public boolean onTransact(int code, android.os.Parcel data, android.os.Parcel re
 
    前面说了，`transact()` 执行了一个远程调用，如果说 `transact()` 是远程调用的发起，那么 `onTransact()` 就是远程调用的响应。真实过程是客户端发器远程方法调用，android 系统通过底层代码对这个调用进行响应和处理，之后回调服务端的 `onTransact()` 方法，从数据包裹中取出方法参数，交给服务端实现的同名方法调用，最后将返回值打包返回给客户端。
       
-   需要注意的是 `onTransact()` 是在服务端进程的 `Binder` 线程池中进行的，这就意味着如果我们的要在 `onTransact()` 方法的中更新 UI，就必须借助 `Handler`。
+   需要注意的是 `onTransact()` 是在服务端进程的 `Binder` 线程池中进行的，这就意味着如果我们的要在 `onTransact()` 方法中更新 UI，就必须借助 `Handler`。
       
    这两个方法的第一个参数的含义是 AIDL 接口方法的标识码，在 `Stub` 中，定义了两个常量作为这两个方法的标示：
       
@@ -482,7 +482,7 @@ public class Client extends AppCompatActivity {
 </LinearLayout>
 ```
 
-我们的客户端就是一个 `Activity`，`onCreate()` 中进行了服务的绑定，`bindService()` 方法中有一参数 `ServiceConnection:conn`，因为绑定服务是异步进行的，这个参数的作用就是绑定服务成功后回调的接口，它有两个回调方法：一个是连接服务成功后回调，另一个在与服务端断开连接后回调。我们现在关心的主要是 `onServiceConnected()` 方法，在这里我们只做了一件事：将服务端转换过来的 `IBinder` 对象转换成 AIDL 接口，我们定义 `IBookManager:bookManager` 字段来保持对其的引用。这样的话，我们就可以通过这个 `bookManager` 来进行方法的远程调用。我们给客户端的 `Button` 注册事件：每一次点击都会向服务端增加一本书，并且将图书馆现有的图书数量显示出来。
+我们的客户端就是一个 `Activity`，`onCreate()` 中进行了服务的绑定，`bindService()` 方法中有一参数 `ServiceConnection:conn`，因为绑定服务是异步进行的，这个参数的作用就是绑定服务成功后回调的接口，它有两个回调方法：一个是连接服务成功后回调，另一个在与服务端断开连接后回调。我们现在关心的主要是 `onServiceConnected()` 方法，在这里我们只做了一件事：将服务端转换过来的 `IBinder` 对象转换成 AIDL 接口，我们定义 `IBookManager:bookManager` 字段来保持对其的引用。这样的话，我们就可以通过这个 `bookManager` 来进行方法的远程调用。我们给客户端的 `Button` 注册事件：每一次点击都会向服务端增加一本书，并将图书馆现有的图书数量显示出来。
 
 现在我们看看程序的运行效果：
 
