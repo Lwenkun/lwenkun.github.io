@@ -292,7 +292,7 @@ private static Element[] makeElements(List<File> files, File optimizedDirectory,
 
 `Element` 数组的构造我们大概理解清楚了。现在看下 `loadDexFile()` 怎样加载 `DexFile` 的：
 
-```
+```java
 private static DexFile loadDexFile(File file, File optimizedDirectory, ClassLoader loader,
                                       Element[] elements) throws IOException {
        if (optimizedDirectory == null) {
