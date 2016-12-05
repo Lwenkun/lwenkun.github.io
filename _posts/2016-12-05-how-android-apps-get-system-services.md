@@ -239,3 +239,5 @@ private static IServiceManager getIServiceManager() {
 ```
 
 这是典型的单例模式，并且我们还发现 `sServiceManager` 也是通过 IPC 得到的（源码中 `xxxManagerNative` 其实就相当于 AIDL 中的 `Stub`），说明这个 `ServiceManager` 其实也是一个代理类。也就是说我们获取系统服务的过程，就是通过 `ServiceManager` 这个代理获取其他服务的客户端代理的过程。
+
+OK，安卓获取系统服务的过程就介绍到这里，感谢大家的阅读，有什么不对的地方还望大家不吝赐教。
