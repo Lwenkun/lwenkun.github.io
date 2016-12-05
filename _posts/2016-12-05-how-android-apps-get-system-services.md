@@ -143,7 +143,7 @@ public static Object[] createServiceCache() {
 - 把该服务的 `class` 对象和服务名对应起来
 - 把该服务的服务名和获取该服务的策略对应起来
 
-现在我们来看看 `SystemServiceRegister` 的 `getSystemService()` 方法：
+现在我们来看看 `SystemServiceRegistry` 的 `getSystemService()` 方法：
 
 ```java
 public static Object getSystemService(ContextImpl ctx, String name) {
