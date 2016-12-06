@@ -87,15 +87,13 @@ static abstract interface ServiceFetcher<T> {
 }
 ```
 
-`registerService()` 这个方法并没有将真正的服务注册进去，而是注册了一个 `ServiceFetcher` 对象，这个对象定义了服务获取接口，这样看来， `ServiceFetcher` 相当是一个服务获取策略。所以我们有理由推测，服务的注册实际上注册的不是实际的服务，而是服务的获取策略。当调用 `SystemServiceRegistry.getSystemService()` 获取某个的服务的时候，它会通过根据这个服务的获取策略返回它的一个实例。实际情况是不是这样呢，我们往下看。
+这个接口定义了 `getService()` 这个方法，从名字也能看出，它是用来获取服务的。因此我们又理由推断，这个接口就相当于一个服务获取策略。获取服务时，通过调用这个接口的 `getService()` 方法就能得到相应的服务。因此，`registerService()` 这个方法并没有将真正的服务注册进去，而是注册了一个服务获取策略。因为各种服务的获取策略不尽相同，系统定义了三种实现 `ServiceFetcher` 接口的抽象类，它们分别是 `CachedServiceFetcher`，`StaticServiceFetcher` 和 `StaticApplicationContextServiceFetcher`，简单说明一下这三个类：
 
-`ServiceFetcher` 有三个抽象的实现类，我们只看其中一个：
+- CachedServiceFetcher
+
+`CachedServiceFetcher` 获取服务的策略是：先从缓存数组中找，如果找到就将其返回；如果没有，那就创建一个服务，缓存之后再将其返回。
 
 ```java
-/**
- * Override this class when the system service constructor needs a
- * ContextImpl and should be cached and retained by that context.
- */
 static abstract class CachedServiceFetcher<T> implements ServiceFetcher<T> {
     private final int mCacheIndex;
 
@@ -122,7 +120,56 @@ static abstract class CachedServiceFetcher<T> implements ServiceFetcher<T> {
 }
 ```
 
-这个抽象类实现了服务获取策略 `getService()`，就算不看这个方法的具体实现，从这个类的名字我们也容易知道，这是一个能够对获取过的服务进行缓存的 `ServiceFetcher`。它将缓存策略封装在 `getService()` 方法中，并且抽象出 `createService()` 这个方法用来创建没有缓存过的对象。`CacheServiceFetcher` 将获取过的服务缓存在 `Context` 的 `mServiceCache` 这个对象中，这个对象是一个 `Object` 类型的数组。你可能会问，为什么选择用数组来缓存，数组的容量是固定的，你怎么知道要缓存多少服务。我们看看 `Context` 的 `mServiceCache`：
+
+- StaticServiceFetcher
+
+`StaticServiceFetcher` 获取服务的策略是：用一个 `mCachedInstance` 的成员变量作为缓存来保存服务，如果这个变量不为空就直接返回；否则就创建一个服务，缓存至这个变量后返回。
+
+```java
+static abstract class StaticServiceFetcher<T> implements ServiceFetcher<T> {
+    private T mCachedInstance;
+
+    @Override
+    public final T getService(ContextImpl unused) {
+        synchronized (StaticServiceFetcher.this) {
+            if (mCachedInstance == null) {
+                mCachedInstance = createService();
+            }
+            return mCachedInstance;
+        }
+    }
+
+    public abstract T createService();
+}
+```
+
+
+- StaticApplicationContextServiceFetcher
+
+`StaticApplicationContextServiceFetcher` 获取服务的策略和 `StaticServiceFetcher` 是一样的，就不赘述了。
+
+```java
+static abstract class StaticApplicationContextServiceFetcher<T> implements ServiceFetcher<T> {
+    private T mCachedInstance;
+
+    @Override
+    public final T getService(ContextImpl ctx) {
+        synchronized (StaticApplicationContextServiceFetcher.this) {
+            if (mCachedInstance == null) {
+                mCachedInstance = createService(appContext != null ? appContext : ctx);
+            }
+            return mCachedInstance;
+        }
+    }
+
+    public abstract T createService(Context applicationContext);
+}
+```
+
+
+我们会发现，这三个抽象类有一个共同的特点，那就是它们都是用缓存策略实现了 `getService()` 这个方法，同时抽离出 `CreateServiceFetcher()` 这个抽象方法。这之中的意图可想而知，就是让子类只需关注如何将这个服务创建出来，不需要关注这个服务的缓存策略，因为缓存策略父类们都已经帮它们实现了。
+
+需要注意的是，`CachedServiceFetcher` 将获取过的服务缓存在 `Context` 的 `mServiceCache` 这个对象中，这个对象是一个 `Object` 类型的数组。你可能会问，为什么选择用数组来缓存，数组的容量是固定的，你怎么知道要缓存多少服务。我们看看 `Context` 的 `mServiceCache`：
 
 ```java
 final Object[] mServiceCache = SystemServiceRegistry.createServiceCache();
@@ -138,12 +185,12 @@ public static Object[] createServiceCache() {
 
 结果发现这个数组的大小为 `sServiceCacheSize`，`sServiceCacheSize` 在上面 `CachedServiceFetcher` 的构造函数中进行了自增运算，而 `CachedServiceFetcher` 是在注册的时候创建的，因此注册了多少个 `CachedServiceFetcher`，`cache` 就有多大，因此我们不必担心缓存空间不够用。
 
-貌似有点扯远了，我们回过头分析 `registerService()`，发现它做了两件事：
+貌似有点扯远了，现在我们回过头来分析 `registerService()`，发现它就做了两件事：
 
 - 把该服务的 `class` 对象和服务名对应起来
 - 把该服务的服务名和获取该服务的策略对应起来
 
-现在我们来看看 `SystemServiceRegistry` 的 `getSystemService()` 方法：
+服务获取策略注册完了，那么你自然会问，怎样通过这个策略获取服务呢？现在我们来看看 `SystemServiceRegistry` 的 `getSystemService()` 方法：
 
 ```java
 public static Object getSystemService(ContextImpl ctx, String name) {
@@ -152,7 +199,7 @@ public static Object getSystemService(ContextImpl ctx, String name) {
 }
 ```
 
-果然和我们前面的推断是一样的，获取系统服务时，系统是通过调用某个服务的获取策略来获取这个服务的。前面分析了， `CachedServiceFetcher` 获取服务的策略是先从缓存中找，如果没有就创建一个。那么服务是怎样创建的呢？通过观察那一系列的 `registerService()`，我们发现大多数的服务是这样创建的：
+这就印证了我们之前的推断。获取系统服务时，先通过注册时的对应好的关系找出这个服务对应的服务获取策略（也就是 `ServiceFetcher` 对象），然后调用这个服务的获取策略的 `getService()` 方法获取这个服务。前面分析了，三种 `ServiceFetcher` 获取服务的策略都是先从缓存中找，如果没有就创建一个。那么服务是怎样创建的呢？如果你仔细观察过那一系列的 `registerService()`，就会发现大多数服务是这样创建的：
 
 ```java
 IBinder b = ServiceManager.getService(service_name);
@@ -165,7 +212,9 @@ return new xxxManager(ctx, ServiceInterface);
 - 获取服务端传过来的 `Binder`（对于进程间通信，其实它是一个 `BinderProxy` 对象）
 - 将这个 `Binder` 通过 `asInterface()` 转换成相应 AIDL 接口的客户端代理
 
-我们知道，`Binder` 的作用相当于一把钥匙，客户端拿到这个 `Binder` 用 `asInterface()` 将其转换成相应 AIDL 接口的客户端代理后就可以 “随意使唤” 服务端了。只不过在这里是服务接口(如 `IActivityManager`，`IWindowManager`)而不是 AIDL 接口，并且在服务接口的客户端代理上又包装了一层，但实际上还是通过操作代理对象进行进程间通信的。我们发现所有服务的客户端 `Binder`（`BinderProxy`） 都有同一个来源，那就是 `ServiceManager`。接下来就有请 `ServiceManager` 登场。
+我们知道，`Binder` 的作用相当于一把钥匙，客户端拿到这个 `Binder` 用 `asInterface()` 将其转换成相应 AIDL 接口的客户端代理后就可以 “随意使唤” 服务端了。只不过在这里是服务接口(如 `IActivityManager`，`IWindowManager`)而不是 AIDL 接口，并且在服务接口的客户端代理上又包装了一层，但实际上还是通过操作代理对象进行进程间通信的。
+
+我们发现所有服务的客户端 `Binder`（`BinderProxy`） 都来自于 `ServiceManager`，看来这个类就是我们接下来要研究的重点。那么有请 `ServiceManager` 登场。
 
 ## ServiceManager ##
 
@@ -209,8 +258,6 @@ private HashMap<String, IBinder> getCommonServicesLocked(boolean isolated) {
     if (mAppBindArgs == null) {
         mAppBindArgs = new HashMap<>();
 
-        // Isolated processes won't get this optimization, so that we don't
-        // violate the rules about which services they have access to.
         if (!isolated) {
             // Setup the application init args
             mAppBindArgs.put("package", ServiceManager.getService("package"));
