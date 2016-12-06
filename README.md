@@ -1,14 +1,1 @@
-# Welcome to lwenkun's blog. You can also visit my blog via <a href="http://liwenkun.xyz"> liwenkun.xyz </a>
-
-
-# Information about boilerplate for this blog:
-
-## HuxBlog Boilerplate
-
-##### This is the boilerplate of [Hux Blog](https://github.com/Huxpro/huxpro.github.io), all documents is over there!
-
-#### [View Boilerplate &rarr;](http://huangxuan.me/huxblog-boilerplate/)
-
-#### [View Live Hux Blog &rarr;](http://huangxuan.me)
-
-## If you like Hux Blog, Please star [huxpro.github.io repo](https://github.com/Huxpro/huxpro.github.io) instead of this! Thank you!
+# Welcome to lwenkun's blog. You can also visit my blog via [liwenkun.me](http://liwenkun.me)
