@@ -87,7 +87,7 @@ static abstract interface ServiceFetcher<T> {
 }
 ```
 
-这个接口定义了 `getService()` 这个方法，从名字也能看出，它是用来获取服务的。因此我们又理由推断，这个接口就相当于一个服务获取策略。获取服务时，通过调用这个接口的 `getService()` 方法就能得到相应的服务。因此，`registerService()` 这个方法并没有将真正的服务注册进去，而是注册了一个服务获取策略。因为各种服务的获取策略不尽相同，系统定义了三种实现 `ServiceFetcher` 接口的抽象类，它们分别是 `CachedServiceFetcher`，`StaticServiceFetcher` 和 `StaticApplicationContextServiceFetcher`，简单说明一下这三个类：
+这个接口定义了 `getService()` 这个方法，从名字也能看出，它是用来获取服务的。因此我们有理由推断，这个接口就相当于一个服务获取策略。获取服务时，通过调用这个接口的 `getService()` 方法就能得到相应的服务。因此，`registerService()` 这个方法并没有将真正的服务注册进去，而是注册了一个服务获取策略。因为各种服务的获取策略不尽相同，系统定义了三种实现 `ServiceFetcher` 接口的抽象类，它们分别是 `CachedServiceFetcher`，`StaticServiceFetcher` 和 `StaticApplicationContextServiceFetcher`，简单说明一下这三个类：
 
 - CachedServiceFetcher
 
