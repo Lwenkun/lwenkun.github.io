@@ -136,7 +136,7 @@ public static Object[] createServiceCache() {
 }
 ```
 
-结果发现这个数组的大小为 `sServiceCacheSize`，`sServiceCacheSize` 在上面 `CachedServiceFetcher` 的构造函数中进行了自增运算，而 `CachedServiceFetcher` 是在注册的时候创建的，因此我们创注册了多少个 `CachedServiceFetcher`，`cache` 就有多大，因此我们不必担心缓存空间不够用。
+结果发现这个数组的大小为 `sServiceCacheSize`，`sServiceCacheSize` 在上面 `CachedServiceFetcher` 的构造函数中进行了自增运算，而 `CachedServiceFetcher` 是在注册的时候创建的，因此注册了多少个 `CachedServiceFetcher`，`cache` 就有多大，因此我们不必担心缓存空间不够用。
 
 貌似有点扯远了，我们回过头分析 `registerService()`，发现它做了两件事：
 
