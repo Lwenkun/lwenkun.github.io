@@ -1,1 +1,1 @@
-# Welcome to lwenkun's blog. You can also visit my blog via [liwenkun.me](http://liwenkun.me)
+# Welcome to my blog. You can also visit my blog via [liwenkun.me](http://liwenkun.me)
