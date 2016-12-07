@@ -15,7 +15,7 @@ function checkMobile() {
 //Admin Start
 function sskadmin(e) {
     var ssk = '';
-    if (e.user_id == 867394) {
+    if (e.user_id == 6360546850860189000) {
         if (checkMobile()) {
             ssk = '<span class="this_ua sskadmin">R00T</span><br><br>';
         } else {
