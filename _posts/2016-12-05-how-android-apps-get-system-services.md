@@ -15,7 +15,7 @@ tags:
 
 # 安卓应用获取系统服务的过程 #
 
-在安卓系统中存在着各种各样的系统服务， 例如 [`ActivityManagerService`](http://androidxref.com/7.0.0_r1/xref/frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java), [`WindowManagerService`](http://androidxref.com/7.0.0_r1/xref/frameworks/base/services/core/java/com/android/server/wm/WindowManagerService.java), [`ClipboardService`](http://androidxref.com/7.0.0_r1/xref/frameworks/base/services/core/java/com/android/server/clipboard/ClipboardService.java) 等。这些系统服务大都运行在单独的进程中，为每个应用提供服务。而应用程序运行于自己的默认进程当中，因此，想要获取系统服务，必定需要进行进程间的通信。而安卓中的进程间通信大多通过 `Binder` 机制进行，因此，要想深入理解应用是如何获取的系统服务的，必须先要了解安卓的 `Binder` 机制。如果对 `Binder` 机制不太了解的同学可以参考我的[这篇博客](/2016-10-28-android-IPC-AIDL)。
+在安卓系统中存在着各种各样的系统服务， 例如 [`ActivityManagerService`](http://androidxref.com/7.0.0_r1/xref/frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java), [`WindowManagerService`](http://androidxref.com/7.0.0_r1/xref/frameworks/base/services/core/java/com/android/server/wm/WindowManagerService.java), [`ClipboardService`](http://androidxref.com/7.0.0_r1/xref/frameworks/base/services/core/java/com/android/server/clipboard/ClipboardService.java) 等。这些系统服务大都运行在单独的进程中，为每个应用提供服务。而应用程序运行于自己的默认进程当中，因此，想要获取系统服务，必定需要进行进程间的通信。而安卓中的进程间通信大多通过 `Binder` 机制进行，因此，要想深入理解应用是如何获取的系统服务的，必须先要了解安卓的 `Binder` 机制。如果对 `Binder` 机制不太了解的同学可以参考我的[这篇博客](/2016/10/28/android-IPC-AIDL)。
 
 安卓中的系统服务作用各不相同，所以，如果对每个服务的内部细节做过多的探讨，不利于我们从宏观的角度去理解安卓的系统服务的大致原理。如果你想知道各个服务的具体实现，那么这篇文章并不适合你。
 
