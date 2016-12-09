@@ -4,7 +4,7 @@ title:      "安卓事件传递机制的理解"
 subtitle:   "安卓事件传递机制"
 date:       2016-04-28
 author:     "lwenkun"
-header-img: "img/post-bg-unix-linux.jpg" 
+header-img: "img/post-bg-android-event-dispatch.png" 
 tags:
     - android
     - View

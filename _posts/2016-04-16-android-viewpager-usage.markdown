@@ -4,7 +4,7 @@ title:      "ViewPager 的使用"
 subtitle:   "ViewPager"
 date:       2016-04-16
 author:     "lwenkun"
-header-img: "img/post-bg-unix-linux.jpg"
+header-img: "img/post-bg-android-viewpager.png"
 tags:
     - android
     - View

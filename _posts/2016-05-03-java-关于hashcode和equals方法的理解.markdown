@@ -4,7 +4,7 @@ title:      "hashcode() 和 equals() 的理解"
 subtitle:   "hashcode() & equals()"
 date:       2016-05-03
 author:     "lwenkun"
-header-img: "img/in-post/post_java_equals_and_hashcode/bg.jpg"
+header-img: "img/post-bg-java-hashcode-and-equals.png"
 tags:
     - java
 ---

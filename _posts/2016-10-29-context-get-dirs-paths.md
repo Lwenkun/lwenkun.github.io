@@ -4,7 +4,7 @@ title:      "Context 获取目录和路径"
 subtitle:   "通过 Context 获取目录、路径"
 date:       2016-10-29
 author:     "lwenkun"
-header-img: "img/"
+header-img: "img/post-bg-android-context-dirs.png"
 tags:
     - android
     - Context

@@ -4,7 +4,7 @@ title:      "rxjava 学习总结"
 subtitle:   "rxjava 学习总结"
 date:       2016-09-03
 author:     "lwenkun"
-header-img: "img/post-bg-unix-linux.jpg"
+header-img: "img/post-rxjava.jpg"
 tags:
     - java
     - rxjava
