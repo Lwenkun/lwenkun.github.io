@@ -45,13 +45,13 @@ public class Lib {
 ## 第二步：编译 ##
 源码准备好后，就开始编译工作了，编译源码需要用到 `javac` 命令，使用方法是 
 
-```java
+```
 javac <options> <source-files>
 ```
 
 因为我们的项目依赖于 `Lib` 这个类，所以我们首先把这个类编译好：
 
-```java
+```
 javac /Users/lwenkun/desktop/com/lib/Lib.java
 ```
 
@@ -75,7 +75,7 @@ javac -cp /Users/lwenkun/desktop/package-dir1:/Users/lwenkun/desktop/package-dir
 
 实际上编译完之后就可以运行了，运行 java 字节码的命令是
 
-```java
+```
 java <options>  <main-class> [args...]
 ```
 
@@ -89,7 +89,7 @@ java -cp /Users/lwenkun/desktop:/Users/lwenkun/desktop/HelloWorld xyz.lwenkun.Ex
 
 命令的运行结果是：
 
-```java
+```
 hello world
 ```
 
@@ -101,7 +101,7 @@ hello world
  
  不管是哪种 jar 包，它们都有一个 `META-INF` 目录，下面有一个 `MANIFEST.MF` 文件，这个文件是个清单，记录着 jar 包相关的一些属性，常用的如 `Main-Class` 和 `Class-Path`，前者指定主类，也就是程序的入口点，后者的作用和命令行中的 `-cp` 是同样的含义，用来指定引用到的类所属类包所在的目录或者所在的 jar 包路径。如果打包时我们不指明清单文件那么打包工具会生成一个默认的清单添加到 jar 包中：
 
-```java
+```
 Manifest-Version: 1.0
 Created-By: 1.8.0_101 (Oracle Corporation)
 
@@ -110,7 +110,7 @@ Created-By: 1.8.0_101 (Oracle Corporation)
 
 默认的清单中没有 `Main-Class` 和 `Class-Path` 等属性，如果需要这些属性我们必须自己添加。添加方法是新建一个 `MANIFEST.txt` 文件(文件名和后缀不重要)，用文本编辑器打开，在里面添加某些属性：
 
-```java
+```
 属性名1: 属性值1
 属性名2: 属性值2
 
@@ -131,19 +131,19 @@ jar {ctxui}[vfmn0PMe] [jar-file] [manifest-file] [entry-point] [-C dir] files ..
 
 - 使用默认清单文件和几个类包创建一个 jar 文件
 
-```java
+```
 jar cf class.jar package-root-dirs...
 ```
 
 - 使用现有清单文件和几个类包创建一个 jar 文件
 
-```java
+```
 jar cfm class.jar mainfest-file package-root-dirs...
 ```
 
 - 使用现有的清单文件并用 `foo` 目录下的所有包创建一个 jar 文件
 
-```java
+```
 jar cvfm classes.jar manifest-file -C foo/ .
 ```
 
@@ -151,7 +151,7 @@ jar cvfm classes.jar manifest-file -C foo/ .
 
 我们先将依赖类所在包的打成 `lib.jar` ：
 
-```java
+```
 jar cf lib.jar /Users/lwenkun/desktop/com
 ```
 
@@ -159,7 +159,7 @@ jar cf lib.jar /Users/lwenkun/desktop/com
 
 对于主项目，因为我们的项目有主类，所以要声明 `Main-Class` 属性；又因为我们的项目有要依赖的类，并且我们要依赖的类的类包没有和我们的主项目的类包在同一目录下，所以要声明 `Class-Path` 属性。因此我们要创建包含如下内容的清单文件 `MANIFEST.txt`（文件名和后缀不重要，只要是文本类型的）：
 
-```java
+```
 Main-Class: xyz.lwenkun.Example
 Class-Path: lib/lib.jar
 
@@ -168,7 +168,7 @@ Class-Path: lib/lib.jar
 
 这样打包时文件中的这些属性就会追加到默认清单文件中了。根据前面我们对 `classpath` 的解释，如果我们的项目依赖的类分别处于三个 jar 包和一个类包中，其中 jar 包位于 `lib` 目录下，名称分别为 `lib1.jar`、`lib2.jar` 和 `lib3.jar`，类包位于桌面（`desktop`），那么我们的清单内容就应该是这样的：
 
-```java
+```
 Main-Class: xyz.lwenkun.Example
 Class-Path: lib/lib1.jar lib/lib2.jar
  lib/lib3.jar /Users/lwenkun/desktop
@@ -199,7 +199,7 @@ java -jar /Users/lwenkun/desktop/HelloWorld/helloworld.jar
 
 输出：
 
-```java
+```
 hello world
 ```
 
@@ -213,7 +213,7 @@ java -cp /Users/lwenkun/desktop/HelloWorld/helloworld.jar xyz.lwenkun.Example
 
 输出：
 
-```java
+```
 hello world
 ```
 
