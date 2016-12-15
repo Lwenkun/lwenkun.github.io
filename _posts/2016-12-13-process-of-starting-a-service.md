@@ -149,7 +149,7 @@ app.thread.scheduleCreateService(r, r.serviceInfo,
 
 虽然在这里是 `ActiveServices` 与应用进程通信，但 `ActiveServices` 也是用来辅助 AMS 管理 `Service` 的，所以也可以把这个过程看作是 AMS 与 应用进程的通信。（要知道早期的安卓版本没有 `ActiveServices` 这个类，这些逻辑都是在 AMS 中的）
 
-这行代码的作用是通知应用进程根据已知信息创建一个 `Service`，那么应用进程是怎样创建这个 `Service` 的呢？进入到 `ActivityThreadPorxy#scheduleCreateService()`：
+这行代码的作用是通知应用进程根据已知信息创建一个 `Service`，那么应用进程是怎样创建这个 `Service` 的呢？进入到 `ApplicationThread#scheduleCreateService()`：
 
 ```java
 public final void scheduleCreateService(IBinder token,
