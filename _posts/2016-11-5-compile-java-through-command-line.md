@@ -45,25 +45,25 @@ public class Lib {
 ## 第二步：编译 ##
 源码准备好后，就开始编译工作了，编译源码需要用到 `javac` 命令，使用方法是 
 
-```
+```java
 javac <options> <source-files>
 ```
 
 因为我们的项目依赖于 `Lib` 这个类，所以我们首先把这个类编译好：
 
-```
+```java
 javac /Users/lwenkun/desktop/com/lib/Lib.java
 ```
 
 然后再编译主类：
 
-```
+```java
 javac -cp /Users/lwenkun/desktop /Users/lwenkun/desktop/HelloWorld/xyz/lwenkun/Example.java
 ```
 
 不同于编译 `Lib` 类，这里我们用到了 `-cp` 选项。其中 `-cp` 是 `-classpath` 的简写，`-classpath` 后面指定的一般是被引用的类所属类包所在的目录或者所在 jar 包的路径（我们称其为 `classpath`），编译时或者运行时 JVM 的**系统类加载器**就要用到 `classpath` 变量来搜索目标类。注意这个变量指明的是类所属**类包所在的目录**或者**所在 jar 包的路径**而不是**具体类的路径**。比如在编译某个类时要引用另一个类 `Lib1`，这个类在类包 `com.example1` 中，而这个类包又在 `/Users/lwenkun/desktop/package-dir1` 目录下 ，那么我只需指定 `classpath` 为 `/Users/lwenkun/desktop/package-dir1` 就可以了。当然在实际情况中一个类引用到的类有很多，如果这些被引用的类(1)在同一个包下(2)或者它们所属类包在同一目录下(3)或者在同一 jar 包内，`classpath` 自然就为同一个值，那就不需要重复指定了。但是如果它们(1)在不同的包里而且这些类包位于不同的目录下(2)或者在不同的 jar 包内，比如我还要引用一个类 `Lib2`，它在一个名为 `com.example2` 的类包下，这个类包又位于 `/Users/lwenkun/desktop/package-dir2` 目录下，那么就要指定多个 `classpath` 了，这些 `classpath` 之间用 `:` （macOSx、Linux、Unix）或者 `;` （Windows）隔开，如：
 
-```
+```java
 javac -cp /Users/lwenkun/desktop/package-dir1:/Users/lwenkun/desktop/package-dir2 ClassToBeCompiled.java
 ```
 
@@ -75,13 +75,13 @@ javac -cp /Users/lwenkun/desktop/package-dir1:/Users/lwenkun/desktop/package-dir
 
 实际上编译完之后就可以运行了，运行 java 字节码的命令是
 
-```
+```java
 java <options>  <main-class> [args...]
 ```
 
 这里我们运行的命令是：
 
-```
+```java
 java -cp /Users/lwenkun/desktop:/Users/lwenkun/desktop/HelloWorld xyz.lwenkun.Example
 ```
 
@@ -89,7 +89,7 @@ java -cp /Users/lwenkun/desktop:/Users/lwenkun/desktop/HelloWorld xyz.lwenkun.Ex
 
 命令的运行结果是：
 
-```
+```java
 hello world
 ```
 
@@ -101,7 +101,7 @@ hello world
  
  不管是哪种 jar 包，它们都有一个 `META-INF` 目录，下面有一个 `MANIFEST.MF` 文件，这个文件是个清单，记录着 jar 包相关的一些属性，常用的如 `Main-Class` 和 `Class-Path`，前者指定主类，也就是程序的入口点，后者的作用和命令行中的 `-cp` 是同样的含义，用来指定引用到的类所属类包所在的目录或者所在的 jar 包路径。如果打包时我们不指明清单文件那么打包工具会生成一个默认的清单添加到 jar 包中：
 
-```
+```java
 Manifest-Version: 1.0
 Created-By: 1.8.0_101 (Oracle Corporation)
 
@@ -110,7 +110,7 @@ Created-By: 1.8.0_101 (Oracle Corporation)
 
 默认的清单中没有 `Main-Class` 和 `Class-Path` 等属性，如果需要这些属性我们必须自己添加。添加方法是新建一个 `MANIFEST.txt` 文件(文件名和后缀不重要)，用文本编辑器打开，在里面添加某些属性：
 
-```
+```java
 属性名1: 属性值1
 属性名2: 属性值2
 
@@ -121,7 +121,7 @@ Created-By: 1.8.0_101 (Oracle Corporation)
 
 打包用到的命令是：
 
-```
+```java
 jar {ctxui}[vfmn0PMe] [jar-file] [manifest-file] [entry-point] [-C dir] files ...
 ```
 
@@ -131,19 +131,19 @@ jar {ctxui}[vfmn0PMe] [jar-file] [manifest-file] [entry-point] [-C dir] files ..
 
 - 使用默认清单文件和几个类包创建一个 jar 文件
 
-```
+```java
 jar cf class.jar package-root-dirs...
 ```
 
 - 使用现有清单文件和几个类包创建一个 jar 文件
 
-```
+```java
 jar cfm class.jar mainfest-file package-root-dirs...
 ```
 
 - 使用现有的清单文件并用 `foo` 目录下的所有包创建一个 jar 文件
 
-```
+```java
 jar cvfm classes.jar manifest-file -C foo/ .
 ```
 
@@ -151,7 +151,7 @@ jar cvfm classes.jar manifest-file -C foo/ .
 
 我们先将依赖类所在包的打成 `lib.jar` ：
 
-```
+```java
 jar cf lib.jar /Users/lwenkun/desktop/com
 ```
 
@@ -159,7 +159,7 @@ jar cf lib.jar /Users/lwenkun/desktop/com
 
 对于主项目，因为我们的项目有主类，所以要声明 `Main-Class` 属性；又因为我们的项目有要依赖的类，并且我们要依赖的类的类包没有和我们的主项目的类包在同一目录下，所以要声明 `Class-Path` 属性。因此我们要创建包含如下内容的清单文件 `MANIFEST.txt`（文件名和后缀不重要，只要是文本类型的）：
 
-```
+```java
 Main-Class: xyz.lwenkun.Example
 Class-Path: lib/lib.jar
 
@@ -168,7 +168,7 @@ Class-Path: lib/lib.jar
 
 这样打包时文件中的这些属性就会追加到默认清单文件中了。根据前面我们对 `classpath` 的解释，如果我们的项目依赖的类分别处于三个 jar 包和一个类包中，其中 jar 包位于 `lib` 目录下，名称分别为 `lib1.jar`、`lib2.jar` 和 `lib3.jar`，类包位于桌面（`desktop`），那么我们的清单内容就应该是这样的：
 
-```
+```java
 Main-Class: xyz.lwenkun.Example
 Class-Path: lib/lib1.jar lib/lib2.jar
  lib/lib3.jar /Users/lwenkun/desktop
@@ -187,19 +187,19 @@ Class-Path: lib/lib1.jar lib/lib2.jar
 
 现在我们来打包主项目中的类包：
 
-```
+```java
 jar cfm helloworld.jar MANIFEST.txt /Users/lwenkun/desktop/HelloWorld/xyz
 ```
 
 这样我们就在当前目录下(项目根目录 `HelloWorld`)生成了一个 `helloworld.jar`。把类包打包后，类包对于我们来说已经没用了，可以都移除掉。现在我们用命令行运行这个程序：
 
-```
+```java
 java -jar /Users/lwenkun/desktop/HelloWorld/helloworld.jar
 ```
 
 输出：
 
-```
+```java
 hello world
 ```
 
@@ -207,13 +207,13 @@ hello world
 
 如果我们打包时忘记了添加 `Main-Class` 这个属性怎么办呢？当然最好的方式是重新打包。当然你说你就不想重新打包，那也行，那么执行方式就是这样的了：
 
-```
+```java
 java -cp /Users/lwenkun/desktop/HelloWorld/helloworld.jar xyz.lwenkun.Example
 ```
 
 输出：
 
-```
+```java
 hello world
 ```
 
@@ -221,7 +221,7 @@ hello world
 
 我们的程序有依赖库(`/Users/lwenkun/desktop/HelloWorld/lib/lib.jar`)，如果你又忘记添加 `Class-Path` 属性又该怎么办？可能你已经知道方法了：
 
-```
+```java
 java -cp /Users/lwenkun/desktop/HelloWorld/helloworld.jar:/Users/lwenkun/desktop/HelloWorld/lib/lib.jar xyz.lwenkun.Example
 ```
 
