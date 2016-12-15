@@ -304,8 +304,8 @@ private static DexFile loadDexFile(File file, File optimizedDirectory, ClassLoad
 }
 ```
 
-先说明下无论是 `DexFile(File file, Classloader loader, Elements[] elements)` 还是
-DexFile.loadDex() 最终都会调用 `DexFile(String sourceName, String outputName, int flags, ClassLoader loader, DexPathList.Element[] elements)` 这个构造方法。所以这个方法的逻辑就是：如果 `optimizedDirectory` 为 null，那么就直接利用 file 的路径构造一个 `DexFile`；否则就根据要加载的 dex（或者包含了 dex 的 zip） 的文件名和优化后的 dex 存放的目录组合成优化后的 dex（也就是 odex）文件的输出路径，然后利用原始路径和优化后的输出路径构造出一个 `DexFile`。关于 `DexFile` 内部的细节到时候分析类加载过程的时候会讲，这里就不细说了。
+先说明下，无论是 `DexFile(File file, Classloader loader, Elements[] elements)` 还是
+`DexFile.loadDex()` 最终都会调用 `DexFile(String sourceName, String outputName, int flags, ClassLoader loader, DexPathList.Element[] elements)` 这个构造方法。所以 `loadDexFile()` 这个方法的逻辑就是：如果 `optimizedDirectory` 为 null，那么就直接利用 dex 文件对应的 `file` 构造一个 `DexFile`；否则就根据要加载的 dex（或者包含了 dex 的 zip） 的文件名和优化后的 dex 存放的目录组合成优化后的 dex（也就是 odex）文件的输出路径，然后利用原始路径和优化后的输出路径构造出一个 `DexFile`。关于 `DexFile` 内部的细节到时候分析类加载过程的时候会讲，这里就不细说了。
 
 通过前面的分析我们知道，我们可以知道 `dexElements` 主要作用就是用来保存和 dex 文件对应的 `DexFile` 对象的。 
 
