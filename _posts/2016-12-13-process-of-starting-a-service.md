@@ -15,9 +15,9 @@ tags:
 作为四大组件的 `Service`，由于没有 UI 界面，只能默默无闻地在后台工作。虽然我们说他是后台工作的，但是他还是默认进程的主线程中运行的，除非我们给它指定了单独的进程。`Service` 的启动过程有两种，一种是 `startActivityForResult()`，另一种是 `bindService()`。我会在接下来的两篇文章中分别来介绍着两种启动方式，首先我们来探究 `startService()` 启动服务的过程。
 
 ## 通过 startService 启动一个 Service ##
-`Activity` 和 `Service` 都是从 `ContextWrapper` 继承而来，而 `ContextWrapper` 实现了 `Context` 接口，所以我们通常把 `Activity` 和 `Service` 看作是 `Context` 对象。`ContextWrapper` 的实现用的是典型的装饰者模式，它的一系列的方法都靠内部的被装饰者的同名方法来实现，这和代理模式有点类似。而这个被装饰者通常是一个 `ContextImpl`，它是 `Context` 接口真正的实现者。
+`Activity` 和 `Service` 都是从 `ContextWrapper` 继承而来，而 `ContextWrapper` 继承自 `Context` 这个抽象类，所以我们通常把 `Activity` 和 `Service` 看作是 `Context` 对象。`ContextWrapper` 的实现用的是典型的装饰者模式，它的一系列的方法都靠内部的被装饰者的同名方法来实现，这和代理模式有点类似。而这个被装饰者通常是一个 `ContextImpl`，它是 `Context` 的真正实现者。
 
-`startService()` 是 `Context` 接口定义的一个方法，由于 `Activity` 和 `Service` 属于 `ContextWrapper` 类型，所以这个方法真正的实现在 `ContextImpl#startService()` 中：
+`startService()` 是 `Context` 中定义的一个方法，由于 `Activity` 和 `Service` 属于 `ContextWrapper` 类型，所以这个方法真正的实现在 `ContextImpl#startService()` 中：
 
 ```java
 @Override
