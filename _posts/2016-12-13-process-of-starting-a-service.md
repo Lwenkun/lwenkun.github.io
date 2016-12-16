@@ -195,7 +195,7 @@ case CREATE_SERVICE:
     break;
 ```
 
-百转千回，消息最终传到了 `handlerCreateService()`：
+百转千回，消息最终传到了 `handleCreateService()`：
 
 ```java
 private void handleCreateService(CreateServiceData data) {
