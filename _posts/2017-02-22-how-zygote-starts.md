@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      "Zygote 的启动过程"
+title:      "zygote 的启动过程"
 subtitle:   "how zygote starts"
 date:       2017-02-22
 author:     "lwenkun"
