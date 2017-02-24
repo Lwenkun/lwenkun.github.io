@@ -46,7 +46,7 @@ Intent getBigPhoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 File file = createEmptyFile(); //用于输出原图
 currentFile = file;
 Uri uri = Uri.fromFile(file);//将 file 转换成 uri 格式
-getBigPhoto.setExtra(MediaStore.EXTRA_OUTPUT, file);
+getBigPhoto.putExtra(MediaStore.EXTRA_OUTPUT, file);
 startActivityForResult(Intent, REQUEST_GET_BIG_PHOTO);
 ```
 然后图片就会自动输出到你指定的文件，如果同时你又想获取原图，你就会这样做：
