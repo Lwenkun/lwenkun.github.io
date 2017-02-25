@@ -23,7 +23,7 @@ if (getThumbnail.resolveActivity(getPackageManager()) != null)
     startActivityForResult(getThumbnail, REQUEST_GET_THUMBNAIL);
 ```
 
-这样就调用了相机拍照，然后我们在 onActivityResult() 中获取图片：
+这样就调用了相机拍照，然后我们在 `onActivityResult()` 中获取图片：
 
 ```java
 @Override
@@ -66,8 +66,8 @@ protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 ```
 好了，看似一切正常，但是总有一些你意想不到的异常发生，我来指出这之中有问题的几个坑吧（权限问题就不讲了）吧：
 
-- file 转换成 uri 格式这一步时，如果你是上面那样转换的，那么在 android N 上你就会得到 FileUriExposedException，因为这样做是不安全的，你将文件的真实 uri 暴露出去了，其他应用可能对这个文件有完全的控制权。安全的做法是通过 [FileProvider.getUriForFile(Context, String, File)](https://developer.android.google.cn/reference/android/support/v4/content/FileProvider.html#getUriForFile(android.content.Context, java.lang.String, java.io.File)) 暴露所要提供的 Uri。这样提供给其他的应用的 Uri 不会暴露出文件的真实位置，因为这只是这是文件的一个 "镜像地址"，其他应用只能调用系统功能才能将此 Uri 定位到实际位置。
-- 如果你想同时获取原图和缩略图，那么你就错了，这二者不可兼得。每次调用相机，只能获取缩略图或者原图，这和你是否指定 MediaStore.EXTRA_OUTPUT 附加字段有关：如果没有指定，说明你并不想将获取的图片输出（即保存为原图)，此时 onActivityResult() 的第三个参数就不为 null，你可以从中取出缩略图；但是如果指定了，说明你想将照片输出为原图，那么第三个参数就为 null，你并不能从中获取缩略图。
+- `File` 转换成 `Uri` 格式这一步时，如果你是上面那样转换的，那么在 android N 上你就会得到 `FileUriExposedException`，因为这样做是不安全的，你将文件的真实 `Uri` 暴露出去了，其他应用可能对这个文件有完全的控制权。安全的做法是通过 [FileProvider.getUriForFile(Context, String, File)](https://developer.android.google.cn/reference/android/support/v4/content/FileProvider.html#getUriForFile(android.content.Context, java.lang.String, java.io.File)) 暴露所要提供的 `Uri`。这样提供给其他的应用的 `Uri` 不会暴露出文件的真实位置，因为这只是这是文件的一个 "镜像地址"，其他应用只能调用系统功能才能将此 `Uri` 定位到实际位置。
+- 如果你想同时获取原图和缩略图，那么你就错了，这二者不可兼得。每次调用相机，只能获取缩略图或者原图，这和你是否指定 `MediaStore.EXTRA_OUTPUT` 附加字段有关：如果没有指定，说明你并不想将获取的图片输出（即保存为原图)，此时 `onActivityResult()` 的第三个参数就不为 `null`，你可以从中取出缩略图；但是如果指定了，说明你想将照片输出为原图，那么第三个参数就为 `null`，你并不能从中获取缩略图。
 
 ## 将图片添加至媒体库 ##
 
@@ -87,7 +87,7 @@ private void galleryAddPic() {
 ```
 
 ### 和系统进程通信将图片添加至媒体库 ###
-另外一种是通过 MediaScannerConnection 实现的，这一方法的原理就是和系统进程进行通信，具体做法是这样的：
+另外一种是通过 `MediaScannerConnection` 实现的，这一方法的原理就是和系统进程进行通信，具体做法是这样的：
 
 ```java
 public Class Client implements MediaScannerConnectionClient {
@@ -119,7 +119,7 @@ public Class Client implements MediaScannerConnectionClient {
 ```
 
 ### 直接操作媒体库的数据库 ###
-第三种方法是直接将图片信息直接添加媒体库的数据库中，其实前面两种方法的底层实现也是这样的，只是屏蔽了相关细节，避免我们直接接触数据库。因为要和操作其他应用的数据数据，所以要用到 ContentResolver，具体实现是这样的：
+第三种方法是直接将图片信息直接添加媒体库的数据库中，其实前面两种方法的底层实现也是这样的，只是屏蔽了相关细节，避免我们直接接触数据库。因为要和操作其他应用的数据数据，所以要用到 `ContentResolver`，具体实现是这样的：
 
 ```java
 ContentValues values = new ContentValues();
@@ -132,7 +132,7 @@ context.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values);
 ```
 下面分别介绍其中遇到的坑：
 
-- 第一种方法在 android 4.4 以下时是可以的，但是有个问题就是通过广播将单个文件添加至媒体库比较浪费资源；在 android 4.4 会出现 SecurityException，原因是 android 4.4 禁止非系统应用发送系统广播，而扫描媒体文件的广播在此之类，因此运行时会崩溃；但是我在 android 5.0 至 7.1 上实测却可行，或许系统开发了此权限。
+- 第一种方法在 android 4.4 以下时是可以的，但是有个问题就是通过广播将单个文件添加至媒体库比较浪费资源；在 android 4.4 会出现 `SecurityException`，原因是 android 4.4 禁止非系统应用发送系统广播，而扫描媒体文件的广播在此之类，因此运行时会崩溃；但是我在 android 5.0 至 7.1 上实测却可行，或许系统开发了此权限。
 - 第二种和第三种方法没有版本限制，是通用的方法。
 - 前两种方法有一点要注意，如果该图片存放至系统的私有文件夹（无论内部存储还是外部存储），媒体库都无法扫描到该文件（没有权限）；第三种方法则没有这种限制，因为它并不是通过扫描，而是直接操作数据库的方式添加的。
 
