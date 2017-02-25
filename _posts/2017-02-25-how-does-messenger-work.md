@@ -35,8 +35,6 @@ private final class MessengerImpl extends IMessenger.Stub {
 
 关于 `Stub` 类是什么，在[安卓进程通信机制之 AIDL](http://liwenkun.me/2016/10/28/android-IPC-AIDL/)已经解释过了，它是一个继承自 `Binder` 的抽象类，内部封装了 `Binder` 通信机制，同时它还实现了 `IMessenger` 接口，但是它自己并没有真正意义的实现，而是留给服务端去实现，这里也就是 `MessengerImpl`。`MessengerImpl` 实现这个接口的方式就是简单地把发送来的消息转发给外部类 `Handler`，由 `Handler` 投递给消息队列。
 
-为什么要把 `IMessenger` 的实现藏在 `Handler` 中，我在后面会将提到。
-
 ## Messenger ##
 
 既然我们说 `Messenger` 是 `Handler` 的变体，那么我们自然的会认为 `Messenger` 应该具有这样的功能，或者说使用方法：在客户端进程中投送一个消息给服务端，服务端通过解析这个消息的内容执行相应的动作。那么，`Messenger` 是怎样做到的呢？它和 `IMessenger` 和 `MessengerImpl` 又有什么关联？首先我们从它的构造方法看起：
