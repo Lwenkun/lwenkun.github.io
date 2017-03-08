@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      "rxjava 学习总结"
-subtitle:   "rxjava 学习总结"
+title:      "rxjava 原理探究"
+subtitle:   "rxjava 原理探究"
 date:       2016-09-03
 author:     "lwenkun"
 header-img: "img/post-bg-rxjava.jpg"
@@ -10,23 +10,22 @@ tags:
     - rxjava
 ---
 
-# rxjava #
+# Rxjava 原理探究 #
+关于 Rxjava 的文章网上有很多，这里只是个人的学习总结，阅读前需要对 Rxjava 有一定的了解，并不能作为学习资料，如果想要入门这里有更好的选择（虽然版本有点久，很多 API 都已过时，但原理差不多，不影响理解）：[给 Android 开发者的 RxJava 详解](https://gank.io/post/560e15be2dca930e00da1083)
 
-关于 rxjava 的文章网上有很多，这里只是个人的学习总结，阅读前需要对 rxjava 有一定的了解，并不能作为学习资料，如果想要入门这里是更好的选择：
+如果只是想了解 API 的使用，可以看看 [ReactiveX/RxJava文档中文版](https://mcxiaoke.gitbooks.io/rxdocs/content/)
 
-<a href="https://gank.io/post/560e15be2dca930e00da1083">给 Android 开发者的 RxJava 详解</a>
-
-## 什么是 rxjava ##
+## 什么是 Rxjava ##
 
 > RxJava is a Java VM implementation of ReactiveX (Reactive Extensions): a library for composing asynchronous and event-based programs by using observable sequences.
 
-翻译一下就是：rxjava 是响应式扩展库在 java 虚拟机上的实现，它使用观察者模式为异步和基于事件程序的编写提供便利
+翻译一下就是：Rxjava 是响应式扩展库在 java 虚拟机上的实现，它使用观察者模式为异步和基于事件程序的编写提供便利。
 
-## 为什么是 rxjava ##
+## 为什么是 Rxjava ##
 
-关于 rxjava 优点网上也总结了很多，总的说来就是使得代码干净，整洁，逻辑清晰。它能将本来一段逻辑复杂、参差错落的代码，变成一条长链，使的代码逻辑清晰，一目了然，可阅读性和可维护性大大提高。
+关于 Rxjava 的优点网上总结了很多，总的说来就是使得代码整洁、逻辑清晰。它能将本来一段逻辑复杂、外观参差错落的代码，变成一条逻辑清晰的长链，使得可阅读性和可维护性大大提高。
 
-以下例子选自《给 Android 开发者的 RxJava 详解》：
+以下例子改编自《给 Android 开发者的 RxJava 详解》：
 
 > 界面上有一个自定义的视图 imageCollectorView ，它的作用是显示多张图片，并能使用 addImage(Bitmap) 方法来任意增加显示的图片。现在需要程序将一个给出的目录数组 File[] folders 中每个目录下的 png 图片都加载出来并显示在 imageCollectorView 中。需要注意的是，由于读取图片的这一过程较为耗时，需要放在后台执行，而图片的显示则必须在 UI 线程执行。常用的实现方式有多种，我这里贴出其中一种：
 
@@ -56,212 +55,150 @@ new Thread() {
 
 ```java
 Observable.from(folders)
-    .flatMap(new Func1<File, Observable<File>>() {
+    .flatMap(new Function<File, Observable<File>>() {
         @Override
-        public Observable<File> call(File file) {
+        public Observable<File> apply(File file) {
             return Observable.from(file.listFiles());
         }
     })
-    .filter(new Func1<File, Boolean>() {
+    .filter(new Function<File, Boolean>() {
         @Override
-        public Boolean call(File file) {
+        public Boolean apply(File file) {
             return file.getName().endsWith(".png");
         }
     })
-    .map(new Func1<File, Bitmap>() {
+    .map(new Function<File, Bitmap>() {
         @Override
-        public Bitmap call(File file) {
+        public Bitmap apply(File file) {
             return getBitmapFromFile(file);
         }
     })
     .subscribeOn(Schedulers.io())
     .observeOn(AndroidSchedulers.mainThread())
-    .subscribe(new Action1<Bitmap>() {
+    .subscribe(new Consumer<Bitmap>() {
         @Override
-        public void call(Bitmap bitmap) {
+        public void accept(Bitmap bitmap) {
             imageCollectorView.addImage(bitmap);
         }
     });
 ```
+简单解释下这段代码：观察者发出数据源，然后对数据源进行三次数据类型变换，之后指定被观察者和订阅者所在线程，最后对观察者进行订阅。
 
-我们可以看出，使用了 rxjava 我们的程序虽然代码看起来多了很多，但是可阅读性和可扩展性提高了很多。
-
-简单解释下这段代码：
-
-观察者发出数据源，然后对数据源进行三次数据类型变换，之后指定被观察者和订阅者所在线程，最后对观察者进行订阅。如果对 java 8 引入的 <a href="https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/">Stream</a> 熟悉的话，就会发现这与对 `Stream` 的操作很像，从
+如果对 java 8 引入的 <a href="https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/">Stream</a> 熟悉的话，就会发现这与对 `Stream` 的操作很像，从
 `flatMap()` 到 `observeOn()` 的操作相当于对流的 Intermediate 操作，而最后的 `subscribe()` 相当是对流的 Terminal 操作。而且前面的操作也都是惰性化(lazy)的，最后的订阅才会触发前面一系列的变换操作（其实 `subscribeOn()` 和 `observeOn()` 这两个方法也是基于变换的）。怎么理解呢，就相当于 rxjava 库将这些操作先 “缓存” 起来了，直到最后的订阅观察者才将那些操作执行，怎么 “缓存” 是库做的事，逻辑上我们可以把那些操作看作是从上到下按顺序执行的。
 
-学习过 rxjava 的人会觉的 rxjava 很神奇，自然就会对其内部实现感兴趣，我也曾对 rxjava 的源码进行过一些粗浅的研究，配合网上的文章，对其原理有了大概的了解（线程切换机制方面还没有涉及）。
+可见，Rxjava 虽然增加了程序代码，但是可阅读性和可扩展性大大增强。
 
-## 对 rxjava 实现原理的粗浅理解 ##
-<b>变换</b> 是 rxjava 的亮点和理解上的难点，所以我的探究也就从变换开始。
+了解过 Rxjava 的人都会觉得 Rxjava 很神奇，几行代码便完成了数据流的转换和线程的切换。那么它的内部原理是怎样的呢，通过阅读源码和网上的资料，我对 Rxjava 的实现原理有了大概的了解，接下来就和大家分享一下。
 
-首先有几个类（接口）很重要：
+## 对 Rxjava 实现原理的粗浅理解 ##
 
-```java
-//这个类是很多变换的基础，它将 T 类型的数据转换成 R 类型的数据
-public interface Func1<T, R> extends Function {
-    R call(T t);
-}
-```
+### 约定
+由于 Rxjava 同时应用了观察者模式（别名：发布-订阅模式）和生产者-消费者模式，所以其 API 的名称有点混乱。为了避免读者理解困难，这里约定如下：
 
-```java
-//这个类用来将一种 Subscriber 转换成另一种 Subscriber，可以
-//用来将实际的订阅者转换成一个隐式的订阅者向上游的被观察者进行订阅
-public interface Operator<R, T> extends Func1<Subscriber<? super R>, Subscriber<? super T>> {
-        // cover for generics insanity
-}
-```
+- `Observable` 及其子类称为 **被观察者**；
+- `Comsumer`（消费者） 和 `Observer`（观察者） 及其子类统称为 **订阅者**（两者在 Rxjava 含义相似）；
+- 由于 Rxjava 订阅的 API 在 `Observale` 中，给我们的感觉是 **被观察者** 订阅 **观察者**，因此为了叙述方便和避免含义混乱，**被观察者** 订阅 **观察者** 和 **观察者** 订阅 **观被察者** 是同样的意思；
+- 本文基于 Rxjava 当前最新版本 2.0.7 。
+
+### 变换
+变换是 Rxjava 的亮点和理解上的难点，变换的作用是将一种数据类型转换成另一种数据类型。当被观察者发出的原始数据类型并不是观察者想要的数据类型时，我们就可以用变换来实现源数据类型和目的数据类型的转换。Rxjava 中有很多种变换，如 map 变换、flatMap 变换、filter 变换等。其中 map 变换比较基础也较易理解，因此我们先从 map 变换讲起。
+
+#### map 变换 ####
+ map 变换能够将一种类型的数据源转换成另一种类型的数据源，比如要将 `int` 类型的图片资源 id 转换成 `Bitmap` 类型的对象并将其设置给一个  `ImageView` ，我们可以这样做：
 
 ```java
-//这个类的作用相当是一张存储在被观察者中的计划表，用来对观察者进
-//行一系列的操作，一般的实现是调用观察者的 onNext() 方法多次，最
-//后调用该观察者 onError() 或者 onComplete()一次
-public interface OnSubscribe<T> extends Action1<Subscriber<? super T>> {
-        // cover for generics insanity
-}
-```
-
-### map 变换 ###
-先将一种比较简单的变换吧，就是 `map()` 变换，它将一种类型的数据源转换成另外一种数据源，比如我们想将 `int` 类型的图片资源 id 转换成 `Bitmap` 类型的对象并将其设置给一个  `ImageView` ，我们可以这样做：
-
-```java
-Observble.just(R.id.img_example)
-         .map(new Func1<Integer, Bitmap>() {
+Observble.just(R.id.img_example) // 1
+         .map(new Function<Integer, Bitmap>() { // 2
               @Override
-              public Bitmap call(int resourceId) {
+              public Bitmap apply(Integer resourceId) {
                  return BitmapFactory.decodeResource(resourceId);
               }
           })
-          .subscribe(new Action1<Bitmap>() {
-              @Override
-              public void call(Bitmap bitmap) {
-                 imageView.setImageBitmap(bitmap);
-              }
-          });
+          .subscribe(new Consumer<String>() { // 4
+            @Override
+            public void accept(@NonNull Bitmap b) throws Exception {
+                imageView.setImageBitmap(b);
+            }
+        });
 ```
 
-这里将上游的 `int` 数据类型转换成了 `Bitmap` 类型的数据，供下游的观察者接收。这里涉及了一次变换，我们只需要将一次 `map()` 变换理解透，多次 `map()` 变换也就不难理解了。
+上面的例子里将上游的 `int` 数据类型转换成了 `Bitmap` 类型的数据，供下游的观察者接收。这个过程涉及了一次 map 变换，我们将透过这个例子分析 map 变换的原理。
 
-首先，我们从变换方法看起，`public Bitmap call(int resourceId)` 这个方法是实现变换的核心方法。这个方法由一个 Func1 类包装并且我们将这个类对象作为参数传入 `map()` 方法中，那么我们自然会对这个 `map()` 方法感到好奇，这个方法究竟做了什么？上源码：
+首先从变换方法 `public Bitmap apply(Integer resourceId)` 看起，这个方法的参数类型是 `Integer`，返回值类型是 `Bitmap` ，因此我们很容易猜想到它就是实现变换的核心方法。这个方法被包装后就传入了 `map()` 中，`map()` 的源码是这样的：
 
 ```java
-public final <R> Observable<R> map(Func1<? super T, ? extends R> func) {
-    return create(new OnSubscribeMap<T, R>(this, func));
+public final <R> Observable<R> map(Function<? super T, ? extends R> mapper) {
+     ObjectHelper.requireNonNull(mapper, "mapper is null");
+     return RxJavaPlugins.onAssembly(new ObservableMap<T, R>(this, mapper)); // 3
 }
 ```
-
-由上述代码可知，`map()` 方法接受了 `Func1` 对象，然后创建了一个新的 `Observable` 对象返回（用我的话说是在变换流中创建了一个隐式的 `Observable` 对象），供下游的观察者订阅，上面也说了，这个类的作用相当是一张计划表，在这里这张计划表是属于新创建的 `Observable` 的。显然，玄机就隐藏在 `OnSubscribeMap` 这个类中。我们来看看这个类：
-
+方法中第一行验证 `mapper` 是否为空；第二行中的 `RxjavaPlugin.onAssenbly()` 是一个钩子方法，据说是用来调试 Rxjava 库用的，你可以把它理解为什么都没做，因此 `map()` 方法可以简化为：`return new ObservableMap<T, R>(this, mapper);`，它返回的是一个 `Observable` 子类 `ObservableMap` 的一个实例。现在我重点看看 `ObservableMap` 这个类：
+ 
 ```java
-public final class OnSubscribeMap<T, R> implements OnSubscribe<R> {
-
-    //这个是上游的 Observable，有可能是最原始的 Observable，也有可能是
-    //在变换流中由 rxjava 库隐式创建的 Obsevable。 
-    final Observable<T> source;
-    
-    //这是我们传入的 Func1 对象，它的名字很好的体现了它的作用——转换器
-    final Func1<? super T, ? extends R> transformer;
-
-    public OnSubscribeMap(Observable<T> source, Func1<? super T, ? extends R> transformer) {
-        this.source = source;
-        this.transformer = transformer;
+public final class ObservableMap<T, U> extends AbstractObservableWithUpstream<T, U> {
+    //用来做数据变换的函数式对象，就是 map() 的参数，且称其为变换器
+    final Function<? super T, ? extends U> function;
+    //source 是实际 Observalbe 对象，也就是 map 变换之前的那个 Observable
+    public ObservableMap(ObservableSource<T> source, Function<? super T, ? extends U> function) {
+        super(source);
+        this.function = function;
     }
-    
+    //调用 Observable 的 subscribe() 方法发起订阅时，subscribe() 最终会调用此方法
     @Override
-    public void call(final Subscriber<? super R> o) {
-        //将下游的观察者和转换器封装成一个新的对象，这个对象也是个 Subscriber，
-        //用来向上游的 Observable 订阅
-        MapSubscriber<T, R> parent = new MapSubscriber<T, R>(o, transformer);
-        //这个应该是方便传递式地解除订阅
-        o.add(parent);
-        //将新生成的观察者想上游的 Observable 订阅
-        source.unsafeSubscribe(parent);
+    public void subscribeActual(Observer<? super U> t) {  // 5
+        //新建一个 MapObserver 订阅者，用来订阅实际 Observable 对象 source
+        source.subscribe(new MapObserver<T, U>(t, function)); // 6
     }
-    
-    static final class MapSubscriber<T, R> extends Subscriber<T> {
-        //这里叫实际观察者，其实是变换流中由 rxjava 库隐式创建的
-        //相对此观察者（MapSubscriber）而言的下游观察者，当然也可
-        //能是最下游的由用户创建的观察者
-        final Subscriber<? super R> actual;
-        //还是那个转换器，在这里叫做 mapper——映射器，功能还是一样
-        final Func1<? super T, ? extends R> mapper;
+    //此类的构造方法传入的参数是变换器 mapper 和真实订阅者 actual
+    static final class MapObserver<T, U> extends BasicFuseableObserver<T, U> {
+        final Function<? super T, ? extends U> mapper;
 
-        boolean done;
-        
-        public MapSubscriber(Subscriber<? super R> actual, Func1<? super T, ? extends R> mapper) {
-            this.actual = actual;
+        MapObserver(Observer<? super U> actual, Function<? super T, ? extends U> mapper) {
+            super(actual);
             this.mapper = mapper;
         }
-        
-        @Override
-        public void onNext(T t) {
-            R result;
-            
-            try {
-                //转换器派上用场了，调用了我们实现的转换方法将 T 类型（上游数据
-                //型）转换成 R 类型（下游数据类型），这里实现了将 int 类型转换成
-                //Bitmap 类型
-                result = mapper.call(t);
-            } catch (Throwable ex) {
-                Exceptions.throwIfFatal(ex);
-                unsubscribe();
-                onError(OnErrorThrowable.addValueAsLastCause(ex, t));
-                return;
-            }
-            //将数据传给下游的观察者，这里实现了将 Bitmap 设置给 ImageView
-            actual.onNext(result);
-        }
-        
-        @Override
-        public void onError(Throwable e) {
-            if (done) {
-                RxJavaHooks.onError(e);
-                return;
-            }
-            done = true;
-            
-            actual.onError(e);
-        }
-        
-        
-        @Override
-        public void onCompleted() {
-            if (done) {
-                return;
-            }
-            actual.onCompleted();
-        }
-        
-        @Override
-        public void setProducer(Producer p) {
-            actual.setProducer(p);
-        }
-    }
 
+        @Override
+        public void onNext(T t) { // 7
+            ......
+            U v;
+            try {
+                //通过转换器把从原 Observable 对象发出的数据转化成真实订阅者要求的数据
+                v = ObjectHelper.requireNonNull(mapper.apply(t), "The mapper function returned a null value.");
+            } catch (Throwable ex) {
+                //如果出错，最终会调用 actual 的 onError() 方法
+                fail(ex); // 8.1
+                return;
+            }
+            //将转换后的数据传给真实订阅者
+            actual.onNext(v); // 8.2
+        }
+        ......
 }
 ```
+因为代码不多，我全部贴上来，便于大家理解。在上面的过程中，有这几类角色：1）实际被观察者；2）新创建的被观察者；3）实际订阅者；4）新创建的订阅者；5）转换器 mapper。它们的关系比较复杂，我们按照代码的执行顺序来将思路理一遍：
 
-因为代码比较少，我还是全部贴上来，便于大家理解。
+- `Observable` 通过 `just()` 这个静态工厂方法创建了一个 `Observable` 对象，此对象即“实际被观察者”；
+- `map()` 方法接受一个转换器对象，在内部新建了一个被观察者后将其返回，也就是 “新创建的被观察者”；
+- 用 map 变换后返回的那个 “新创建的被观察者” 订阅 “实际订阅者”，最终 “新创建的被观察者” 的 `subscribeActual()` 方法被调用，此方法触发的操作有：
+ - 创建一个订阅者，也就是 “新创建的订阅者”，向 “实际的被观察者” 订阅；
+ - 实际的被观察者发出数据，通过调用 “新创建的订阅者” 的 `onNext()` 方法向其传递数据；
+ - 在新创建的被订阅者的内部先用 “转换器” 的 `apply()` 方法将数据类型进行转换，然后调用 “实际订阅者” 的 `onNext()` 方法将转换后的数据传给 “实际订阅者”
 
-<b>说明：<br>
-在 `map()` 中做的事有：<br>
-1.创建新的 `Observable` 订阅下游观察者(在 `map()` 的调用链中创建)；<br>
-2.创建新的 `Subscriber` 供上游被观察者订阅（新创建的 `Observable` 订阅下游观察者这个动作执行后创建，即在 `subscribe()` 的调用链中创建）；<br>
-3.在上面的基础上实现建立起上游被观察者和下游观察者之间的一条桥梁。
-</b><br/>
-可能这样理解会有些困难，上图：
+整个过程有点复杂，所以我在上述代码片段中用序号来表示各个过程的调用顺序，同时用一张图来表示 map 变换过程中以上几个角色的交互过程：
 
-<center><img src="/img/in-post/post_rxjava/map.jpg" width="500" height="100"/></center>
+![map 变换](/img/in-post/post_rxjava/map_1.png)
 
-有了图应该就好理解多了吧。
+说明：
+- A 表示实际被观察者，B 表示新创建的订阅者，C 表示新创建的被观察者，D 表示实际的订阅者，E 代表转换器；
+- 虚线框是 map 变换导致的新创建的角色，它们没有直接接触并且未发生任何订阅关系；
+- B 和 D 都是订阅者，它们进行了直接的接触：B 将信息转换后交给 D;
 
-<b>让我们再从代码执行顺序将整个流程来走一遍吧：<br/>
-先是由 `just()` 方法创建了 `Observable` 对象，然后经过 `map()` 方法创建了隐式的 `Observable`，当我们最终调用隐式的 `Observable` 的 `subscribe()` 对下游的 `subscriber` 订阅时，隐式的 `Observable` 会根据计划表创建一个隐式的 `Subscriber` 对上游 `Observable` 进行订阅，触发上游 `Observable` 将数据传给隐式的 `Subscriber` 的 `onNext(int resourceId)` 方法，在这个 `onNext(int resourceId)` 方法中，会使用转换器将上游数据类型转换成下游数据类型并传入下游 `Subscriber` 的 `onNext(Bitmap bitmap)` 方法中， 从而成功将上游原始类型（int）数据转换成了下游观察者所需类型（Bitmap）的数据。</b>
+如果大家理解了一次 map 变换的原理，连续两次 map 变换的的原理就不难理解了，在这里就不赘述了，贴一张和上面类似的交互图，请大家自行理解：
 
-<b>注意：<br/>
-1.隐式的 `Observable` 和隐式的 `Subscriber` 之间并没有发生订阅关系;<br>
-2.这个隐式 `Observable` 的作用是创建一个隐式的 `Subsrciber`，并将其订阅给上游的 `Observable` 从而触发上游数据的发送；<br>
-3.隐式的 `Subscriber` 像是做了下游 `Subscriber` 的代理，它借助转换器完成了数据转换的工作然后将数据交由下游`Subscriber` 处理，这两个 `Subscriber` 直接进行了接触，隐式的 `Subscriber` 中的三个回调方法会调用下游 `Subscriber` 的同名回调方法。</b>
+![2次连续 map 变换](/img/in-post/post_rxjava/map_2.png)
 
-多个 map 变换也是同样的道理，读者应该自己能明白，这里就不赘述了。
+### flatMap 变换 ###
+
+此处先占坑，日后来填
