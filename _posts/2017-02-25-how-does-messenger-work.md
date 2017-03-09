@@ -33,7 +33,7 @@ private final class MessengerImpl extends IMessenger.Stub {
 }
 ```
 
-关于 `Stub` 类是什么，在[安卓进程通信机制之 AIDL](http://liwenkun.me/2016/10/28/android-IPC-AIDL/)已经解释过了，它是一个继承自 `Binder` 的抽象类，内部封装了 `Binder` 通信机制，同时它还实现了 `IMessenger` 接口，但是它自己并没有真正意义的实现，而是留给服务端去实现，这里也就是 `MessengerImpl`。`MessengerImpl` 实现这个接口的方式就是简单地把发送来的消息转发给外部类 `Handler`，由 `Handler` 投递给消息队列。
+关于 `Stub` 类是什么，在[安卓进程通信机制之 AIDL](/2016/10/28/android-IPC-AIDL/)已经解释过了，它是一个继承自 `Binder` 的抽象类，内部封装了 `Binder` 通信机制，同时它还实现了 `IMessenger` 接口，但是它自己并没有真正意义的实现，而是留给服务端去实现，这里也就是 `MessengerImpl`。`MessengerImpl` 实现这个接口的方式就是简单地把发送来的消息转发给外部类 `Handler`，由 `Handler` 投递给消息队列。
 
 ## Messenger ##
 
@@ -48,7 +48,7 @@ public Messenger(IBinder target) {
     mTarget = IMessenger.Stub.asInterface(target);
 }
 ```
-其中 `mTarget` 是一个 `IMessenger` 对象；而 `target.getIMessenger()` 就是前面的 `MessengerImpl` 对象。从这里我们很容易发现通过第一个构造方法构造的 `Messenger` 其 `mTarget` 是 `Binder` 接口在服务端的实现；而第二个构造方法构造出的 `Messenger` 其 `mTarget` 是 `Binder` 接口在客户端的实现（不懂的话可以看看我的[这篇文章](http://liwenkun.xyz/2016/10/28/android-IPC-AIDL/))。
+其中 `mTarget` 是一个 `IMessenger` 对象；而 `target.getIMessenger()` 就是前面的 `MessengerImpl` 对象。从这里我们很容易发现通过第一个构造方法构造的 `Messenger` 其 `mTarget` 是 `Binder` 接口在服务端的实现；而第二个构造方法构造出的 `Messenger` 其 `mTarget` 是 `Binder` 接口在客户端的实现（不懂的话可以看看我的[这篇文章](/2016/10/28/android-IPC-AIDL/))。
 
 现在我们对 `Messenger` 有了一个具体的认知：为了给开发者提供最简单的接口，系统又在 `IMessenger` 的基础之上用 `Messenger` 又封装了一层，将 `Binder` “隐藏”起来。我们通过 `Messenger` 的使用示例来说明：
 
