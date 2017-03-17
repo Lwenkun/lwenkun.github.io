@@ -8,21 +8,19 @@ header-img: "img/post-bg-java-hashcode-and-equals.png"
 tags:
     - java
 ---
-# hashcode() 和 equals() 的理解 #
+# 浅析 hashcode() 和 equals()#
 
-`equals()` 的默认实现的返回值根据的是两个对象是否占用同一内存空间，即这两个对象是否其实是同一实例的两个引用。
+在 Java 中，`equals()` 的默认实现的是判断两个引用变量是否指向同一内存空间，即这两个引用变量是否是对同一实例的引用。而 `hashcode()` 默认实现与 `native` 方法相关，我的猜测是和这两个引用所指对象的内存地址有关，事实上的确是这样。为什么我的猜测会是正确的呢？我们来分析原因。
 
-`hashcode()` 默认实现是一个和 `native` 方法相关的，我们可以不管他们，我的猜测是和这两个引用的所指对象的地址相关，事实上的确是这样，为什么我的猜测会是正确的呢，后面我会说原因。
+Java 文档对子类重写这两个方法的要求是：
 
-java 文档对子类重写这两个方法的要求是：
-
-1.要么两个方法都重写，要么都不重写；
-2.如果两个对象的通过 `equals` 方法比较返回 `true`，那么这两个方法的 `hashcode` 必须相等；
-3.如果这两个对象的 `hashcode` 相等，这两个对象不一定 `equals` 比较后返回 `true`.
+1. 要么两个方法都重写，要么都不重写；
+2. 如果两个对象的通过 `equals` 方法比较返回 `true`，那么这两个方法的 `hashcode` 必须相等；  
+3. 如果这两个对象的 `hashcode` 相等，这两个对象不一定 `equals` 比较后返回 `true`。
 
 看看 `String` 的 `hashcode()` 方法和 `equals()` 方法：
 
-`hashcode()` :
+- hashcode() :
 
 ```java
 @Override public int hashCode() {
@@ -40,7 +38,7 @@ java 文档对子类重写这两个方法的要求是：
 }
 ```
 
-`equals()` 方法：
+- equals()：
 
 ```java
 @Override public boolean equals(Object other) {
@@ -53,12 +51,7 @@ java 文档对子类重写这两个方法的要求是：
             if (s.count != count) {
                 return false;
             }
-            // TODO: we want to avoid many boundchecks in the loop below
-            // for long Strings until we have array equality intrinsic.
-            // Bad benchmarks just push .equals without first getting a
-            // hashCode hit (unlike real world use in a Hashtable). Filter
-            // out these long strings here. When we get the array equality
-            // intrinsic then remove this use of hashCode.
+            
             if (hashCode() != s.hashCode()) {
                 return false;
             }
@@ -74,52 +67,53 @@ java 文档对子类重写这两个方法的要求是：
 }
 ```
 
-我们可以看到：
+对于 `String`， 我们可以看到：
 
-`equals()` 方法的“核心条件”（两个对象的引用相等的条件）是比较两个字符串内容是否一样。但是为了程序效率，这个方法一开始并不会直接比较两个字符串的内容，而是先比较他们长度是否相等，再看他们的 `hashcode()` 是否相等（因为按照规范，如果两个对象相等，他们的 `hashcode()` 一定相等），最后才出“杀手锏”，逐个地比较他们的内容是否相等。
+- `equals()` 方法的 “关键变量”（比较的依据）是字符串中的每个字符。但是为了程序效率，这个方法一开始并不会逐个比较两个字符串的字符，而是先比较它们长度是否相等，再看它们的 `hashcode()` 是否相等（按照规范，如果两个对象相等，它们的 `hashcode()` 一定相等），最后才出 “杀手锏”，逐个地比较它们的字符。
+- `hashcode()` 方法返回的是对每个字符的 ascii 码进行加权求和。
 
-`hashcode()` 方法的实现是对每个字符的 ascii 码进行加权求和。
+从文档的规范和 `String` 中两个方法的实现我们可以暂时可以推导出这样的结论：`hashcode()` 方法的返回值一定是通过对 `equals()` 中的关键变量进行某种函数变换得到的（简单点说就是和关键变量有关），只有这样才能保证 **equals() 返回 ture** => **关键变量相等** => **hashcode() 返回值相等**。
 
-如果我们要重写这两个方法，应该首先重写前者。因为为了满足上面说的第二点要求，`hashcode()` 方法的实现应该与 `equals()` 方法的“核心条件”涉及的变量有关且只能与这些变量有关（注意：应该至少与其中的一个变量有关），用数学语言解释就是 hashcode 应该是 `equals()` 核心条件涉及变量中的一个或多个的函数，并且不能是其他无关变量（核心条件不涉及的变量）的函数。为什么可以用数学中的函数概念来解释 `hashcode()` 应该满足的要求？因为根据函数的性质，相同自变量有相同的因变量，而 `hashcode()` 正好需要满足这种性质。
+对于我们自定义的类，如果要重写这两个方法，应该首先重写 `equals()`。因为根据第二点要求，`hashcode()` 方法的实现应该是建立在 `equals()` 方法之上的：在重写 `equals()` 方法之后，我们再去保证对于 `euqals()` 比较返回 `true` 的两个对象，如何让它们的 `hashcode()` 返回值相等。
 
-为什么能推导出这种关系?我们用例子来说明。
+例如，定义一个 `People` 类：
 
-例如， 对于 `String` 来说，两个字符串是否相等（`equals()` 是否返回 `true`）的核心条件是这两个字符串的内容是否相等，所以字符串的 hashcode 应该是关于这个字符串内容的函数。`String` 的 `hashcode()` 方法的确满足这个条件，因为如果两个 `String` 对象的内容相同，那么他们的所有字符的加权和一定相等，hashcode 也就相等。
-
-又例如，定义一个类 `People`，该类有两个对象 `a` 和 `b`，这个类的 `equals()` 方法的“核心条件”是他们的名字相等，那么 `equals()` 方法的代码就可以这样实现：
+```java
+public class People {
+    private int age;
+    private String name;
+    private String hometown;
+    ......
+}
+```
+如果有这样的定义：对于 `People` 的两个对象 `a` 和 `b`，如果它们的 `name` 相等我们就认为这两个对象相等。那么 `People` 的 `equals()` 方法就应该是这样实现的：
 
 ```java
 public boolean equals(Object other) {
-  if (! other instanceof People) {
-
-         if(a.hashcode() != b.hashcode()) {
-               return false;
-        }
-    
-        if(a.name.euqals( b.name)) {
-            return true;
-        }  
-       
+    if (！other instanceof People)
         return false;
-  } else {
-     return false
-  }
+
+    if(hashcode() != other.hashcode())
+        return false;
+    
+    return name == null ? other.name == null : name.equals(other.name);
 }
 ```
 
-我们看到 `equals()` 的“核心条件”是两个人的名字是否相同，所以我们的 `hashcode()` 方法应该保证两个名字相同的人的 `hashcode()` 返回值也一样，即我先前说的 hashcode 是 `name` 的函数。既然判断名字相同沿用了 `name` 的 `equals()` 方法（相等的核心条件与 `name` 相关），所以 `hashcode()` 方法沿用 `name` 的 `hashcode()` 方法也是可以的（满足 hashcode 是 `name` 的函数这个要求）。所以 `hashcode()` 方法可以这样实现：
+`equals()` 的 “关键变量” 是 `name`，所以 `hashcode()` 的返回值必须是通过对 `name` 的某种函数变换得到的。
 
 ```java
-//这个方法沿用了 `name` 的 `hashcode()` 方法，则 hashcode
-//会是关于 `name` 的“函数”，因此这里的实现满足要求
 public int hashcode() {
+     // 在 String 中，hashcode() 返回值就是通过对字符串的函数变换得到的，
+     // 因此这里直接返回 name 的 hashcode 也能保证 People 的 hashcode() 返回值是
+     // 通过对 name 的函数变换得到的
      return name.hashcode();
  }
 ```
 
-按照上面的实现，如果两个人“相等”，两个人的 `hashcode()` 也一定会相等。
+按照上面的实现，我们可以保证，如果 `a.equals(b) == true`，一定有 `a.hashcode() == b.hashcode()`。
 
-但是这样就不正确了：
+如果我们按照下面这样实现 `hashcode()` 会怎样呢？
 
 ```java
 public int hashcode() {
@@ -127,83 +121,66 @@ public int hashcode() {
 } 
 ```
 
- 或者用一种更一般形式来表示：
+在上面的实现中，`hashcode()` 的返回值并不和 “关键变量” 有关，我们看看这会导致什么问题：假如有两个人 `name` 相等，`hometown` 不相等，那么它们通过 `equals()` 比较会返回 `true`，但是由于 `hometown` 的不相等会直接导致它们 `hometown.hashcode()` 的返回值不相等，进而导致它们自己的 `hashcode()` 返回值不相等，这显然违背了 java 的规范。
 
-```java
-public int hashcode() {
-   //`fun()` 是关于自变量 `var` 的函数，并且 `var` 不是 `name` 的函
-   //数，所以 `fun()` 不会是关于 `name` 的函数，从而 hashcode
-   //不会是关于 `name` 的函数,因此不满足条件
-   return fun(var);
-} 
-```
+现在考虑判断两个人相等另一种定义：如果两个 `People` 对象的 `name` 和 `hometown` 都相同，那么它们相等。
 
-因为两个人是否“相等”的“核心条件”是 `name` 是否相等而不与他们的 `hometown` 有关，所以如果按照上面的实现，假如有两个人 `name` 相等，但是他们的 `hometown` 不相等，就会导致 `equals()` 为 `true` 时，两个人的 hashcode 不相等，这就违背了 java 的规范，虽然 `hashcode()` 这样实现并不会影响 `equals()` 的结果（因为 `equals()` 方法的返回值并不依赖于两个对象的 hashcode 相等）。
-
-现在考虑另外一种两个人是否相等的定义：如果两个人的 `name` 和 `hometown` 都相同，那么他们相等。
-
-那么中规中矩的实现是这样的：
+那么对于 `equals()` 方法来说，中规中矩的实现是这样的：
 
 ```java
 public boolean equals(Object other) {
 
-   if(other instanceof People) {
-        if(! a.hashcode == b.hashcode()) {
-             return false;
-        }
-        
-        if(a.name.equals(b.name) && a.hometown.equals(b.hometown)) {
-             return true;
-       }
-
-       return false;
-
-    }  else {
+    if (! other instanceof People)
         return false;
-    }
-
+        
+    return (name == null ? 
+               other.name == null : name.equals(other.name))
+        && (hometown == null ?
+               other.hometown == null : hometown.equals(other.hometown));
 }
+```
+而对于 `hashcode()` 方法来说，就可以这样实现（不是最好的做法，但是符合 java 规范）：
 
+```java
 public int hashcode() {
      return name.hashcode() + hometown.hashcode();
 }
 ```
-
-下面的实现 `hashcode()` 也是正确的（只与其中的一个变量有关，并且 hashcode 是那个变量的函数）：
+下面的实现也是可以的（同样不建议这样做）：
 
 ```java
 public int hashcode()  {
+   // 返回值只与其中的一个关键变量有关，
+   // 虽然这样容易导致 hashcode 的聚集，但是理论上也符合 java 的规范
    return name.hashcode() ;
 }
 ```
-
-或者
-
-```java
-public int hashcode() {
-    return hometown.hashcode(); 
-}
-```
-
-但是这样就是不对的（与别的变量 `age` 有关，是 `age` 的函数）：
+或者（推荐的做法）:
 
 ```java
 public int hashcode() {
-     return homtown.hashcode() + age.hashcode();
+    int k = 17; // 任意的起始值
+    k += name.hashcode() * 31;
+    k += hometown.hashcode() * 31;
+    return k;
 }
 ```
 
-或者以一种更一般的形式来表现：
+但是这样就绝对是错误的（与无关变量 `age` 有关）：
 
 ```java
 public int hashcode() {
-   // `fun1()` 是关于 `hometown` 的函数，`fun2()` 是关于 `age` 的函数，`age` 不是关于 `name` 的函数
-   return fun1(hometown) + fun2(age);
+     return homtown.hashcode() + age;
 }
 ```
 
-像上面这样实现的话，如果有两个对象，它们的 `name` 和 `hometown` 相同，则它们通过 `equals()` 比较返回 `true`， 但是它们 `hashcode()` 的返回值却可能不相等，因为它们的 `age` 可能不相等（即他俩的 `age`通过 `equals()` 比较返回 `false`），从而它们的 `age.hashcode()`（或者 `fun2()`）的返回值不一定相等。
+对于上面这种实现，虽然保证了和关键变量 `hometown` 有关，但是却引入 `age` 这个非关键变量（无关变量），我们看看这样做有什么问题：有两个 `People` 对象，它们的 `name` 和 `hometown` 相同，但 `age` 不相等，那么它们通过 `equals()` 比较会返回 `true`， 但它们 `hashcode()` 的返回值却不相等，因为 `age` 的不相等导致 `hometown.hashcode() + age` 不相等，进而导致了这两个对象 `hashcode()` 的返回值不相等。
 
-现在回到开头的问题，为什么我会猜测 `hashcode()` 方法的默认实现与地址相关，相信大家现在应该也都明白了吧，因为 `equals()` 默认实现的返回值根据的是两个对象的引用是否是共用同一内存地址，即核心条件涉及的变量是对象的内存地址，所以根据我们的总结，`hashcode()` 方法就应该是是对象的内存地址的函数，所以必须与内存地址有关。
+因此对于开头的结论，我们还需要进行完善：`hashcode()` 方法的返回值一定是通过对 `equals()` 中的关键变量进行某种函数变换得到的（简单点说就是和关键变量有关），并且不能和非关键变量（无关变量，即 `equals()` 方法中用不到的变量）有关。
 
-以上仅仅是我个人的理解，如果总结得不准确还请大家留言告知。
+现在回到开头的问题：为什么 `hashcode()` 方法的默认实现与地址相关？因为在 `equals()` 的默认实现中，关键变量是两个引用变量所指向的内存地址，因此 `hashcode()` 方法返回值必须和对象的内存地址有关。
+
+## 感谢阅读 ##
+由于只是说明 `hashcode()` 和 `equals()` 的内在联系，因此文章中有的例子并是 `hashcode()` 和 `equals()` 的最佳实现（但还是满足 java 规范，对于最佳实现可以参考 《Effective Java》 这本书）。另外如果有什么不对的话，还望大家不吝赐教。
+
+参考书籍：《Effective Java》
