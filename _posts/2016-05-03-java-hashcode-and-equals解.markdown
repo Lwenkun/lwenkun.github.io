@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      "hashcode() 和 equals() 的理解"
+title:      "浅析 hashcode() 和 equals()"
 subtitle:   "hashcode() & equals()"
 date:       2016-05-03
 author:     "lwenkun"
