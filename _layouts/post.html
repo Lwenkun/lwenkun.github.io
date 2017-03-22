@@ -154,10 +154,19 @@ layout: default
 
 
 <a class="muut" href="https://muut.com/i/lwenkun/comments" type="dynamic">lwenkun</a>
- <script src="//cdn.muut.com/1/moot.zh.min.js"></script>
+ <!--<script src="//cdn.muut.com/1/moot.zh.min.js"></script>-->
  
 
- 
+<script type="text/javascript">
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//cdn.muut.com/1/moot.zh.min.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
 
 
 {% if site.duoshuo_username %}
