@@ -160,8 +160,8 @@ public int hashcode()  {
 ```java
 public int hashcode() {
     int k = 17; // 任意的起始值
-    k += name.hashcode() * 31;
-    k += hometown.hashcode() * 31;
+    k = k * 31 + name.hashcode();
+    k = k * 31 + hometown.hashcode();
     return k;
 }
 ```
