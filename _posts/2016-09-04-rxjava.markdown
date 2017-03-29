@@ -1,29 +1,29 @@
 ---
 layout:     post
-title:      "Rxjava 原理探究"
-subtitle:   "Rxjava 原理探究"
+title:      "RxJava 原理探究"
+subtitle:   "RxJava 原理探究"RxJava
 date:       2016-09-03
 author:     "lwenkun"
-header-img: "img/post-bg-rxjava.jpg"
+header-img: "img/post-bg-RxJava.jpg"
 tags:
     - java
-    - rxjava
+    - RxJava
 ---
 
-# Rxjava 原理探究 #
-关于 Rxjava 的文章网上有很多，这里只是个人的学习总结，阅读前需要对 Rxjava 有一定的了解，并不能作为学习资料，如果想要入门这里有更好的选择：[给 Android 开发者的 RxJava 详解](https://gank.io/post/560e15be2dca930e00da1083)（虽然版本有点久，很多 API 都已过时，但原理差不多，不影响理解）。观察者
+# RxJava 原理探究 #
+关于 RxJava 的文章网上有很多，这里只是个人的学习总结，阅读前需要对 RxJava 有一定的了解，并不能作为学习资料，如果想要入门这里有更好的选择：[给 Android 开发者的 RxJava 详解](https://gank.io/post/560e15be2dca930e00da1083)（虽然版本有点久，很多 API 都已过时，但原理差不多，不影响理解）。
 
-如果只是想了解 API 的使用，可以看看 [ReactiveX/RxJava文档中文版](https://mcxiaoke.gitbooks.io/rxdocs/content/)
+如果只是想了解 API 的使用，可以看看 [ReactiveX/RxJava文档中文版](https://mcxiaoke.gitbooks.io/rxdocs/content/)。
 
-## 什么是 Rxjava ##
+## 什么是 RxJava ##
 
 > RxJava is a Java VM implementation of ReactiveX (Reactive Extensions): a library for composing asynchronous and event-based programs by using observable sequences.
 
-翻译一下就是：Rxjava 是响应式扩展库在 java 虚拟机上的实现，它使用观察者模式为异步和基于事件程序的编写提供便利。
+翻译一下就是：RxJava 是响应式扩展库在 Java 虚拟机上的实现，它使用观察者模式为异步和基于事件程序的编写提供便利。
 
-## 为什么是 Rxjava ##
+## 为什么是 RxJava ##
 
-关于 Rxjava 的优点网上总结了很多，总的说来就是使得代码整洁、逻辑清晰。它能将本来一段逻辑复杂、外观参差错落的代码，变成一条逻辑清晰的长链，使得可阅读性和可维护性大大提高。
+关于 RxJava 的优点网上总结了很多，总的说来就是使得代码整洁、逻辑清晰。它能将本来一段逻辑复杂、外观参差错落的代码，变成一条逻辑清晰的长链，使得可阅读性和可维护性大大提高。
 
 以下例子改编自《给 Android 开发者的 RxJava 详解》：
 
@@ -85,24 +85,24 @@ Observable.from(folders)
 简单解释下这段代码：观察者发出数据源，然后对数据源进行三次数据类型变换，之后指定被观察者和观察者所在线程，最后对观察者进行订阅。
 
 如果对 java 8 引入的 <a href="https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/">Stream</a> 熟悉的话，就会发现这与对 `Stream` 的操作很像，从
-`flatMap()` 到 `observeOn()` 的操作相当于对流的 Intermediate 操作，而最后的 `subscribe()` 相当是对流的 Terminal 操作。而且前面的操作也都是惰性化(lazy)的，最后的订阅才会触发前面一系列的变换操作（其实 `subscribeOn()` 和 `observeOn()` 这两个方法也是基于变换的）。怎么理解呢，就相当于 rxjava 库将这些操作先 “缓存” 起来了，直到最后的订阅观察者才将那些操作执行，怎么 “缓存” 是库做的事，逻辑上我们可以把那些操作看作是从上到下按顺序执行的。
+`flatMap()` 到 `observeOn()` 的操作相当于对流的 Intermediate 操作，而最后的 `subscribe()` 相当是对流的 Terminal 操作。而且前面的操作也都是惰性化(lazy)的，最后的订阅才会触发前面一系列的变换操作（其实 `subscribeOn()` 和 `observeOn()` 这两个方法也是基于变换的）。怎么理解呢，就相当于 RxJava 库将这些操作先 “缓存” 起来了，直到最后的订阅观察者才将那些操作执行，怎么 “缓存” 是库做的事，逻辑上我们可以把那些操作看作是从上到下按顺序执行的。
 
-可见，Rxjava 虽然增加了程序代码，但是可阅读性和可扩展性大大增强。
+可见，RxJava 虽然增加了程序代码，但是可阅读性和可扩展性大大增强。
 
-了解过 Rxjava 的人都会觉得 Rxjava 很神奇，几行代码便完成了数据流的转换和线程的切换。那么它的内部原理是怎样的呢，通过阅读源码和网上的资料，我对 Rxjava 的实现原理有了大概的了解，接下来就和大家分享一下。
+了解过 RxJava 的人都会觉得 RxJava 很神奇，几行代码便完成了数据流的转换和线程的切换。那么它的内部原理是怎样的呢，通过阅读源码和网上的资料，我对 RxJava 的实现原理有了大概的了解，接下来就和大家分享一下。
 
-## 对 Rxjava 实现原理的粗浅理解 ##
+## 对 RxJava 实现原理的粗浅理解 ##
 
 ### 约定
-由于 Rxjava 同时应用了观察者模式（别名：发布-订阅模式）和生产者-消费者模式，所以其 API 的名称有点混乱。为了避免读者理解困难，这里约定如下：
+由于 RxJava 同时应用了观察者模式（别名：发布-订阅模式）和生产者-消费者模式，所以其 API 的名称有点混乱。为了避免读者理解困难，这里约定如下：
 
 - `Observable` 及其子类称为 **被观察者**；
-- `Comsumer`（消费者） 和 `Observer`（观察者） 及其子类统称为 **观察者**（两者在 Rxjava 含义相似）；
-- 由于 Rxjava 订阅的动作（subscribe）定义在 `Observale` 中，给我们的感觉是 **被观察者** 订阅 **观察者**，因此为了叙述方便和避免含义混乱，**被观察者** 订阅 **观察者** 和 **观察者** 订阅 **观被察者** 是同样的意思；
-- 本文基于 Rxjava 2.0.7 版。
+- `Comsumer`（消费者） 和 `Observer`（观察者） 及其子类统称为 **观察者**（两者在 RxJava 含义相似）；
+- 由于 RxJava 订阅的动作（subscribe）定义在 `Observale` 中，给我们的感觉是 **被观察者** 订阅 **观察者**，因此为了叙述方便和避免含义混乱，**被观察者** 订阅 **观察者** 和 **观察者** 订阅 **观被察者** 是同样的意思；
+- 本文基于 RxJava 2.0.7 版。
 
 ### 变换
-变换是 Rxjava 的亮点和理解上的难点，变换的作用是将一种数据类型转换成另一种数据类型。当被观察者发出的原始数据类型并不是观察者想要的数据类型时，我们就可以用变换来实现源数据类型和目的数据类型的转换。Rxjava 中有很多种变换，如 map 变换、flatMap 变换、filter 变换等。其中 map 变换比较基础也较易理解，因此我们先从 map 变换讲起。
+变换是 RxJava 的亮点和理解上的难点，变换的作用是将一种数据类型转换成另一种数据类型。当被观察者发出的原始数据类型并不是观察者想要的数据类型时，我们就可以用变换来实现源数据类型和目的数据类型的转换。RxJava 中有很多种变换，如 map 变换、flatMap 变换、filter 变换等。其中 map 变换比较基础也较易理解，因此我们先从 map 变换讲起。
 
 #### map 变换 ####
  map 变换能够将一种类型的数据源转换成另一种类型的数据源，比如要将 `int` 类型的图片资源 id 转换成 `Bitmap` 类型的对象并将其设置给一个  `ImageView` ，我们可以这样做：
@@ -133,7 +133,7 @@ public final <R> Observable<R> map(Function<? super T, ? extends R> mapper) {
      return RxJavaPlugins.onAssembly(new ObservableMap<T, R>(this, mapper)); // 3
 }
 ```
-方法中第一行验证 `mapper` 是否为空；第二行中的 `RxjavaPlugin.onAssenbly()` 是一个钩子方法，据说是用来调试 Rxjava 库用的，你可以把它理解为什么都没做，因此 `map()` 方法可以简化为：`return new ObservableMap<T, R>(this, mapper);`，它返回的是一个 `Observable` 子类 `ObservableMap` 的一个实例。现在我重点看看 `ObservableMap` 这个类：
+方法中第一行验证 `mapper` 是否为空；第二行中的 `RxJavaPlugin.onAssenbly()` 是一个钩子方法，据说是用来调试 RxJava 库用的，你可以把它理解为什么都没做，因此 `map()` 方法可以简化为：`return new ObservableMap<T, R>(this, mapper);`，它返回的是一个 `Observable` 子类 `ObservableMap` 的一个实例。现在我重点看看 `ObservableMap` 这个类：
  
 ```java
 public final class ObservableMap<T, U> extends AbstractObservableWithUpstream<T, U> {
@@ -188,7 +188,7 @@ public final class ObservableMap<T, U> extends AbstractObservableWithUpstream<T,
 
 整个过程有点复杂，所以我在上述代码片段中用序号来表示各个过程的调用顺序，同时用一张图来表示 map 变换过程中以上几个角色的交互过程：
 
-![map 变换](/img/in-post/post_rxjava/map_1.png)
+![map 变换](/img/in-post/post_RxJava/map_1.png)
 
 说明：
 - A 表示实际被观察者，B 表示新创建的观察者，C 表示新创建的被观察者，D 表示实际的观察者，E 代表转换器；
@@ -197,7 +197,7 @@ public final class ObservableMap<T, U> extends AbstractObservableWithUpstream<T,
 
 如果大家理解了一次 map 变换的原理，连续两次 map 变换的的原理就不难理解了，在这里就不赘述了，贴一张和上面类似的交互图，请大家自行理解：
 
-![2次连续 map 变换](/img/in-post/post_rxjava/map_2.png)
+![2次连续 map 变换](/img/in-post/post_RxJava/map_2.png)
 
 ### flatMap 变换 ###
 
