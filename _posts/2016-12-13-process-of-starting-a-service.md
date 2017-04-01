@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "安卓中 Service 的启动过程（上）"
-subtitle:   "how a Service in a android app starts"
+subtitle:   "Process of starting a Service in android"
 date:       2016-12-15
 author:     "lwenkun"
 catalog:  true
