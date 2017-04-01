@@ -2,6 +2,7 @@
 layout:     post
 title:      "ViewPager 的使用"
 subtitle:   "ViewPager"
+catalog:  true
 date:       2016-04-16
 author:     "lwenkun"
 header-img: "img/post-bg-android-viewpager.png"

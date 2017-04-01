@@ -3,6 +3,7 @@ layout:     post
 title:      "浅析 hashcode() 和 equals()"
 subtitle:   "hashcode() & equals()"
 date:       2016-05-03
+catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-java-hashcode-and-equals.png"
 tags:

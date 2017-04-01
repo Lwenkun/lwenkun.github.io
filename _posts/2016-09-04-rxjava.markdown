@@ -3,6 +3,7 @@ layout:     post
 title:      "RxJava 原理探究"
 subtitle:   "RxJava 原理探究"RxJava
 date:       2016-09-03
+catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-RxJava.jpg"
 tags:

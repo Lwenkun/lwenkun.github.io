@@ -4,6 +4,7 @@ title:      "Java 8 方法引用"
 subtitle:   "Method References"
 date:       2017-03-23
 author:     "lwenkun"
+catalog:  true
 header-img: "img/post-bg-java-8-method-references.png"
 tags:
     - java

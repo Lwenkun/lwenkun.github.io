@@ -4,6 +4,7 @@ title:      "探究 Java 虚拟机栈"
 subtitle:   "explore JVM stack"
 date:       2017-03-06
 author:     "lwenkun"
+catalog:  true
 header-img: "img/post-bg-java-vm-stack.jpg"
 tags:
     - java

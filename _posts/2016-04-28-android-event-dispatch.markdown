@@ -2,6 +2,7 @@
 layout:     post
 title:      "安卓事件传递机制的理解"
 subtitle:   "安卓事件传递机制"
+catalog:  true
 date:       2016-04-28
 author:     "lwenkun"
 header-img: "img/post-bg-android-event-dispatch.png" 

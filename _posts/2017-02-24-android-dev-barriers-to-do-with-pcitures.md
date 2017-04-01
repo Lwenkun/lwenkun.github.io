@@ -3,6 +3,7 @@ layout:     post
 title:      "android 记坑（图片相关）"
 subtitle:   "android 记坑"
 date:       2017-02-24
+catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-android-dev-barriers-to-do-with-pcitures.png"
 tags:

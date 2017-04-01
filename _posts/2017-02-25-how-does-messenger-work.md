@@ -4,6 +4,7 @@ title:      "Messenger 的工作原理"
 subtitle:   "How does Messenger work"
 date:       2017-02-25
 author:     "lwenkun"
+catalog:  true
 header-img: "img/post-bg-how-does-messenger-work.png"
 tags:
 - android

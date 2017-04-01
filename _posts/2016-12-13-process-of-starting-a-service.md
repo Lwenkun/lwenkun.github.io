@@ -4,6 +4,7 @@ title:      "安卓中 Service 的启动过程（上）"
 subtitle:   "how a Service in a android app starts"
 date:       2016-12-15
 author:     "lwenkun"
+catalog:  true
 header-img: "img/post-bg-android-how-a-service-in-a-android-app-starts.jpg"
 tags:
 - android

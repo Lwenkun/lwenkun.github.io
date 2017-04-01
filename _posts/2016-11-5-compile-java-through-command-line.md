@@ -3,6 +3,7 @@ layout:     post
 title:      "命令行编译、打包并运行一个 java 程序"
 subtitle:   "compile java through command line"
 date:       2016-11-05
+catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-compile-java-through-command-line.png"
 tags:
