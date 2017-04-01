@@ -7,8 +7,8 @@ catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-android-dev-barriers-to-do-with-pcitures.png"
 tags:
-- android
-- barriers
+    - Android
+    - 记坑
 ---
 
 # android 记坑（图片相关）#

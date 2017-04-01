@@ -7,7 +7,7 @@ author:     "lwenkun"
 catalog:  true
 header-img: "img/post-bg-java-8-method-references.png"
 tags:
-    - java
+    - Java
     - Method Reference
 ---
 

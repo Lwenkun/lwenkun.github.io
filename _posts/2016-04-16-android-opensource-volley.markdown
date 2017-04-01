@@ -7,19 +7,15 @@ date:       2016-04-16
 author:     "lwenkun"
 header-img: "img/post-bg-android-volley.png"
 tags:
-    - android
-    - View
-    - ViewPager
+    - Android
+    - 开源库
 ---
 
-
-> 简介
+# Volley 学习总结
 
 Volley 是谷歌提供的 android 网络通信框架。在安卓中，谷歌提供了两种网络通信有关的类 `HttpClient` 和 `HttpUrlConnection`，但是如果不适当封装，很容写很多重复的代码。谷歌也意识到了这个问题，所以提供了 Volley 来解决这个问题。
 
-> 用法
-
-### 1.StringRequest的用法
+## StringRequest的用法
 ```java
 RequestQueue mQueue = Volley.newRequestQueue(context);
 StringRequest stringReuqest = new StirngRequest("http://www.baidu.com", new Response.Listener<String>() {
@@ -58,7 +54,7 @@ StringRequest stringRequest = new StringRequest(Method.POST, url,  listener, err
 ```
 我们重写了 `StringRequest` 的方法中 `getParams` 方法，在这里我们构造参数表。
 
-### 2.JsonObjectRequest&amp;JsonArrayRequest的用法
+## JsonObjectRequest&amp;JsonArrayRequest的用法
 ```java
 JsonObjectRequest jsonObjectRequest = new
 JsonObjectRequest("http://m.weather.com.cn/data/101010100.html", null, new Response.Listener<JsonObject>() {
@@ -79,7 +75,7 @@ mRequest.add(jsonObjectRequest);
 ```
 `JsonArrrayRequest` 的用法类似。
 
-### 3.ImageRequest的用法
+## ImageRequest的用法
 ```java
 ImageRequest imageRequest = new ImageRequest("http://developer.android.com/images/home/aw_dac.png", new Response.Listener<Bitmap>() {
    @Override

@@ -7,13 +7,13 @@ date:       2016-04-16
 author:     "lwenkun"
 header-img: "img/post-bg-android-viewpager.png"
 tags:
-    - android
+    - Android
     - View
-    - ViewPager
 ---
->什么是ViewPager
 
-图告诉你一切：
+# ViewPager
+
+什么是 ViewPager？图告诉你一切：
 
 <table border="0px">
 <tbody>
@@ -27,6 +27,8 @@ tags:
 </table>
 
 如图，白色矩形区域就是我们的 `ViewPager`，正如我们所熟悉的，`ViewPager` 通常会配合 `tab` 使用，什么是 `tab`？就是“网易新闻，网易体育，网易财经，网易女人”（page title) 这四个标题所在的那个区域，每个 page title 代表着一个 `tab` 。这个区域再上面一点就是 `ToolBar` 了。 `tab` 的实现方法有很多种，但现在最受欢迎并且最美观的就是谷歌MD提供的 `TabLayout` 了。现在我们主要讲下 `TabLayout` + `ViewPager` 的实现和使用吧。
+
+## ViewPager 的使用
 
 <strong>布局文件</strong>：
 
@@ -228,6 +230,8 @@ pager.addOnPageChangeListener(new   TabLayout.TabLayoutOnPagerChangeListener(tab
 ```
 
 也不用写了，但是有一点要记住这个方法一定要是在 `ViewPager ` 设置 `PagerAdapter` 之后调用，否则程序运行时会崩溃。
+
+## 可能出现的问题
 
 如果你的手机是安卓5.0以上，你的页面可能会出现下图这种情况：
 

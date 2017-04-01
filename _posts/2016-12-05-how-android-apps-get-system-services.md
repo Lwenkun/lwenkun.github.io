@@ -7,10 +7,10 @@ author:     "lwenkun"
 catalog:  true
 header-img: "img/post-bg-android-how-apps-get-system-services.jpg"
 tags:
-- android
-- system service
-- IPC
-- Binder
+    - Android
+    - System Service
+    - IPC
+    - Binder
 ---
 
 

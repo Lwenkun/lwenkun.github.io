@@ -1,15 +1,14 @@
 ---
 layout:     post
-title:      "AIDL"
+title:      "安卓进程通信机制之 AIDL"
 subtitle:   "安卓进程通信机制之 AIDL"
 catalog:  true
 date:       2016-10-28
 author:     "lwenkun"
 header-img: "img/post-bg-android-ipc-aidl.png"
 tags:
-    - android
+    - Android
     - IPC
-    - AIDL
 ---
 
 
@@ -526,4 +525,4 @@ public class Client extends AppCompatActivity {
 每当我们点击按钮，我们就成功的向服务端添加了一本书，说明我们通过 AIDL 跨进程通信成功了。
 
 **参考书籍**  
-《安卓开发艺术探索》 任
+《安卓开发艺术探索》 任玉刚 著

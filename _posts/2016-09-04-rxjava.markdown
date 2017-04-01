@@ -1,28 +1,28 @@
 ---
 layout:     post
 title:      "RxJava 原理探究"
-subtitle:   "RxJava 原理探究"RxJava
+subtitle:   "RxJava 原理探究"
 date:       2016-09-03
 catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-RxJava.jpg"
 tags:
-    - java
-    - RxJava
+    - Java
+    - 开源库
 ---
 
-# RxJava 原理探究 #
+# RxJava 原理探究
 关于 RxJava 的文章网上有很多，这里只是个人的学习总结，阅读前需要对 RxJava 有一定的了解，并不能作为学习资料，如果想要入门这里有更好的选择：[给 Android 开发者的 RxJava 详解](https://gank.io/post/560e15be2dca930e00da1083)（虽然版本有点久，很多 API 都已过时，但原理差不多，不影响理解）。
 
 如果只是想了解 API 的使用，可以看看 [ReactiveX/RxJava文档中文版](https://mcxiaoke.gitbooks.io/rxdocs/content/)。
 
-## 什么是 RxJava ##
+## 什么是 RxJava
 
 > RxJava is a Java VM implementation of ReactiveX (Reactive Extensions): a library for composing asynchronous and event-based programs by using observable sequences.
 
 翻译一下就是：RxJava 是响应式扩展库在 Java 虚拟机上的实现，它使用观察者模式为异步和基于事件程序的编写提供便利。
 
-## 为什么是 RxJava ##
+## 为什么是 RxJava
 
 关于 RxJava 的优点网上总结了很多，总的说来就是使得代码整洁、逻辑清晰。它能将本来一段逻辑复杂、外观参差错落的代码，变成一条逻辑清晰的长链，使得可阅读性和可维护性大大提高。
 
@@ -92,7 +92,7 @@ Observable.from(folders)
 
 了解过 RxJava 的人都会觉得 RxJava 很神奇，几行代码便完成了数据流的转换和线程的切换。那么它的内部原理是怎样的呢，通过阅读源码和网上的资料，我对 RxJava 的实现原理有了大概的了解，接下来就和大家分享一下。
 
-## 对 RxJava 实现原理的粗浅理解 ##
+## 对 RxJava 实现原理的粗浅理解
 
 ### 约定
 由于 RxJava 同时应用了观察者模式（别名：发布-订阅模式）和生产者-消费者模式，所以其 API 的名称有点混乱。为了避免读者理解困难，这里约定如下：
@@ -105,7 +105,7 @@ Observable.from(folders)
 ### 变换
 变换是 RxJava 的亮点和理解上的难点，变换的作用是将一种数据类型转换成另一种数据类型。当被观察者发出的原始数据类型并不是观察者想要的数据类型时，我们就可以用变换来实现源数据类型和目的数据类型的转换。RxJava 中有很多种变换，如 map 变换、flatMap 变换、filter 变换等。其中 map 变换比较基础也较易理解，因此我们先从 map 变换讲起。
 
-#### map 变换 ####
+#### map 变换
  map 变换能够将一种类型的数据源转换成另一种类型的数据源，比如要将 `int` 类型的图片资源 id 转换成 `Bitmap` 类型的对象并将其设置给一个  `ImageView` ，我们可以这样做：
 
 ```java
@@ -200,6 +200,6 @@ public final class ObservableMap<T, U> extends AbstractObservableWithUpstream<T,
 
 ![2次连续 map 变换](/img/in-post/post_RxJava/map_2.png)
 
-### flatMap 变换 ###
+#### flatMap 变换
 
 此处先占坑，日后来填

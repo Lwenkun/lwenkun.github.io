@@ -7,10 +7,9 @@ author:     "lwenkun"
 catalog:  true
 header-img: "img/post-bg-java-vm-stack.jpg"
 tags:
-    - java
+    - Java
     - JVM
-    - virtual stack
----
+ ---
 
 
 # 探究 Java 虚拟机栈 #

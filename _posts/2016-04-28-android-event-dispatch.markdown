@@ -7,10 +7,10 @@ date:       2016-04-28
 author:     "lwenkun"
 header-img: "img/post-bg-android-event-dispatch.png" 
 tags:
-    - android
+    - Android
     - View
-    - 事件传递机制
 ---
+
 # 安卓事件传递机制的理解 #
 
 ## 事件产生的源头以及预处理 ##

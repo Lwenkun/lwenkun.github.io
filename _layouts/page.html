@@ -22,8 +22,8 @@ layout: default
 	<div class="row">
         {% if site.sidebar == false %}
 <!-- NO SIDEBAR -->
-    <!-- Post Container -->
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 post-container">
+    <!-- PostList Container -->
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 postlist-container">
                 {{ content }}
             </div>
     <!-- Sidebar Container -->
@@ -63,13 +63,13 @@ layout: default
         {% else %}
 
 <!-- USE SIDEBAR -->
-    <!-- Post Container -->
+    <!-- PostList Container -->
     		<div class="
                 col-lg-8 col-lg-offset-1
                 col-md-8 col-md-offset-1
                 col-sm-12
                 col-xs-12
-                post-container
+                postlist-container
             ">
     			{{ content }}
     		</div>
@@ -81,12 +81,6 @@ layout: default
                 col-xs-12
                 sidebar-container
             ">
-   
-            <div wmode="transparent" 
-            src="http://chabudai.sakura.ne.jp/blogparts/honehoneclock/honehone_clock_tr.swf" 
-            quality="high" bgcolor="#ffffff" width="160" height="70" name="honehoneclock" align="middle" 
-            allowscriptaccess="always" type="application/x-shockwave-flash" 
-            pluginspage="http://www.macromedia.com/go/getflashplayer">
                 <!-- Featured Tags -->
                 {% if site.featured-tags %}
                 <section>
@@ -176,10 +170,19 @@ layout: default
                                 </a>
                             </li>
                             {% endif %}
+                            {% if site.linkedin_username %}
+                            <li>
+                                <a target="_blank" href="https://www.linkedin.com/in/{{ site.linkedin_username }}">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            {% endif %}
                         </ul>
                     </div>
                 </section>
-
                 <!-- Friends Blog -->
                 {% if site.friends %}
                 <hr>

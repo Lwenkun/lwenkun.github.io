@@ -7,8 +7,9 @@ catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-java-hashcode-and-equals.png"
 tags:
-    - java
+    - Java
 ---
+
 # 浅析 hashcode() 和 equals()#
 
 在 Java 中，`equals()` 的默认实现的是判断两个引用变量是否指向同一内存空间，即这两个引用变量是否是对同一实例的引用。而 `hashcode()` 默认实现与 `native` 方法相关，我的猜测是和这两个引用所指对象的内存地址有关，事实上的确是这样。为什么我的猜测会是正确的呢？我们来分析原因。

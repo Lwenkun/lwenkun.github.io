@@ -7,7 +7,7 @@ catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-compile-java-through-command-line.png"
 tags:
-- java
+    - Java
 ---
 
 # 命令行编译、打包并运行一个 java 程序 #

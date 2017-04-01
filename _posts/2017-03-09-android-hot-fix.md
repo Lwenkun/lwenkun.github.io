@@ -7,7 +7,7 @@ catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-android-hot-fix.jpg"
 tags:
-    - android
+    - Android
     - 动态加载
     - 热更新
 ---

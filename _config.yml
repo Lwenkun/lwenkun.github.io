@@ -49,9 +49,6 @@ kramdown:
 # Disqus settings
 disqus_username: lwenkun
 
-# YouYan settings
-youyan_share: true
-
 # Duoshuo settings
 duoshuo_username: lwenkun
 # Share component is depend on Comment so we can NOT use share only.
@@ -80,7 +77,9 @@ sidebar-avatar: /img/avatar-lwenkun.jpg      # use absolute URL, seeing it's use
 featured-tags: true                     # whether or not using Feature-Tags
 featured-condition-size: 1              # A tag will be featured if the size of it is more than this condition value
 
-
+# Progressive Web Apps
+chrome-tab-theme-color: "#000000"
+service-worker: true
 
 # Friends
 friends: [

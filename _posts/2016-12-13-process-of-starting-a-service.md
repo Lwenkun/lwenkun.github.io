@@ -7,8 +7,8 @@ author:     "lwenkun"
 catalog:  true
 header-img: "img/post-bg-android-how-a-service-in-a-android-app-starts.jpg"
 tags:
-- android
-- Service
+    - Android
+    - 四大组件
 ---
 
 # Service 的启动过程（上）#

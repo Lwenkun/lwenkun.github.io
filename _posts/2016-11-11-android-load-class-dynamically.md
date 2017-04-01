@@ -7,7 +7,7 @@ catalog:  true
 author:     "lwenkun"
 header-img: "img/post-bg-android-load-class-dynamically.jpg"
 tags:
-    - android
+    - Android
     - 动态加载
 ---
 
