@@ -198,7 +198,7 @@ public final class ObservableMap<T, U> extends AbstractObservableWithUpstream<T,
 
 如果大家理解了一次 map 变换的原理，连续两次 map 变换的的原理就不难理解了，在这里就不赘述了，贴一张和上面类似的交互图，请大家自行理解：
 
-![2次连续 map 变换](/img/in-post/post_RxJava/map_2.png)
+![2次连续 map 变换](/img/in-post/post_rxjava/map_2.png)
 
 #### flatMap 变换
 
