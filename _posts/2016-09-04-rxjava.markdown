@@ -5,7 +5,7 @@ subtitle:   "RxJava 原理探究"
 date:       2016-09-03
 catalog:  true
 author:     "lwenkun"
-header-img: "img/post-bg-RxJava.jpg"
+header-img: "img/post-bg-rxjava.jpg"
 tags:
     - Java
     - 开源库
@@ -189,7 +189,7 @@ public final class ObservableMap<T, U> extends AbstractObservableWithUpstream<T,
 
 整个过程有点复杂，所以我在上述代码片段中用序号来表示各个过程的调用顺序，同时用一张图来表示 map 变换过程中以上几个角色的交互过程：
 
-![map 变换](/img/in-post/post_RxJava/map_1.png)
+![map 变换](/img/in-post/post_rxjava/map_1.png)
 
 说明：
 - A 表示实际被观察者，B 表示新创建的观察者，C 表示新创建的被观察者，D 表示实际的观察者，E 代表转换器；
