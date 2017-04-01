@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      "命令行编译、打包并运行一个 java 程序"
-subtitle:   "compile java through command line"
+title:      "命令行编译制作一个 Java 程序"
+subtitle:   "make a Java application through command line"
 date:       2016-11-05
 catalog:  true
 author:     "lwenkun"
