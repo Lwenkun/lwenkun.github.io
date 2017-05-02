@@ -33,8 +33,8 @@ public class Person {
         return name;
     }
     
-    public static int compareName(Person b) {
-        return name.compare(b.name);
+    public static int compareName(Person a, Person b) {
+        return a.getName().compareTo(b.name);
     }
 }
 ```
