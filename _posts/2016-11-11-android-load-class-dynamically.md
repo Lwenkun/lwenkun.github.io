@@ -424,7 +424,7 @@ private DexFile(String sourceName, String outputName, int flags, ClassLoader loa
 }
 ```
 
-估计你已经找到这个方法的重点了，没错，就是 `openDexFile()`，它最终会调用 `openDexFileNative()`，这家伙是个本地方法，我们就不[深究](http://blog.csdn.net/jltxgcy/article/details/50552674)了。它做的事就是把对应的 dex 文件加载到内存中，然后返回给 java 层一个类似句柄一样的东西 `Object:mCookie`，我不知道这样说准不准确，但是后续的操作包括从 dex 文件中加载目标类和关闭 `DexFile` 对象释放资源都用到了这个 `mCookie`。此外，这个本地方法还做了一件重要的事，那就是优化 dex 并将其输出到指定文件夹。
+估计你已经找到这个方法的重点了，没错，就是 `openDexFile()`，它最终会调用 `openDexFileNative()`，这家伙是个本地方法，我们就不[深究](http://blog.csdn.net/jltxgcy/article/details/50552674)了。它做的事就是把对应的 dex 文件加载到内存中，然后返回给 Java 层一个 `Object:mCookie` 用来标识本次和 Java 层的交互，后续的操作包括从 dex 文件中加载目标类和关闭 `DexFile` 对象释放资源都用到了这个 `mCookie`。此外，这个本地方法还做了一件重要的事，那就是优化 dex 并将其输出到指定文件夹。
 
 在构造方法中 `DexFile` 就完成了 dex 文件的加载过程。现在我们回到 `DexFile` 对象的 `loadClassBinaryName()`：
 
