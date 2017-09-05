@@ -17,7 +17,7 @@ tags:
 ### 定义
 事件序列：手指接触屏幕开始到离开屏幕为止产生的事件为一次事件序列。
 
-##规律一
+## 规律一
 从父视图的角度来看，无论他的子视图是 View 还是 ViewGroup，对父视图来说都是透明的。它只知道如果当 ACTION\_DOWN 事件传给子视图后子视图的 dispatchTouchEvent () 返回 true，说明子视图想要处理这个事件，那么以后的事件就都交给它，不管以后子视图的 dispatchTouchEvent() 返回的是 true 还是 false; 如果 ACTION\_DOWN 事件传给子视图后子视图返回的是 false，那么以后的事件再也不会传给子视图（子视图没有处理 ACTION\_DOWN 就视作它不想处理该事件序列）。如果一个子视图的 dispatchTouchEvent() 在处理 ACTION\_DOWN 时返回 true ，只要父视图没有拦截事件, 那么该事件序列中的后续事件都会传入该视图中，也就是传入该视图的 dispatchTouchEvent() 方法中，就算手指的触摸区域已经超出了该视图的范围。并且对于该事件序列的之后所有事件，即使该视图的 dispatchTouchEvent() 返回 false 事件也同样会继续传入该视图，唯一的影响是会将该事件原路返回，最终落到 activity.onTouchEvent() 中。因此建议如果消耗了该事件，除非有特殊情况需要处理，最好不要返回 false，否则上级视图以为下面的视图没有处理事件从而自己处理。
 
 ## 规律二
@@ -47,10 +47,19 @@ public boolean dispatchTouchEvent(MotionEvent e) {
 
 ## 规律五
 父视图如何找到能够接受某个事件的子视图？
+
 假设在父视图中的事件坐标是 (x, y)
+
 1）首先要转换成相对子视图的坐标，转换的步骤如下：
+
 首先要考虑父视图是否发生滚动，其次需要考虑子视图是否发生平移，如果用（x', y'）表示转换后的坐标，那么有：
-x' = x + scrollX - child.left - child.translationX;
+
+x' = x + scrollX - child.left - child.translationX;<br>
 y' = y + scrollY - child.top - child.translationY;
-其实在源码中上述变换过程分为两步进行：第一步不考虑平移：x' = x + scrollX - child.left; 第二步通过 TransformationInfo（内含变换矩阵） 将平移考虑进去：x' = x + scrollX - child.left - child.translationX;
-2）然后根据相对子视图的坐标判断该点是否落在子视图的范围内。判断的依据是：x' < width && y' < height && x' >= 0 && y' >= 0（height 和 width 是 子视图的宽高）。
+
+其实在源码中上述变换过程分为两步进行：
+
+1. 第一步不考虑平移：x' = x + scrollX - child.left; 
+2. 第二步通过 TransformationInfo（内含变换矩阵） 将平移考虑进去：x' = x + scrollX - child.left - child.translationX;
+
+2）然后根据相对子视图的坐标判断该点是否落在子视图的范围内。判断的依据是：x' < width && y' < height && x' >= 0 && y' >= 0（width 和 height 是子视图的宽高）。
