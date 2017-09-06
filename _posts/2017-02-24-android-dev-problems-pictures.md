@@ -5,7 +5,7 @@ subtitle:   "android 记坑"
 date:       2017-02-24
 catalog:  true
 author:     "lwenkun"
-header-img: "img/post-bg-android-dev-barriers-to-do-with-pcitures.png"
+header-img: "img/post-bg-android-dev-problems-pictures.png"
 tags:
     - Android
     - 记坑
@@ -47,7 +47,7 @@ Intent getBigPhoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 File file = createEmptyFile(); //用于输出原图
 currentFile = file;
 Uri uri = Uri.fromFile(file);//将 file 转换成 uri 格式
-getBigPhoto.putExtra(MediaStore.EXTRA_OUTPUT, file);
+getBigPhoto.putExtra(MediaStore.EXTRA_OUTPUT, uri);
 startActivityForResult(Intent, REQUEST_GET_BIG_PHOTO);
 ```
 然后图片就会自动输出到你指定的文件，如果同时你又想获取原图，你就会这样做：
@@ -72,7 +72,7 @@ protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
 ## 将图片添加至媒体库 ##
 
-我们的应用经常有将图片保存到磁盘的需求，但是保存的图片在下一次开机前媒体库是检测不到的，也就是说如果我们在图库中是看不到保存的图片的，因此就无法和其他应用共享。要将保存的图片加入系统的媒体库中需要做一点额外的工作，下面介绍实现方法：
+我们的应用经常有将图片保存到磁盘的需求，但是保存的图片在下一次开机前媒体库是检测不到的，也就是说我们在图库中是看不到刚才保存的图片的，因此也就无法和其他应用共享。要将保存的图片加入媒体库中需要做一点额外的工作，下面介绍实现方法：
 
 ### 发送广播通知媒体库扫描此图片 ###
 这一方法在安卓官方培训[教程](https://developer.android.google.cn/training/camera/photobasics.html)中有提到，它是这样做的：
@@ -120,7 +120,7 @@ public Class Client implements MediaScannerConnectionClient {
 ```
 
 ### 直接操作媒体库的数据库 ###
-第三种方法是直接将图片信息直接添加媒体库的数据库中，其实前面两种方法的底层实现也是这样的，只是屏蔽了相关细节，避免我们直接接触数据库。因为要和操作其他应用的数据数据，所以要用到 `ContentResolver`，具体实现是这样的：
+第三种方法是直接将图片信息直接添加媒体库的数据库中，其实前面两种方法的底层实现也是这样的，只是屏蔽了相关细节，避免我们直接接触数据库。因为要操作其他应用的数据库，所以要用到 `ContentResolver`，具体实现是这样的：
 
 ```java
 ContentValues values = new ContentValues();
@@ -133,8 +133,8 @@ context.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values);
 ```
 下面分别介绍其中遇到的坑：
 
-- 第一种方法在 android 4.4 以下时是可以的，但是有个问题就是通过广播将单个文件添加至媒体库比较浪费资源；在 android 4.4 会出现 `SecurityException`，原因是 android 4.4 禁止非系统应用发送系统广播，而扫描媒体文件的广播在此之类，因此运行时会崩溃；但是我在 android 5.0 至 7.1 上实测却可行，或许系统开发了此权限。
+- 第一种方法在 android 4.4 以下时是可以的，但是有个问题就是通过广播将单个文件添加至媒体库性能上不划算；在 android 4.4 会出现 `SecurityException`，原因是 android 4.4 禁止非系统应用发送系统广播，而扫描媒体文件的广播属于系统广播，因此运行时会崩溃；但是我在 android 5.0 至 7.1 上实测却可行，或许系统已经开放了此权限。
 - 第二种和第三种方法没有版本限制，是通用的方法。
-- 前两种方法有一点要注意，如果该图片存放至系统的私有文件夹（无论内部存储还是外部存储），媒体库都无法扫描到该文件（没有权限）；第三种方法则没有这种限制，因为它并不是通过扫描，而是直接操作数据库的方式添加的。
+- 前两种方法有一点要注意，如果该图片存放至应用的私有目录下（无论内部存储还是外部存储），媒体库都无法扫描到该文件（没有权限）；第三种方法则没有这种限制，因为它不是通过扫描，而是直接操作数据库的方式添加的。
 
 --- 未完待续
