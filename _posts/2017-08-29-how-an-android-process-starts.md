@@ -19,7 +19,7 @@ Android 中的应用是支持多进程的，我们只要在 AndroidManifest 中�
 ## Zygote 进程
 
 ### zygote 进程的启动
-Zygote 的中文意思是“受精卵”，它的字面意思很形象的概括了 Zygote 进程在 Android 系统中的作用——“分裂”出其他进程。Zygote 进程是所有 Android 应用的父进程，并且还是 system\_server 的父进程。由此看来，Zygote 进程在 Android 系统中发挥了举足轻重的作用。但是 Zygote 并不是 Android  系统中的第一个进程，它也是其他进程 fork 来的，这个进程就是 init 进程（init 进程其实是第二个进程，第一个进程是 swapper 换页进程）。init 进程就是用来解析并执行 init.rc 配置文件的，这个文件位于系统根目录下，这个配置文件中会导入其他的配置文件如 init.zygote32.rc 或者 init.zygote64_32.rc，具体导入哪一个由 ro.zygote 的值决定。这两个配置文件的作用就是启动 Zygote 进程。在 init.zygote32.rc 中，启动 Zygote 的语句如下：
+Zygote 的中文意思是“受精卵”，它的字面意思很形象的概括了 Zygote 进程在 Android 系统中的作用——“分裂”出其他进程。Zygote 进程是所有 Android 应用的父进程，并且还是 system\_server 的父进程。由此看来，Zygote 进程在 Android 系统中发挥了举足轻重的作用。但是 Zygote 并不是 Android  系统中的第一个进程，它也是其他进程 fork 来的，这个进程就是 init 进程，它是用户空间的第一个进程。init 进程就是用来解析并执行 init.rc 配置文件的，这个文件位于系统根目录下，这个配置文件中会导入其他的配置文件如 init.zygote32.rc 或者 init.zygote64_32.rc，具体导入哪一个由 ro.zygote 的值决定。这两个配置文件的作用就是启动 Zygote 进程。在 init.zygote32.rc 中，启动 Zygote 的语句如下：
 
 ```
 serivce zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-system-server
