@@ -24,7 +24,7 @@ tags:
 父视图有两种角色，一种是 ViewGroup , 另一种是 View。当父视图的角色是 ViewGroup 时，父视图的主要任务就是分派事件给子视图；当父视图的角色为 View 时，它和普通的 View 一样处理事件。
 父视图在两种情况下会将事件拿给自己处理：
 1）如果没有子视图能够处理事件，那么只能由父视图自己处理，此时会把事件传给 super.dispatchTouchEvent()，也就是父类方法来处理（注意是父类，不是父视图）。
-2）假如本来整个事件序列都是要传给子视图的，但是中途父视图想要拦截的话，从父视图决定拦截开始之后的所以事件都不会再交给子视图处理了，但是决定拦截时的那一次的事件会还是会交给子视图的，只不过是事件的类型是 ACTION\_CANCEL，这样做的原因我认为可能是通知一下子视图父视图拦截了你的事件，免得子视图事件被拦截了还蒙在鼓里（其实就是让开发者可以对这种情况加以处理）。从开始拦截的那一次开始，之后的所有事件都不会传给子视图了，都传入 super.dispatchOnToucnEvent() 中，即交给父视图给自己处理。
+2）假如本来整个事件序列都是要传给子视图的，但是中途父视图想要拦截的话，从父视图决定拦截开始之后的所以事件都不会再交给子视图处理了，但是决定拦截时的那一次的事件会还是会交给子视图的，只不过是事件的类型是 ACTION\_CANCEL，这样做的原因我认为可能是通知一下子视图父视图拦截了你的事件，免得子视图事件被拦截了还蒙在鼓里（其实就是让开发者可以对这种情况加以处理）。从开始拦截的那一次开始，之后的所有事件（不包括拦截的那一次）都不会传给子视图了，都传入 super.dispatchOnToucnEvent() 中，即交给父视图给自己处理。
 
 ## 规律三
 如果事件是交给自己处理，不管是子视图还是父视图，只要事件交给了自己处理，那么事件的处理流程都是一样的（这个流程在 View 中定义），下面来分析是如它们何处理事件的：
@@ -32,20 +32,23 @@ tags:
 
 ```java
 public boolean dispatchTouchEvent(MotionEvent e) {
-    return (onTouchListener != null) ? onTouchListener.onTouch(e) : onTouchEvent(e);
+    return (onTouchListener != null) ? (onTouchListener.onTouch(e) ? true : onTouchEvent(ev)) : onTouchEvent(e);
 }
 ```
 
-之前已经说到，如果当父视图接收到 ACTION\_DOWN 事件时，如果没有子视图能够处理该事件，那么后续的事件就不会给该子视图了，子视图有没有处理该事件就是根据 dispatchTouchEvent() 的返回值来看的。返回 true 表示处理，false 表示未处理。如果子视图对于 ACTION\_DOWN 事件进行了处理（dispatchTouchEvent() 返回true），那么之后的事件都会给它处理，不管子视图之后 dispatchTouchEvent() 是否返回 true，也就是说，父视图会忽略子视图接下来的 dispatchTouchEvent() 的返回值，只要事件继续发生就都传给该子视图。但是，返回 false 会导致事件从该子视图返回给上级视图，如果上级视图没有处理该事件，那么该事件就会一直上传，直至传到 Activity 中的 onTouchEvent() 方法中。
+之前已经说到，如果当父视图接收到 ACTION\_DOWN 事件时，如果没有子视图能够处理该事件，那么后续的事件就不会给该子视图了，并且该事件会交给父视图处理，即传入父视图的 super.dispatchTouchEvent() 方法中。子视图有没有处理该事件就是根据 dispatchTouchEvent() 的返回值来看的。返回 true 表示处理，false 表示未处理。如果子视图对于 ACTION\_DOWN 事件进行了处理（dispatchTouchEvent() 返回true），那么之后的事件都会给它处理，不管子视图之后 dispatchTouchEvent() 是否返回 true，也就是说，父视图会忽略子视图接下来的 dispatchTouchEvent() 的返回值，只要事件继续发生就都传给该子视图。但是，返回 false 会导致事件从该子视图返回给上级视图，上级视图也不会处理该事件，该事件会一直上传，直至传到 Activity 中的 onTouchEvent() 方法中。 
 
 ## 规律四
 关于事件的拦截：
 父视图可以在任何时候拦截本应该传递子视图的事件，拦截的依据就是 onInterceptTouchEvent() 的返回值，true 表示拦截，false 表示不拦截，父视图每次分发事件时会根据这个方法的返回值决定是否开始拦截：如果返回 false，即不拦截该事件，父视图下次分发事件时依然会调用这个方法来判断是否开始拦截事件；如果返回 true，说明该事件需要拦截，那么以后的事件，包括该事件都会直接交由父视图的 super.dispatchTouchEvent() 方法处理，而不会再传入子视图的 dispatchTouchEvent() 方法中 。但是开始拦截的那个事件还是会交给那个子视图，只是事件的类型变为了 ACTION\_CANCEL。
 
-## 规律四
+## 规律五
 事件在系统中的传递流程：ViewRootImpl => DecorView(调用的方法是 dispatchTouchEvent()) => WindowCallback(即Activity) => PhoneWindow => DecorView(调用的方法是 super.dispatchTouchEvent)
 
-## 规律五
+## 规律六
+子视图可以调用父视图的 requestDisallowInterceptTouchEvent() 方法来向父视图请求不拦截事件。但是这个方法只对除 ACTION\_DOWN 之外的其他事件有效，如果父视图选择拦截 ACTION\_DOWN，子视图即使在此之前调用此方法也是没有任何用的。并且需要注意，如果父视图在此方法调用之前就已经对事件进行了拦截，那么这个方法也同样无效。
+
+## 规律七
 父视图如何找到能够接受某个事件的子视图？
 
 假设在父视图中的事件坐标是 (x, y)
