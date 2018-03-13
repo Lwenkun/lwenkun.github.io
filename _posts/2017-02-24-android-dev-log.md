@@ -1,17 +1,17 @@
 ---
 layout:     post
-title:      "android 记坑（图片相关）"
+title:      "android 记坑"
 subtitle:   "android 记坑"
 date:       2017-02-24
 catalog:  true
 author:     "lwenkun"
-header-img: "img/post-bg-android-dev-problems-pictures.png"
+header-img: "img/post-bg-android-dev-log.png"
 tags:
     - Android
     - 记坑
 ---
 
-# android 记坑（图片相关）#
+# android 记坑#
 ## 调用相机获取图片 ##
 有两种方法获取图片，分别对应不同的需求：一种是获取缩略图，适合用来做头像或者其他比较小的 icon ；另一种是获取原图，如果有保存或查看原图的需求，就应该用这种方法。
 
@@ -136,5 +136,11 @@ context.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values);
 - 第一种方法在 android 4.4 以下时是可以的，但是有个问题就是通过广播将单个文件添加至媒体库性能上不划算；在 android 4.4 会出现 `SecurityException`，原因是 android 4.4 禁止非系统应用发送系统广播，而扫描媒体文件的广播属于系统广播，因此运行时会崩溃；但是我在 android 5.0 至 7.1 上实测却可行，或许系统已经开放了此权限。
 - 第二种和第三种方法没有版本限制，是通用的方法。
 - 前两种方法有一点要注意，如果该图片存放至应用的私有目录下（无论内部存储还是外部存储），媒体库都无法扫描到该文件（没有权限）；第三种方法则没有这种限制，因为它不是通过扫描，而是直接操作数据库的方式添加的。
+
+## 通知
+###创建通知
+- 如果你的 target sdk 大于 26 (O)，那么发布通知时应该指定通知渠道，否则通知不能发送成功。
+- 发送通知时必须指定 smallIcon，并且 smallIcon 必须是 drawable 资源 ID ，否则会导致系统的 SystemUI 崩溃。
+- 设置通知的 PendingIntent 时需要注意，如果 Intent 中有附加字段需要传递，一定记得带 FLAG_UPDATE_CURRENT 这个标志，至于为什么，可以看看这篇文章：[说说 PendingIntent 的内部机制](https://www.kancloud.cn/digest/androidframeworks/127784)。
 
 --- 未完待续
