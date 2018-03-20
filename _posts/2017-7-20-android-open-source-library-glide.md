@@ -878,7 +878,7 @@ private Stage getNextStage(Stage current) {
 ```
 该方法根据当前的 Stage 返回下一个 Stage，它的状态变迁可以用下图来表示:
 
-![Stage 状态变迁图](/img/in-post/post_android_open_source_library_glide.png)
+![Stage 状态变迁图](/img/in-post/post_android_open_source_library_glide/post-4.png)
 
 getNextGenerator() 的定义如下：
 
