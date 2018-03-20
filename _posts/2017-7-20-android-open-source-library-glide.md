@@ -1379,6 +1379,8 @@ Glide 给 isCancelled 加了 volatile 关键字，这样保证了，SingleReques
 
 ModelLoader 的子类有很多，Glide 会根据 model 的类型决定使用哪种 ModelLoader。现假设 model 为 http 协议的 url 的话，Glide 最终就会用到 HttpGlideUrlLoader 实现 Model 到 Data 的转换。
 
+[->HttpGlideUrlLoader]
+
 ```java
 public class HttpGlideUrlLoader implements ModelLoader<GlideUrl, InputStream> {
   public static final Option<Integer> TIMEOUT = Option.memory(
@@ -1425,6 +1427,8 @@ public class HttpGlideUrlLoader implements ModelLoader<GlideUrl, InputStream> {
 ```
 
 重点是 HttpUrlFethcer，它的 loadData() 方法会调用 loadDataWithRedirects()：
+
+[->HttpUrlFetcher.java]
 
 ```java
 private InputStream loadDataWithRedirects(URL url, int redirects, URL lastUrl,
