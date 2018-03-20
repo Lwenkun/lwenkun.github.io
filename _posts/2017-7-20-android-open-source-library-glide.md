@@ -1220,32 +1220,211 @@ private void decodeFromRetrievedData() {
 
 decodeFromData() 返回了 Transcoded Resource 类型的的图片资源。这个方法的内部细节即使不去分析我们也能略知一二，无非就是对 Data 使用合适的 ResourceDocoder 和 ResourceTranscoder 进行解码和转码。这个方法的最后调用了 notifyEncodeAndRelease()，这个方法最终会调用 DecodeJob.Callback#onResourceReady() 将最终的资源回传。EncodeJob 实现了该接口并且在构造 DecodeJob 时曾将自身作为参数传入，因此资源会被传入 EncodeJob#onResourceReady() 中。类似的 EncodeJob 又会通过回调将资源进一步传给 SingleRequest 中，SingleRequest 最后通过 Target#onResourceReady() 结果传给了 Target。
 
-<!--## 补充
+## 补充
  
-前面我们仅仅是沿着加载这条主线讲解了 Glide 内部原理，为了不使逻辑混乱，很多细节我们都带过了。为了加深对 Glide 的理解，我觉得还是有必要分析一下。
+前面我们仅仅是沿着加载这条主线讲解了 Glide 内部原理，为了不使逻辑混乱，很多细节我们都带过了。为了加深对 Glide 的理解，我觉得有些问题还是有必要分析一下。
 
-首先是 Engine#load() 返回的 LoadStatus
+### Glide 是如何暂停加载任务的
+我们知道 Glide 会借助 Activity 或者 Fragment 的生命周期来管理加载，那么具体它是如何再暂停和继续一个正在线程池中运行的加载任务呢？之前在分析 Engine#load() 的时候，对于它的返回值我暂时没讲，现在我们回到 Engine#load() 方法：
 
-假设 model 为 http 协议的 URI 字符串的话，最终就会用到 HttpGlideUriLoader 和 HttpUrlFetcher 这两个类：HttpGlideUriLoader 根据 model 构造出一个 LoadData 对象，该对象的 fetcher:DataFetcher 为 HttpUrlFetcher 字段；SourceGenerator#startNext() 方法中，调用 DataFetcher#loadData() 执行资源加载动作。现在来看看 HttpUrlFetcher 是如何加载资源的：
+[->Engine.java]
+
+```java
+EngineKey key = keyFactory.buildKey(model, signature, width, height, transformations,
+    resourceClass, transcodeClass, options);
+EngineResource<?> active = loadFromActiveResources(key, isMemoryCacheable);
+if (active != null) {
+  cb.onResourceReady(active, DataSource.MEMORY_CACHE);
+  ......
+  return null;
+}
+EngineResource<?> cached = loadFromCache(key, isMemoryCacheable);
+if (cached != null) {
+  cb.onResourceReady(cached, DataSource.MEMORY_CACHE);
+  ......
+  return null;
+}
+EngineJob<?> current = jobs.get(key, onlyRetrieveFromCache);
+if (current != null) {
+  current.addCallback(cb);
+  ......
+  return new LoadStatus(cb, current);
+}
+EngineJob<R> engineJob = engineJobFactory.build(key, isMemoryCacheable,
+        useUnlimitedSourceExecutorPool, useAnimationPool, onlyRetrieveFromCache);
+DecodeJob<R> decodeJob = decodeJobFactory.build(glideContext, model, key,
+        signature, width, height, resourceClass, transcodeClass, priority,
+        diskCacheStrategy, transformations, isTransformationRequired,
+        isScaleOnlyOrNoTransform, onlyRetrieveFromCache, options, engineJob);
+jobs.put(key, engineJob);
+engineJob.addCallback(cb);
+engineJob.start(decodeJob);
+......
+return new LoadStatus(cb, engineJob);
+```
+我们知道它的返回值是 LoadStatus 对象，这个类的定义如下：
+
+[->Engine.java]
+
+```java
+public static class LoadStatus {
+  private final EngineJob<?> engineJob;
+  private final ResourceCallback cb;
+  LoadStatus(ResourceCallback cb, EngineJob<?> engineJob) {
+    this.cb = cb;
+    this.engineJob = engineJob;
+  }
+  public void cancel() {
+    engineJob.removeCallback(cb);
+  }
+}
+```
+很简单，仅仅是封装了 EngineJob 和 ResourceCallback 两个对象。注意到他还有一个 cancel() 方法，这个方法的作用我想大家猜也能猜到，它是用来取消加载的。那么这个方法什么时候会调用呢？我们得回到 SingleRequest 中去寻找答案，因为 Engine#load() 是在 SingleRequest 中调用的，LoadStatus 对象肯定是要返回给 SingleRequest 的。
+
+[->SingleRequest.java]
+
+```java
+loadStatus = engine.load(...);
+```
+
+SingleRequest 将返回的 LoadStatus 保存在了 loadStatus 中，现在我们看看 SingleRequest 的 pause() 方法，这个方法会在 RequestTracker#pauseRequests() 中调用，而 RequestTracker#pauseRequests() 会被 RequestManager#onStop() 触发：
+
+[->SingleRequest.java]
 
 ```java
 @Override
-public void loadData(Priority priority, DataCallback<? super InputStream> callback) {
-  long startTime = LogTime.getLogTime();
-  final InputStream result;
-  try {
-    result = loadDataWithRedirects(glideUrl.toURL(), 0 /*redirects*/, null /*lastUrl*/,
-        glideUrl.getHeaders());
-  } catch (IOException e) {
-    ......
-    callback.onLoadFailed(e);
+public void pause() {
+  clear();
+  status = Status.PAUSED;
+}
+
+@Override
+public void clear() {
+  ......
+  if (status == Status.CLEARED) {
     return;
   }
+  cancel();
   ......
-  callback.onDataReady(result);
+  status = Status.CLEARED;
+}
+
+void cancel() {
+  assertNotCallingCallbacks();
+  stateVerifier.throwIfRecycled();
+  target.removeCallback(this);
+  status = Status.CANCELLED;
+  if (loadStatus != null) {
+    loadStatus.cancel();
+    loadStatus = null;
+  }
 }
 ```
-逻辑很清晰：调用 loadDataWithRedirects() 方法获取资源的输入流，如果这个过程发生异常，那么回调 onLoadFail() 方法；如果成功，那么回调 onDataReady() 方法将输入流传给上层。loadDataWithRedirects() 方法如下：
+
+pause() 方法最后会导致 loadStatus 的 cancel() 方法被调用，现在我们从 LoadStatus#cancel() 方法往下看，为什么 cancel() 就能将一个正在运行的加载任务给取消掉呢？LoadStatus#cancel() 只是简单调用了 EngineJob#removeCallback()：
+
+[->EngineJob.java]
+ 
+```java
+void removeCallback(ResourceCallback cb) {
+  Util.assertMainThread();
+  stateVerifier.throwIfRecycled();
+  if (hasResource || hasLoadFailed) {
+    addIgnoredCallback(cb);
+  } else {
+    cbs.remove(cb);
+    if (cbs.isEmpty()) {
+      cancel();
+    }
+  }
+}
+```
+
+这个方法的意图很明了，假设加载还未完成的时候取消了加载，那么便会执行 else 中的代码块，从回调列表中删除该 ResourceCallback，但是移除还不够，因为移除回调仅仅是让 SingleRequest 接收不到最终的结果，我们还必须停止加载任务以节省资源。接下来会继续判断回调列表是否为空，如果为空就调用 cancel() 方法，这个方法就是用来取消加载任务的。这样看来，单单取消一个加载请求并不一定会导致这个加载任务的取消，这很容易理解，因为可能还有其他的请求依赖这个任务的执行。现在看看 EngineJob#cancel() 方法：
+
+[->Engine.java]
+
+```java
+void cancel() {
+  if (hasLoadFailed || hasResource || isCancelled) {
+    return;
+  }
+  isCancelled = true;
+  decodeJob.cancel();
+  // TODO: Consider trying to remove jobs that have never been run before from executor queues.
+  // Removing jobs that have run before can break things. See #1996.
+  listener.onEngineJobCancelled(this, key);
+}
+
+public void cancel() {
+  isCancelled = true;
+  DataFetcherGenerator local = currentGenerator;
+  if (local != null) {
+    local.cancel();
+  }
+}
+```
+这个方法调用了 DecodeJob#cancel()，DecodeJob#cancel() 做了两件事，一是设置 isCancelled 为 true，二是停止当前 DataFetcherGenerator 中的任务。isCancelled 是一个标志，那么它对加载任务有什么影响呢？影响主要有两处，一个 DecodeJob#run()，另一个是 DecodeJob#runGenerators()。isCancelled==true 会导致前者发出加载失败的通知，导致后者停止运行后续的 DataFetcherGenerator 并发出加载失败的通知。加载失败的通知最终会传到 EngineJob 中，使得 EngineJob 执行资源的释放工作。
+
+有一个细节不知大家发现没有，DecodeJob 是被投入线程中运行的，也就是说 SingleRequest 和 DecodeJob 是在不同的线程中运行的。isCancelled 的改变是在 SingleRequest 的线程中进行的，而 DecodeJob 读取 isCancelled 的值是在 DecodeJob 的线程中发生的。那么这很容易发生一个问题，就是线程感知问题。那么 Glide 是如何解决这一问题的呢？我们看看 isCancelled 在 DecodeJob 中的定义：
+
+[->DecodeJob.java]
+
+```java
+private volatile boolean isCancelled;
+```
+Glide 给 isCancelled 加了 volatile 关键字，这样保证了，SingleRequest 线程对 isCancelled 的改变能够及时被 DecodeJob 线程感知。同样的，currentGenerator 在定义时也使用了这个关键字，目的都是一样的。如果大家对于 volatile 关键字还不理解，可以到网上查阅相关资料，因为一时半会儿是解释不清的，我当初为了理解这个关键字花了不少时间。
+
+### ModelLoader 的内部细节
+
+ModelLoader 的子类有很多，Glide 会根据 model 的类型决定使用哪种 ModelLoader。现假设 model 为 http 协议的 url 的话，Glide 最终就会用到 HttpGlideUrlLoader 实现 Model 到 Data 的转换。
+
+```java
+public class HttpGlideUrlLoader implements ModelLoader<GlideUrl, InputStream> {
+  public static final Option<Integer> TIMEOUT = Option.memory(
+      "com.bumptech.glide.load.model.stream.HttpGlideUrlLoader.Timeout", 2500);
+  @Nullable private final ModelCache<GlideUrl, GlideUrl> modelCache;
+  public HttpGlideUrlLoader() {
+    this(null);
+  }
+  public HttpGlideUrlLoader(@Nullable ModelCache<GlideUrl, GlideUrl> modelCache) {
+    this.modelCache = modelCache;
+  }
+  @Override
+  public LoadData<InputStream> buildLoadData(@NonNull GlideUrl model, int width, int height,
+      @NonNull Options options) {
+    GlideUrl url = model;
+    if (modelCache != null) {
+      url = modelCache.get(model, 0, 0);
+      if (url == null) {
+        modelCache.put(model, 0, 0, model);
+        url = model;
+      }
+    }
+    int timeout = options.get(TIMEOUT);
+    return new LoadData<>(url, new HttpUrlFetcher(url, timeout));
+  }
+  @Override
+  public boolean handles(@NonNull GlideUrl model) {
+    return true;
+  }
+  
+  public static class Factory implements ModelLoaderFactory<GlideUrl, InputStream> {
+    private final ModelCache<GlideUrl, GlideUrl> modelCache = new ModelCache<>(500);
+    @NonNull
+    @Override
+    public ModelLoader<GlideUrl, InputStream> build(MultiModelLoaderFactory multiFactory) {
+      return new HttpGlideUrlLoader(modelCache);
+    }
+    @Override
+    public void teardown() {
+      // Do nothing.
+    }
+  }
+}
+```
+
+重点是 HttpUrlFethcer，它的 loadData() 方法会调用 loadDataWithRedirects()：
 
 ```java
 private InputStream loadDataWithRedirects(URL url, int redirects, URL lastUrl,
@@ -1283,7 +1462,7 @@ private InputStream loadDataWithRedirects(URL url, int redirects, URL lastUrl,
   }
 }
 ```
-这里就是 Glide 和网络交互的地方，Glide 通过 HttpUrlConnection 进行网络连接，并且对可能存在的重定向情况进行了处理，最终 Glide 会将获取到的输入流解码成客户端期望的资源。-->
+这里就是 Glide 和网络交互的地方，Glide 通过 HttpUrlConnection 进行网络连接，并且对可能存在的重定向情况进行了处理，HttpUrlFetcher 最终会将获取到的 InputStream 作为 Data 返回。
 
 ## 总结
 
