@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "View 的焦点机制"
-date:       2016-12-05
+date:       2018-04-06
 author:     "lwenkun"
 catalog:  true
 header-img: "img/post-bg-android-how-apps-get-system-services.jpg"
