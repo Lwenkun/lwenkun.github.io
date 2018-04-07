@@ -1,6 +1,7 @@
 ---
 layout:     post
 title:      "View 的焦点机制"
+subtitle:  ""
 date:       2018-04-06
 author:     "lwenkun"
 catalog:  true
