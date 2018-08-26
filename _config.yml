@@ -69,7 +69,7 @@ ga_domain: lwenkun.github.io
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
 sidebar-about-description: "standing loneliness, standing out"
-sidebar-avatar: /img/avatar-lwenkun.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
+sidebar-avatar: https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640     # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
 
