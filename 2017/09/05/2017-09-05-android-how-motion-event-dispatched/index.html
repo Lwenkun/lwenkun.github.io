@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2},"changyan":{"order":-1}},"activeClass":"disqus"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Android 事件分发规律总结定义事件序列：手指接触屏幕开始到离开屏幕为止产生的事件为一次事件序列。 规律一从父视图的角度来看，无论他的子视图是 View 还是 ViewGroup，对父视图来说都是透明的。它只知道如果当 ACTION_DOWN 事件传给子视图后子视图的 dispatchTouchEvent () 返回 true，说明子视图想要处理这个事件，那么以后的事件就都交给它，不管以后子视">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android 事件分发规律总结">
+<meta property="og:url" content="https://lwenkun.github.io/2017/09/05/2017-09-05-android-how-motion-event-dispatched/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="Android 事件分发规律总结定义事件序列：手指接触屏幕开始到离开屏幕为止产生的事件为一次事件序列。 规律一从父视图的角度来看，无论他的子视图是 View 还是 ViewGroup，对父视图来说都是透明的。它只知道如果当 ACTION_DOWN 事件传给子视图后子视图的 dispatchTouchEvent () 返回 true，说明子视图想要处理这个事件，那么以后的事件就都交给它，不管以后子视">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-09-05T00:00:00.000Z">
+<meta property="article:modified_time" content="2022-01-07T19:24:27.558Z">
+<meta property="article:author" content="李文坤">
+<meta property="article:tag" content="Android">
+<meta property="article:tag" content="View">
+<meta property="article:tag" content="事件分发">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://lwenkun.github.io/2017/09/05/2017-09-05-android-how-motion-event-dispatched/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Android 事件分发规律总结 | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2017/09/05/2017-09-05-android-how-motion-event-dispatched/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="李文坤">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android 事件分发规律总结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-09-05 00:00:00" itemprop="dateCreated datePublished" datetime="2017-09-05T00:00:00+00:00">2017-09-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-01-07 19:24:27" itemprop="dateModified" datetime="2022-01-07T19:24:27+00:00">2022-01-07</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2017/09/05/2017-09-05-android-how-motion-event-dispatched/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2017/09/05/2017-09-05-android-how-motion-event-dispatched/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2017/09/05/2017-09-05-android-how-motion-event-dispatched/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/09/05/2017-09-05-android-how-motion-event-dispatched/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Android-事件分发规律总结"><a href="#Android-事件分发规律总结" class="headerlink" title="Android 事件分发规律总结"></a>Android 事件分发规律总结</h1><h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><p>事件序列：手指接触屏幕开始到离开屏幕为止产生的事件为一次事件序列。</p>
+<h2 id="规律一"><a href="#规律一" class="headerlink" title="规律一"></a>规律一</h2><p>从父视图的角度来看，无论他的子视图是 View 还是 ViewGroup，对父视图来说都是透明的。它只知道如果当 ACTION_DOWN 事件传给子视图后子视图的 dispatchTouchEvent () 返回 true，说明子视图想要处理这个事件，那么以后的事件就都交给它，不管以后子视图的 dispatchTouchEvent() 返回的是 true 还是 false; 如果 ACTION_DOWN 事件传给子视图后子视图返回的是 false，那么以后的事件再也不会传给子视图（子视图没有处理 ACTION_DOWN 就视作它不想处理该事件序列）。如果一个子视图的 dispatchTouchEvent() 在处理 ACTION_DOWN 时返回 true ，只要父视图没有拦截事件, 那么该事件序列中的后续事件都会传入该视图中，也就是传入该视图的 dispatchTouchEvent() 方法中，就算手指的触摸区域已经超出了该视图的范围。并且对于该事件序列的之后所有事件，即使该视图的 dispatchTouchEvent() 返回 false 事件也同样会继续传入该视图，唯一的影响是会将该事件原路返回，最终落到 activity.onTouchEvent() 中。因此建议如果消耗了该事件，除非有特殊情况需要处理，最好不要返回 false，否则上级视图以为下面的视图没有处理事件从而自己处理。</p>
+<span id="more"></span>
+<h2 id="规律二"><a href="#规律二" class="headerlink" title="规律二"></a>规律二</h2><p>父视图有两种角色，一种是 ViewGroup , 另一种是 View。当父视图的角色是 ViewGroup 时，父视图的主要任务就是分派事件给子视图；当父视图的角色为 View 时，它和普通的 View 一样处理事件。<br>父视图在两种情况下会将事件拿给自己处理：<br>1）如果没有子视图能够处理事件，那么只能由父视图自己处理，此时会把事件传给 super.dispatchTouchEvent()，也就是父类方法来处理（注意是父类，不是父视图）。<br>2）假如本来整个事件序列都是要传给子视图的，但是中途父视图想要拦截的话，从父视图决定拦截开始之后的所以事件都不会再交给子视图处理了，但是决定拦截时的那一次的事件会还是会交给子视图的，只不过是事件的类型是 ACTION_CANCEL，这样做的原因我认为可能是通知一下子视图父视图拦截了你的事件，免得子视图事件被拦截了还蒙在鼓里（其实就是让开发者可以对这种情况加以处理）。从开始拦截的那一次开始，之后的所有事件（不包括拦截的那一次）都不会传给子视图了，都传入 super.dispatchOnToucnEvent() 中，即交给父视图给自己处理。</p>
+<h2 id="规律三"><a href="#规律三" class="headerlink" title="规律三"></a>规律三</h2><p>如果事件是交给自己处理，不管是子视图还是父视图，只要事件交给了自己处理，那么事件的处理流程都是一样的（这个流程在 View 中定义），下面来分析是如它们何处理事件的：<br>如果视图将事件交给自己处理，那么事件首先都是从 dispatchTouchEvent() 传入的（父视图是 super.dispatchTouchEvent()），这个方法的逻辑是：如果该视图注册了OnTouchListener 监听器，并且监听器不为 null，那么就把事件交给监听器中的 onTouch() 方法。下一步就是看 onTouch() 的返回值了，如果返回值为 true，那么说明 onTouch() 消费了该事件，事件的传递到此为止， dispatchTouchEvent() 返回 true；如果返回值为 false，那么说明 onTouch() 方法并没有消耗该事件，那么进行下一步的事件分发。下一步事件会传给 onTouchEvent 方法，这个方法是最常见也最常用的方法，对于一个 自定义 View 来说，这个方法是根据事件来更改 View 的行为的主要场所。dispatchTouchEvent() 同样需要根据 onTouchEvent() 的返回值来决定下一步的事件转发流程。如果 onTouchEvent() 返回 false，那么 dispatchTouchEvent() 返回的就是 false，否则返回的就是 true。这个过程可以用如下代码表示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">dispatchTouchEvent</span><span class="params">(MotionEvent e)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (onTouchListener != <span class="keyword">null</span>) ? (onTouchListener.onTouch(e) ? <span class="keyword">true</span> : onTouchEvent(ev)) : onTouchEvent(e);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之前已经说到，如果当父视图接收到 ACTION_DOWN 事件时，如果没有子视图能够处理该事件，那么后续的事件就不会给该子视图了，并且该事件会交给父视图处理，即传入父视图的 super.dispatchTouchEvent() 方法中。子视图有没有处理该事件就是根据 dispatchTouchEvent() 的返回值来看的。返回 true 表示处理，false 表示未处理。如果子视图对于 ACTION_DOWN 事件进行了处理（dispatchTouchEvent() 返回true），那么之后的事件都会给它处理，不管子视图之后 dispatchTouchEvent() 是否返回 true，也就是说，父视图会忽略子视图接下来的 dispatchTouchEvent() 的返回值，只要事件继续发生就都传给该子视图。但是，返回 false 会导致事件从该子视图返回给上级视图，上级视图也不会处理该事件，该事件会一直上传，直至传到 Activity 中的 onTouchEvent() 方法中。 </p>
+<h2 id="规律四"><a href="#规律四" class="headerlink" title="规律四"></a>规律四</h2><p>关于事件的拦截：<br>父视图可以在任何时候拦截本应该传递子视图的事件，拦截的依据就是 onInterceptTouchEvent() 的返回值，true 表示拦截，false 表示不拦截，父视图每次分发事件时会根据这个方法的返回值决定是否开始拦截：如果返回 false，即不拦截该事件，父视图下次分发事件时依然会调用这个方法来判断是否开始拦截事件；如果返回 true，说明该事件需要拦截，那么以后的事件，包括该事件都会直接交由父视图的 super.dispatchTouchEvent() 方法处理，而不会再传入子视图的 dispatchTouchEvent() 方法中 。但是开始拦截的那个事件还是会交给那个子视图，只是事件的类型变为了 ACTION_CANCEL。</p>
+<h2 id="规律五"><a href="#规律五" class="headerlink" title="规律五"></a>规律五</h2><p>事件在系统中的传递流程：ViewRootImpl =&gt; DecorView(调用的方法是 dispatchTouchEvent()) =&gt; WindowCallback(即Activity) =&gt; PhoneWindow =&gt; DecorView(调用的方法是 super.dispatchTouchEvent)</p>
+<h2 id="规律六"><a href="#规律六" class="headerlink" title="规律六"></a>规律六</h2><p>子视图可以调用父视图的 requestDisallowInterceptTouchEvent() 方法来向父视图请求不拦截事件。但是这个方法只对除 ACTION_DOWN 之外的其他事件有效，如果父视图选择拦截 ACTION_DOWN，子视图即使在此之前调用此方法也是没有任何用的。并且需要注意，如果父视图在此方法调用之前就已经对事件进行了拦截，那么这个方法也同样无效。</p>
+<h2 id="规律七"><a href="#规律七" class="headerlink" title="规律七"></a>规律七</h2><p>父视图如何找到能够接受某个事件的子视图？</p>
+<p>假设在父视图中的事件坐标是 (x, y)</p>
+<p>1）首先要转换成相对子视图的坐标，转换的步骤如下：</p>
+<p>首先要考虑父视图是否发生滚动，其次需要考虑子视图是否发生平移，如果用（x’, y’）表示转换后的坐标，那么有：</p>
+<p>x’ = x + scrollX - child.left - child.translationX;<br><br>y’ = y + scrollY - child.top - child.translationY;</p>
+<p>其实在源码中上述变换过程分为两步进行：</p>
+<ol>
+<li>第一步不考虑平移：x’ = x + scrollX - child.left; </li>
+<li>第二步通过 TransformationInfo（内含变换矩阵） 将平移考虑进去：x’ = x + scrollX - child.left - child.translationX;</li>
+</ol>
+<p>2）然后根据相对子视图的坐标判断该点是否落在子视图的范围内。判断的依据是：x’ &lt; width &amp;&amp; y’ &lt; height &amp;&amp; x’ &gt;= 0 &amp;&amp; y’ &gt;= 0（width 和 height 是子视图的宽高）。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>lwenkun
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2017/09/05/2017-09-05-android-how-motion-event-dispatched/" title="Android 事件分发规律总结">https://lwenkun.github.io/2017/09/05/2017-09-05-android-how-motion-event-dispatched/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android/" rel="tag"># Android</a>
+              <a href="/tags/View/" rel="tag"># View</a>
+              <a href="/tags/%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91/" rel="tag"># 事件分发</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2017/08/29/2017-08-29-glide-disk-cache-strategy/" rel="prev" title="Glide 之磁盘缓存">
+      <i class="fa fa-chevron-left"></i> Glide 之磁盘缓存
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2017/11/07/2017-11-07-android-launch-mode/" rel="next" title="Android LaunchMode 总结">
+      Android LaunchMode 总结 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+            <li class="tab"><a href="#comment-changyan">changyan</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+            <div class="tab-pane changyan" id="comment-changyan">
+              
+  <div class="comments">
+    <div id="SOHUCS"></div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Android-%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E8%A7%84%E5%BE%8B%E6%80%BB%E7%BB%93"><span class="nav-number">1.</span> <span class="nav-text">Android 事件分发规律总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89"><span class="nav-number">1.0.1.</span> <span class="nav-text">定义</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%84%E5%BE%8B%E4%B8%80"><span class="nav-number">1.1.</span> <span class="nav-text">规律一</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%84%E5%BE%8B%E4%BA%8C"><span class="nav-number">1.2.</span> <span class="nav-text">规律二</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%84%E5%BE%8B%E4%B8%89"><span class="nav-number">1.3.</span> <span class="nav-text">规律三</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%84%E5%BE%8B%E5%9B%9B"><span class="nav-number">1.4.</span> <span class="nav-text">规律四</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%84%E5%BE%8B%E4%BA%94"><span class="nav-number">1.5.</span> <span class="nav-text">规律五</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%84%E5%BE%8B%E5%85%AD"><span class="nav-number">1.6.</span> <span class="nav-text">规律六</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%84%E5%BE%8B%E4%B8%83"><span class="nav-number">1.7.</span> <span class="nav-text">规律七</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李文坤"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">李文坤</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/lwenkun" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李文坤</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">217k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:18</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  <script>
+  NexT.utils.loadComments(document.querySelector('#SOHUCS'), () => {
+    var appid = 'cysUmzEyu';
+    var conf = '2459465628a99f57dac524f945fb682a';
+    var width = window.innerWidth || document.documentElement.clientWidth;
+    if (width < 960) {
+      window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="https://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>');
+    } else {
+      var loadJs=function(d,a){var c=document.getElementsByTagName("head")[0]||document.head||document.documentElement;var b=document.createElement("script");b.setAttribute("type","text/javascript");b.setAttribute("charset","UTF-8");b.setAttribute("src",d);if(typeof a==="function"){if(window.attachEvent){b.onreadystatechange=function(){var e=b.readyState;if(e==="loaded"||e==="complete"){b.onreadystatechange=null;a()}}}else{b.onload=a}}c.appendChild(b)};loadJs("https://changyan.sohu.com/upload/changyan.js",function(){window.changyan.api.config({appid:appid,conf:conf})});
+    }
+  });
+  </script>
+  <script src="https://assets.changyan.sohu.com/upload/plugins/plugins.count.js"></script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://lwenkun.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://lwenkun.github.io/2017/09/05/2017-09-05-android-how-motion-event-dispatched/";
+    this.page.identifier = "2017/09/05/2017-09-05-android-how-motion-event-dispatched/";
+    this.page.title = "Android 事件分发规律总结";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://lwenkun.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

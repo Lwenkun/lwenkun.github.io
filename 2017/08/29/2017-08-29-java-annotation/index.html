@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2},"changyan":{"order":-1}},"activeClass":"disqus"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Java 注解学习前言注解是在 JDk 5 时引入的，注解可以提供一些元数据，它们能为所注解的代码提供一些不属于程序本身的数据，从而可以对程序提供一些辅助功能。这些辅助功能包括编译时检查（错误和警告）、编译时和部署时的代码加工，以及运行时的代码处理。这三种注解分别被称为源码级别的注解（这些注解主要是在编辑代码时为程序员提供错误信息）；编译时注解：这种类型的注解一般需要配合注解处理器框架使用，可以在">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 注解学习总结">
+<meta property="og:url" content="https://lwenkun.github.io/2017/08/29/2017-08-29-java-annotation/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="Java 注解学习前言注解是在 JDk 5 时引入的，注解可以提供一些元数据，它们能为所注解的代码提供一些不属于程序本身的数据，从而可以对程序提供一些辅助功能。这些辅助功能包括编译时检查（错误和警告）、编译时和部署时的代码加工，以及运行时的代码处理。这三种注解分别被称为源码级别的注解（这些注解主要是在编辑代码时为程序员提供错误信息）；编译时注解：这种类型的注解一般需要配合注解处理器框架使用，可以在">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-08-29T00:00:00.000Z">
+<meta property="article:modified_time" content="2022-01-07T19:24:27.558Z">
+<meta property="article:author" content="李文坤">
+<meta property="article:tag" content="Java">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://lwenkun.github.io/2017/08/29/2017-08-29-java-annotation/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Java 注解学习总结 | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2017/08/29/2017-08-29-java-annotation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="李文坤">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java 注解学习总结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-08-29 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-29T00:00:00+00:00">2017-08-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-01-07 19:24:27" itemprop="dateModified" datetime="2022-01-07T19:24:27+00:00">2022-01-07</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2017/08/29/2017-08-29-java-annotation/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2017/08/29/2017-08-29-java-annotation/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2017/08/29/2017-08-29-java-annotation/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/08/29/2017-08-29-java-annotation/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Java-注解学习"><a href="#Java-注解学习" class="headerlink" title="Java 注解学习"></a>Java 注解学习</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>注解是在 JDk 5 时引入的，注解可以提供一些元数据，它们能为所注解的代码提供一些不属于程序本身的数据，从而可以对程序提供一些辅助功能。这些辅助功能包括编译时检查（错误和警告）、编译时和部署时的代码加工，以及运行时的代码处理。这三种注解分别被称为源码级别的注解（这些注解主要是在编辑代码时为程序员提供错误信息）；编译时注解：这种类型的注解一般需要配合注解处理器框架使用，可以在编译器编译项目时生成一些文件，包括 .java 源文件和 .xml 配置文件等；运行时注解：在程序运行的时候为程序提供一些功能，一般配合反射框架使用。</p>
+<span id="more"></span>
+<h2 id="注解的定义和使用"><a href="#注解的定义和使用" class="headerlink" title="注解的定义和使用"></a>注解的定义和使用</h2><p>在细讲这三种注解的区别前，先简单说下注解的定义和使用。</p>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>注解的使用想必大家很熟悉了，如最常见的 Override 注解，这种注解没有配置参数，被称为标记注解：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Overide</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span></span>&#123;&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>有参数的注解常见的有 SuppressWarnings 注解，这个注解用来关闭编译器的警告，如关闭 unchecked（未受检）警告和 deprecation（使用了已弃用方）警告：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">useDeprecatedMethod() &#123;</span><br><span class="line">    deprecatedMethod();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个注解带有配置参数，并且参数值可以有多个，表示需要关闭多种类型的警告，比如需要同时关闭 unchecked 和 deprecation 警告：@SuppressWarnings({“unchecked”, “deprecation”})。</p>
+<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><p>Java 类库中有很多预定义好的注解，如上面那两个，用户也可以自己定义注解，注解的定义是这样的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Target(ElementType.Type)</span></span><br><span class="line"><span class="meta">@Documented</span></span><br><span class="line">@<span class="meta">@Inherited</span></span><br><span class="line"><span class="meta">@Repeatable</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.SOURCE)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Person &#123;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">enum</span> <span class="title">GENDER</span> </span>&#123;MALE, FEMALE&#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">String <span class="title">name</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">id</span><span class="params">()</span> <span class="keyword">default</span> -1</span>;</span><br><span class="line">    <span class="function">GENDER <span class="title">gender</span><span class="params">()</span> <span class="keyword">default</span> GENDER.MALE</span>;</span><br><span class="line">    String[] hobit();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的例子中，定义了一个名为 Person 的注解。注意 Person 前面的 @interface，它是来声明注解用的，和 class 和 enum 是一个级别的东西，所有的注解都会自动继承 Annation 接口。我们发现这个注解定义上也有多个注解，他们被称为“元注解”，作用是注解其他的注解。那么它们含义是什么呢？首先看 Target 注解，它用来说明我们定义的注解的总用范围，它含有一个枚举类型的参数，可以取以下值：</p>
+<ul>
+<li>ElementType.ANNOTATION_TYPE 作用于注解类型上（元注解就是这种类型，而且这种类型的注解可以自注解，即自己作用在自己身上）。</li>
+<li>ElementType.CONSTRUCTOR 作用于构造器。</li>
+<li>ElementType.FIELD 作用于类属性。</li>
+<li>ElementType.LOCAL_VARIABLE 作用于局部变量。</li>
+<li>ElementType.METHOD 作用于方法。</li>
+<li>ElementType.PACKAGE 作用于包的声明。</li>
+<li>ElementType.PARAMETER 作用于方法参数。</li>
+<li>ElementType.TYPE 作用于接口，类和枚举。</li>
+</ul>
+<p>@Documented 注解用来说明 javadoc 工具是否为该注解生成文档，因为注解默认是不生成文档的。@Inherited 注解表示的是该注解可从父类传给子类，比如用 Person 去注解一个类，那么这个类的子类即使没有 Person 所注解，但是由于 Person 的可继承性，子类也同样被隐式的被 Person 注解了。@Repeatable 表示该注解可以重复注解在某一个元素上，这个注解是在 java8 引入的。@Retention 注解用来说明该注解的级别，是源码级别的（编辑时注解），还是类级别的（编译时注解，这种注解会被编译器保留，但会被 JVM 忽略），运行时级别的（被 JVM 保留，并且在运行时被使用）。</p>
+<p>@Person 含有四个配置参数，它们的声明看起来像是方法。需要注意的是注解的配置参数的类型只可以是基本数据类型、枚举、Class、String 和以上类型的数组类型。当注解只含有一个配置参数时，一般参数名直接用 “value”，因为注解本身的名称就很好的解释了 value 的意义。现在看看如何用 @Person 注解：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Person(name=&quot;Chance&quot;, id=16, gender=GENDER.MALE&quot;, hobit=&#123;&quot;music&quot;, &quot;movie&quot;, &quot;game&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Chance</span> </span>&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>相信大家一目了然，就不细讲了。需要说明的是，这里使用名值对的形式表示注解。如果只有一个配置参数，那么写配置参数的时候可以将参数名称省略掉，就像 @SupperssWarnings 一样。并且要注意的是，注解的某些参数的配置参数后可以通过 default 关键字指定默认值，如果没有指定，那么使用该注解时一定要填写该参数值，否则编译器会报错。也就是说，没有默认值的参数是必填项。</p>
+<h2 id="源码级别的注解"><a href="#源码级别的注解" class="headerlink" title="源码级别的注解"></a>源码级别的注解</h2><p>之所以称之为源码级别的注解，就是注解信息仅仅会在源码中保留，不会编译到 class 文件中。这和它的作用相符：因为它仅仅是为编辑器提供信息而已。这种注解常见的如 @Override、@SuppressWarnings、@Deprecated 等。这种注解比较简单，就不细说了。</p>
+<h2 id="编译时注解"><a href="#编译时注解" class="headerlink" title="编译时注解"></a>编译时注解</h2><p>这种类型的注解要配合注解处理器来使用，什么是注解处理器？为什么要注解处理器？注解处理器顾名思义就是对注解进行处理的工具，为什么需要注解处理器呢？前面说了，注解其实对被注解的代码不会有任何影响，也就是说它们不会被项目中的代码识别，那么要想它们发挥作用，必定是需要能够识别它们的东西。编辑时注解器靠的就是编辑器来识别，而编译时处理器靠的便是注解处理器了，下面要说的运行时注解靠的就是反射框架了。如何定义注解处理器呢？</p>
+<h2 id="运行时注解"><a href="#运行时注解" class="headerlink" title="运行时注解"></a>运行时注解</h2><p>运行时注解可以反射框架来实现，比如对于上面那个例子，假设 @Person 注解是运行时注解，那么可以定义一个注解的运行时解析类在运行时获取注解的信息：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AnnotationUtil</span> </span>&#123;</span><br><span class="line">   <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">inject</span><span class="params">(Object target)</span> </span>&#123;</span><br><span class="line">       Class cls = target.getClass();</span><br><span class="line">       <span class="keyword">if</span> (cls.isAnnotationPresent(Person.class)) &#123;</span><br><span class="line">       	Person personAnnotation = cls.getAnnotation(Person.class);</span><br><span class="line">       	System.out.print(personAnnotation.toString());</span><br><span class="line">        <span class="comment">//  System.out.print(personAnnotation.gender());</span></span><br><span class="line">        <span class="comment">//  System.out.print(personAnnotation.hobit());</span></span><br><span class="line">        <span class="comment">//  System.out.print(personAnnotation.id());</span></span><br><span class="line">        <span class="comment">//  System.out.print(personAnnotation.name());</span></span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后这样定义 Chance：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Person(name=&quot;Chance&quot;, id=16, gender=GENDER.MALE&quot;, hobit=&#123;&quot;music&quot;, &quot;movie&quot;, &quot;game&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Chance</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Chanece</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		AnnotationUtil.inject(<span class="keyword">this</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Chance c = <span class="keyword">new</span> Chance();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后打印出来的结果是这样的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@com</span>.company.MyAnnotation(gender=MALE, id=<span class="number">16</span>, name=Chance, hobit=[music, movie, game])</span><br></pre></td></tr></table></figure>
+<p>通过反射就可以拿到注解信息。如果注解作用在字段或者方法上，也是通过同样的方法获取注解的信息的，这里就不再说了。拿到注解信息后想干什么那就看自己的喜好了，很多第三方框架就是通过这种方法来获取注解信息然后实现一些看似很炫酷的功能。比如 Retrofit，刚接触的时候很疑惑，为什么在接口方法上使用注解就可以 “实现” 该接口呢？其实它就是在运行时获取注解信息然后根据这些信息通过动态代理的方式实现该接口。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>lwenkun
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2017/08/29/2017-08-29-java-annotation/" title="Java 注解学习总结">https://lwenkun.github.io/2017/08/29/2017-08-29-java-annotation/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2017/07/20/2017-7-20-android-open-source-library-glide/" rel="prev" title="Glide 源码探究">
+      <i class="fa fa-chevron-left"></i> Glide 源码探究
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2017/08/29/2017-08-29-how-an-android-process-starts/" rel="next" title="Android 进程启动原理">
+      Android 进程启动原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+            <li class="tab"><a href="#comment-changyan">changyan</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+            <div class="tab-pane changyan" id="comment-changyan">
+              
+  <div class="comments">
+    <div id="SOHUCS"></div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Java-%E6%B3%A8%E8%A7%A3%E5%AD%A6%E4%B9%A0"><span class="nav-number">1.</span> <span class="nav-text">Java 注解学习</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B3%A8%E8%A7%A3%E7%9A%84%E5%AE%9A%E4%B9%89%E5%92%8C%E4%BD%BF%E7%94%A8"><span class="nav-number">1.2.</span> <span class="nav-text">注解的定义和使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8"><span class="nav-number">1.2.1.</span> <span class="nav-text">使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89"><span class="nav-number">1.2.2.</span> <span class="nav-text">定义</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E7%BA%A7%E5%88%AB%E7%9A%84%E6%B3%A8%E8%A7%A3"><span class="nav-number">1.3.</span> <span class="nav-text">源码级别的注解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E6%97%B6%E6%B3%A8%E8%A7%A3"><span class="nav-number">1.4.</span> <span class="nav-text">编译时注解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E8%A7%A3"><span class="nav-number">1.5.</span> <span class="nav-text">运行时注解</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李文坤"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">李文坤</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/lwenkun" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李文坤</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">217k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:18</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  <script>
+  NexT.utils.loadComments(document.querySelector('#SOHUCS'), () => {
+    var appid = 'cysUmzEyu';
+    var conf = '2459465628a99f57dac524f945fb682a';
+    var width = window.innerWidth || document.documentElement.clientWidth;
+    if (width < 960) {
+      window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="https://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>');
+    } else {
+      var loadJs=function(d,a){var c=document.getElementsByTagName("head")[0]||document.head||document.documentElement;var b=document.createElement("script");b.setAttribute("type","text/javascript");b.setAttribute("charset","UTF-8");b.setAttribute("src",d);if(typeof a==="function"){if(window.attachEvent){b.onreadystatechange=function(){var e=b.readyState;if(e==="loaded"||e==="complete"){b.onreadystatechange=null;a()}}}else{b.onload=a}}c.appendChild(b)};loadJs("https://changyan.sohu.com/upload/changyan.js",function(){window.changyan.api.config({appid:appid,conf:conf})});
+    }
+  });
+  </script>
+  <script src="https://assets.changyan.sohu.com/upload/plugins/plugins.count.js"></script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://lwenkun.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://lwenkun.github.io/2017/08/29/2017-08-29-java-annotation/";
+    this.page.identifier = "2017/08/29/2017-08-29-java-annotation/";
+    this.page.title = "Java 注解学习总结";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://lwenkun.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

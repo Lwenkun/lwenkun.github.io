@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2},"changyan":{"order":-1}},"activeClass":"disqus"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="安卓动态加载入门这几周为了理解安卓动态加载技术算是花了不少时间，遇到很多坑，当然也学到了不少。一开始是学习 java 虚拟机，了解类文件格式，然后又在各种博客网站上看 dalvik 虚拟机和 dex 文件格式，了解安卓的类加载机制，到后来又去了解 art 虚拟机和 oat 文件格式。虽然有些地方没搞太清楚，学习的不够深入，但总算把动态加载的大概原理弄清了，也算是为之后更深入学习安卓动态加载以及热修">
+<meta property="og:type" content="article">
+<meta property="og:title" content="安卓动态加载入门">
+<meta property="og:url" content="https://lwenkun.github.io/2016/11/11/2016-11-11-android-load-class-dynamically/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="安卓动态加载入门这几周为了理解安卓动态加载技术算是花了不少时间，遇到很多坑，当然也学到了不少。一开始是学习 java 虚拟机，了解类文件格式，然后又在各种博客网站上看 dalvik 虚拟机和 dex 文件格式，了解安卓的类加载机制，到后来又去了解 art 虚拟机和 oat 文件格式。虽然有些地方没搞太清楚，学习的不够深入，但总算把动态加载的大概原理弄清了，也算是为之后更深入学习安卓动态加载以及热修">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_android_load_class_dynamically/android-load-class-dynamically-1.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_android_load_class_dynamically/android-load-class-dynamically-2.png">
+<meta property="article:published_time" content="2016-11-11T00:00:00.000Z">
+<meta property="article:modified_time" content="2022-01-07T19:24:27.558Z">
+<meta property="article:author" content="李文坤">
+<meta property="article:tag" content="Android">
+<meta property="article:tag" content="动态加载">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lwenkun.github.io/img/in-post/post_android_load_class_dynamically/android-load-class-dynamically-1.png">
+
+<link rel="canonical" href="https://lwenkun.github.io/2016/11/11/2016-11-11-android-load-class-dynamically/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>安卓动态加载入门 | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2016/11/11/2016-11-11-android-load-class-dynamically/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="李文坤">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          安卓动态加载入门
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2016-11-11 00:00:00" itemprop="dateCreated datePublished" datetime="2016-11-11T00:00:00+00:00">2016-11-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-01-07 19:24:27" itemprop="dateModified" datetime="2022-01-07T19:24:27+00:00">2022-01-07</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2016/11/11/2016-11-11-android-load-class-dynamically/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2016/11/11/2016-11-11-android-load-class-dynamically/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2016/11/11/2016-11-11-android-load-class-dynamically/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/11/11/2016-11-11-android-load-class-dynamically/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>17k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>15 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="安卓动态加载入门"><a href="#安卓动态加载入门" class="headerlink" title="安卓动态加载入门"></a>安卓动态加载入门</h1><p>这几周为了理解安卓动态加载技术算是花了不少时间，遇到很多坑，当然也学到了不少。一开始是学习 java 虚拟机，了解类文件格式，然后又在各种博客网站上看 dalvik 虚拟机和 dex 文件格式，了解安卓的类加载机制，到后来又去了解 art 虚拟机和 oat 文件格式。虽然有些地方没搞太清楚，学习的不够深入，但总算把动态加载的大概原理弄清了，也算是为之后更深入学习安卓动态加载以及热修复、热更新等技术打下基础吧。</p>
+<span id="more"></span>
+
+<h2 id="什么是动态加载技术"><a href="#什么是动态加载技术" class="headerlink" title="什么是动态加载技术"></a>什么是动态加载技术</h2><p>这个在网上没有看到严格的定义，不过就我个人的理解，动态加载代码就是通过在运行时加载外部代码（磁盘，网络等）改变程序行为的技术。关于安卓动态加载技术的文章网上有很多，但很多都是基于较低安卓版本的，对于较高版本有些地方不一定适用。我这里准备基于 andriod M 来和大家分享一下安卓的动态加载技术，让大家对这项技术有一个初步的了解。</p>
+<h2 id="动态加载技术详解"><a href="#动态加载技术详解" class="headerlink" title="动态加载技术详解"></a>动态加载技术详解</h2><p>不管是 java 应用还是安卓应用，动态加载技术的核心都是类加载机制，所以我们有必要先了解下安卓的类加载机制，而安卓的类加载机制沿袭了普通的 java 应用的类加载机制，因此我们先看看 java 虚拟机（JVM）是怎么加载类的。</p>
+<h3 id="JVM-类加载机制"><a href="#JVM-类加载机制" class="headerlink" title="JVM 类加载机制"></a>JVM 类加载机制</h3><p>JVM 的类加载机制是双亲委派模型，但是这个“双亲”感觉有点误导，因此我更喜欢叫它委派式模型。这里不对 JVM 委派式的类加载机制做过多分析，贴上一张图供大家去理解：</p>
+<p><img src="/img/in-post/post_android_load_class_dynamically/android-load-class-dynamically-1.png"></p>
+<p>结合这张图说明几点：</p>
+<ul>
+<li><code>BootStrapClassLoader</code> 是顶级的类加载器，它是唯一一个不继承自 <code>ClassLoader</code> 的类加载器，它高度集成于 JVM，是 <code>ExtensionClassLoader</code> 的父加载器，它的类加载路径是 <code>JDK\jre\lib</code> 和 用户指定的虚拟机参数 <code>-Xbootclasspath</code> 的值。</li>
+<li><code>ExtensionClassLoader</code> 是 <code>BootStrapClassLoader</code> 的子加载器，同时是 <code>SystemClassLoader</code> （有的地方称 <code>AppClassLoader</code>）的父加载器，它的类加载路径是 <code>JDK\jre\lib\ext</code> 和系统属性 <code>java.ext.dirs</code> 的值。</li>
+<li><code>SystemClassLoader</code> 是 <code>ExtensionClassLoader</code> 的子加载器，同时是我们的应用程序的类加载器，我们在应用程序中编写的类一般情况下（如果没有用到动态加载技术的话）都是通过这个类加载加载的。它的类加载路径是环境变量 <code>CLASSPATH</code> 的值或者用户通过命令行可选项 <code>-cp (-classpath)</code> 指定的值。</li>
+<li>类加载器由于父子关系形成树形结构，开发人员可以开发自己的类加载器从而实现动态加载功能，但必须给这个类加载器指定树上的一个节点作为它的父加载器。</li>
+<li>因为类加载器是通过包名和类名（或者说类的全限定名），所以由于委派式加载机制的存在，全限定名相同的类不会在有 <strong>祖先—子孙</strong> 关系的类加载器上分别加载一次，不管这两个类的实现是否一样。</li>
+<li>不同的类加载器加载的类一定是不同的类，即使它们的全限定名一样。如果全限定名一样，那么根据上一条，这两个类加载器一定没有 <strong>祖先-子孙</strong> 的关系。这样来看，可以通过自定义类加载器使得相同全限定名但实现不同的类存在于同一 JVM 中，也就是说，类加载器相当于给类在包名之上又加了个命名空间。</li>
+<li>如果两个相同全限定名的类由两个非 <strong>祖先-子孙</strong> 关系的类加载器加载，这两个类之间通过 <code>instanceof</code> 和 <code>equals()</code> 等进行比较时总是返回 <code>false</code>。</li>
+</ul>
+<p>我们知道，安卓应用和普通的 java 应用不同，它们运行于 Dalvik 虚拟机。JVM 是基于栈的虚拟机，而 Dalvik 是基于寄存器的虚拟机。因此，java 虚拟机具有更大的指令集，而 Dalvik 虚拟机的指令更长。除此之外，考虑到 Dalvik 虚拟机运行于移动设备，内存空间和 CPU 执行效率有限，因此采用 dex 作为储存类字节码信息的文件。当 java 程序编译成 class 后，编译器会使用 dx 工具将所有的class 文件整合到一个 dex 文件，目的是使其中各个类能够共享数据，在一定程度上降低了冗余，同时也是文件结构更加紧凑。虽然这两种虚拟机有诸多不同，但是 Dalvik 继承了 JVM 的委派式的类加载机制，因此上面的<strong>部分</strong>（主要是后面四条）结论对于安卓来说也是同样适用的。</p>
+<p>因为安卓的类加载机制也是委派式的，所以如果你知道 JVM 的类加载机制，那么通过类比学习安卓的类加载机制就很容易了。本来准备放张图来对比说明安卓的类加载模型的，但是想想我们还是有必要先了解安卓中两个重要的类加载器以及内部的细节：<code>DexClassLoader</code> 和 <code>PathClassLoader</code>。</p>
+<h3 id="DexClassLoader-amp-PathClassLoader"><a href="#DexClassLoader-amp-PathClassLoader" class="headerlink" title="DexClassLoader &amp; PathClassLoader"></a>DexClassLoader &amp; PathClassLoader</h3><p>先看看这两个类加载器的定义（点击超链接可查看注释）：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://androidxref.com/7.0.0_r1/xref/libcore/dalvik/src/main/java/dalvik/system/DexClassLoader.java">DexCloassLoader</a></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> dalvik.system;</span><br><span class="line"><span class="keyword">import</span> java.io.File;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DexClassLoader</span> <span class="keyword">extends</span> <span class="title">BaseDexClassLoader</span> </span>&#123;</span><br><span class="line">   </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DexClassLoader</span><span class="params">(String dexPath, String optimizedDirectory, String libraryPath, ClassLoader parent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(dexPath, <span class="keyword">new</span> File(optimizedDirectory), libraryPath, parent);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><a target="_blank" rel="noopener" href="http://androidxref.com/7.0.0_r1/xref/libcore/dalvik/src/main/java/dalvik/system/PathClassLoader.java">PathClassLoader</a></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> dalvik.system;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PathClassLoader</span> <span class="keyword">extends</span> <span class="title">BaseDexClassLoader</span> </span>&#123;</span><br><span class="line">   </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PathClassLoader</span><span class="params">(String dexPath, ClassLoader parent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(dexPath, <span class="keyword">null</span>, <span class="keyword">null</span>, parent);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PathClassLoader</span><span class="params">(String dexPath, String libraryPath, ClassLoader parent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(dexPath, <span class="keyword">null</span>, libraryPath, parent);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，这两个类加载器都是继承自 <a target="_blank" rel="noopener" href="http://androidxref.com/7.0.0_r1/xref/libcore/dalvik/src/main/java/dalvik/system/BaseDexClassLoader.java">BaseDexClassLoader</a>，只是分别实现了自己的构造方法。那么我们自然对这个 BaseDexClassLoader 很感兴趣，看看它的构造方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">BaseDexClassLoader</span><span class="params">(String dexPath, File optimizedDirectory, String librarySearchPath, ClassLoader parent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(parent);</span><br><span class="line">        <span class="keyword">this</span>.pathList = <span class="keyword">new</span> DexPathList(<span class="keyword">this</span>, dexPath, librarySearchPath, optimizedDirectory);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>说下这个构造方法的几个参数：</p>
+<ul>
+<li>第一个参数指的是我们要加载的 dex 文件的路径，它有可能是多个 dex 路径，取决于我们要加载的 dex 文件的个数，多个路径之间用 <code>:</code> 隔开。</li>
+<li>第二个参数指的是优化后的 dex 存放目录。实际上，dex 其实还并不能被虚拟机直接加载，它需要系统的优化工具优化后才能真正被利用。优化之后的 dex 文件我们把它叫做 odex （optimized dex，说明这是被优化后的 dex）文件。其实从 class 到 dex 也算是经历了一次优化，这种优化的是机器无关的优化，也就是说不管将来运行在什么机器上，这种优化都是遵循固定模式的，因此这种优化发生在 apk 编译。而从 dex 文件到 odex 文件，是机器相关的优化，它使得 odex 适配于特定的硬件环境，不同机器这一步的优化可能有所不同，所以这一步需要在应用安装等运行时期由机器来完成。需要注意的是，在较早版本的系统中，这个目录可以指定为外部存储中的目录，较新版本的系统为了安全只允许其为应用程序私有存储空间（<code>/data/data/apk-package-name/</code>）下的目录，一般我们可以通过 <code>Context#getDir(String dirName)</code> 得到这个目录。</li>
+<li>第三个参数的意义是库文件的的搜索路径，一般来说是 <code>.so</code> 库文件的路径，也可以指明多个路径。</li>
+<li>第四个参数就是要传入的父加载器，一般情况我们可以通过 <code>Context#getClassLoader()</code> 得到应用程序的类加载器然后把它传进去。</li>
+</ul>
+<p>这个构造函数的意义很简单，它做了两件事：连接了父加载器；构造了一个 <a target="_blank" rel="noopener" href="http://androidxref.com/7.0.0_r1/xref/libcore/dalvik/src/main/java/dalvik/system/DexPathList.java">DexPathList</a> 实例保存在 <code>pathList</code> 中。这个 <code>pathList</code> 现在我们还不知道它是何方神圣，但是我们通过类名隐约的感觉到它保存了 Dalvik 虚拟机要加载的 dex 文件的路径，实际情况如何呢？我们看看这个类：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">DexPathList</span><span class="params">(ClassLoader definingContext, String dexPath,</span></span></span><br><span class="line"><span class="params"><span class="function">            String librarySearchPath, File optimizedDirectory)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (definingContext == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException(<span class="string">&quot;definingContext == null&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (dexPath == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException(<span class="string">&quot;dexPath == null&quot;</span>);</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">if</span> (optimizedDirectory != <span class="keyword">null</span>) &#123;</span><br><span class="line">           <span class="keyword">if</span> (!optimizedDirectory.exists())  &#123;</span><br><span class="line">               <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">                       <span class="string">&quot;optimizedDirectory doesn&#x27;t exist: &quot;</span></span><br><span class="line">                       + optimizedDirectory);</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (!(optimizedDirectory.canRead()</span><br><span class="line">                           &amp;&amp; optimizedDirectory.canWrite())) &#123;</span><br><span class="line">               <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">                       <span class="string">&quot;optimizedDirectory not readable/writable: &quot;</span></span><br><span class="line">                       + optimizedDirectory);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">this</span>.definingContext = definingContext;</span><br><span class="line"></span><br><span class="line">       ArrayList&lt;IOException&gt; suppressedExceptions = <span class="keyword">new</span> ArrayList&lt;IOException&gt;();</span><br><span class="line">       <span class="comment">// save dexPath for BaseDexClassLoader</span></span><br><span class="line">       <span class="keyword">this</span>.dexElements = makeDexElements(splitDexPath(dexPath), optimizedDirectory,</span><br><span class="line">                              suppressedExceptions, definingContext);</span><br><span class="line"></span><br><span class="line">       <span class="comment">// Native libraries may exist in both the system and</span></span><br><span class="line">       <span class="comment">// application library paths, and we use this search order:</span></span><br><span class="line">       <span class="comment">//</span></span><br><span class="line">       <span class="comment">//   1. This class loader&#x27;s library path for application libraries (librarySearchPath):</span></span><br><span class="line">       <span class="comment">//   1.1. Native library directories</span></span><br><span class="line">       <span class="comment">//   1.2. Path to libraries in apk-files</span></span><br><span class="line">       <span class="comment">//   2. The VM&#x27;s library path from the system property for system libraries</span></span><br><span class="line">       <span class="comment">//      also known as java.library.path</span></span><br><span class="line">       <span class="comment">//</span></span><br><span class="line">       <span class="comment">// This order was reversed prior to Gingerbread; see http://b/2933456.</span></span><br><span class="line">       <span class="keyword">this</span>.nativeLibraryDirectories = splitPaths(librarySearchPath, <span class="keyword">false</span>);</span><br><span class="line">       <span class="keyword">this</span>.systemNativeLibraryDirectories =</span><br><span class="line">               splitPaths(System.getProperty(<span class="string">&quot;java.library.path&quot;</span>), <span class="keyword">true</span>);</span><br><span class="line">       List&lt;File&gt; allNativeLibraryDirectories = <span class="keyword">new</span> ArrayList&lt;&gt;(nativeLibraryDirectories);</span><br><span class="line">       allNativeLibraryDirectories.addAll(systemNativeLibraryDirectories);</span><br><span class="line"></span><br><span class="line">       <span class="keyword">this</span>.nativeLibraryPathElements = makePathElements(allNativeLibraryDirectories,</span><br><span class="line">                                                         suppressedExceptions,</span><br><span class="line">                                                         definingContext);</span><br><span class="line"></span><br><span class="line">       <span class="keyword">if</span> (suppressedExceptions.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">           <span class="keyword">this</span>.dexElementsSuppressedExceptions =</span><br><span class="line">               suppressedExceptions.toArray(<span class="keyword">new</span> IOException[suppressedExceptions.size()]);</span><br><span class="line">       &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">           dexElementsSuppressedExceptions = <span class="keyword">null</span>;</span><br><span class="line">       &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个构造方法也很简单，这里我们主要看这几行代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.dexElements = makeDexElements(splitDexPath(dexPath), optimizedDirectory,</span><br><span class="line">                              suppressedExceptions, definingContext);</span><br><span class="line">...</span><br><span class="line"><span class="keyword">this</span>.nativeLibraryDirectories = splitPaths(librarySearchPath, <span class="keyword">false</span>);</span><br><span class="line"><span class="keyword">this</span>.systemNativeLibraryDirectories = </span><br><span class="line">                splitPaths(System.getProperty(<span class="string">&quot;java.library.path&quot;</span>), <span class="keyword">true</span>);</span><br><span class="line">List&lt;File&gt; allNativeLibraryDirectories = <span class="keyword">new</span> ArrayList&lt;&gt;(nativeLibraryDirectories);</span><br><span class="line">allNativeLibraryDirectories.addAll(systemNativeLibraryDirectories);</span><br><span class="line"></span><br><span class="line"><span class="keyword">this</span>.nativeLibraryPathElements = makePathElements(allNativeLibraryDirectories,</span><br><span class="line">                                          suppressedExceptions,</span><br><span class="line">                                          definingContext);</span><br></pre></td></tr></table></figure>
+
+<p>这几行代码做的事也很清晰明了，就是给两个字段赋值。一个是 <code>dexElements</code>，另一个是 <code>nativeLibraryPathElements</code>。我们来看看这两个字段是怎么得到的：</p>
+<ul>
+<li><code>dexElements</code> 是通过 <code>makeDexElements()</code> 方法得到的，我们主要关注这个方法的前两个参数。第二个参数前面已经说了，是 dex 文件优化后的存放目录。第一个参数是通过 <code>splitDexPath()</code> 得到的，这个方法方法最终会调用 <code>splitPaths()</code>，所以我们看看 <code>splitPaths()</code> 是怎样的：</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> List&lt;File&gt; <span class="title">splitPaths</span><span class="params">(String searchPath, <span class="keyword">boolean</span> directoriesOnly)</span> </span>&#123;</span><br><span class="line">       List&lt;File&gt; result = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">       <span class="keyword">if</span> (searchPath != <span class="keyword">null</span>) &#123;</span><br><span class="line">           <span class="keyword">for</span> (String path : searchPath.split(File.pathSeparator)) &#123;</span><br><span class="line">               <span class="keyword">if</span> (directoriesOnly) &#123;</span><br><span class="line">                   <span class="keyword">try</span> &#123;</span><br><span class="line">                       StructStat sb = Libcore.os.stat(path);</span><br><span class="line">                       <span class="keyword">if</span> (!S_ISDIR(sb.st_mode)) &#123;</span><br><span class="line">                           <span class="keyword">continue</span>;</span><br><span class="line">                       &#125;</span><br><span class="line">                   &#125; <span class="keyword">catch</span> (ErrnoException ignored) &#123;</span><br><span class="line">                       <span class="keyword">continue</span>;</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;</span><br><span class="line">               result.add(<span class="keyword">new</span> File(path));</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法做的事正如其名字所表达的，就是把用 <code>:</code> 分隔的路径分割后保存为 File 类型的列表返回。现在看看 <code>makeDexElements()</code> 这个方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Element[] makeDexElements(List&lt;File&gt; files, File optimizedDirectory,</span><br><span class="line">                                            List&lt;IOException&gt; suppressedExceptions,</span><br><span class="line">                                            ClassLoader loader) &#123;</span><br><span class="line">     <span class="keyword">return</span> makeElements(files, optimizedDirectory, suppressedExceptions, <span class="keyword">false</span>, loader);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>就是利用已有参数简单调用了 <code>makeElements()</code>，其中，<code>ignoreDexFiles</code> 传入的是 <code>false</code>，<code>makeElements()</code> 的实现： </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Element[] makeElements(List&lt;File&gt; files, File optimizedDirectory,</span><br><span class="line">                                          List&lt;IOException&gt; suppressedExceptions,</span><br><span class="line">                                          <span class="keyword">boolean</span> ignoreDexFiles,</span><br><span class="line">                                         ClassLoader loader) &#123;</span><br><span class="line">       Element[] elements = <span class="keyword">new</span> Element[files.size()];</span><br><span class="line">       <span class="keyword">int</span> elementsPos = <span class="number">0</span>;</span><br><span class="line">       <span class="comment">/*</span></span><br><span class="line"><span class="comment">        * Open all files and load the (direct or contained) dex files</span></span><br><span class="line"><span class="comment">        * up front.</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">       <span class="keyword">for</span> (File file : files) &#123;</span><br><span class="line">           File zip = <span class="keyword">null</span>;</span><br><span class="line">           File dir = <span class="keyword">new</span> File(<span class="string">&quot;&quot;</span>);</span><br><span class="line">           DexFile dex = <span class="keyword">null</span>;</span><br><span class="line">           String path = file.getPath();</span><br><span class="line">           String name = file.getName();</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (path.contains(zipSeparator)) &#123;</span><br><span class="line">               String split[] = path.split(zipSeparator, <span class="number">2</span>);</span><br><span class="line">               zip = <span class="keyword">new</span> File(split[<span class="number">0</span>]);</span><br><span class="line">               dir = <span class="keyword">new</span> File(split[<span class="number">1</span>]);</span><br><span class="line">           &#125; <span class="keyword">else</span> <span class="keyword">if</span> (file.isDirectory()) &#123;</span><br><span class="line">               <span class="comment">// We support directories for looking up resources and native libraries.</span></span><br><span class="line">               <span class="comment">// Looking up resources in directories is useful for running libcore tests.</span></span><br><span class="line">               elements[elementsPos++] = <span class="keyword">new</span> Element(file, <span class="keyword">true</span>, <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line">           &#125; <span class="keyword">else</span> <span class="keyword">if</span> (file.isFile()) &#123;</span><br><span class="line">               <span class="keyword">if</span> (!ignoreDexFiles &amp;&amp; name.endsWith(DEX_SUFFIX)) &#123;</span><br><span class="line">                   <span class="comment">// Raw dex file (not inside a zip/jar).</span></span><br><span class="line">                   <span class="keyword">try</span> &#123;</span><br><span class="line">                       dex = loadDexFile(file, optimizedDirectory, loader, elements);</span><br><span class="line">                   &#125; <span class="keyword">catch</span> (IOException suppressed) &#123;</span><br><span class="line">                       System.logE(<span class="string">&quot;Unable to load dex file: &quot;</span> + file, suppressed);</span><br><span class="line">                       suppressedExceptions.add(suppressed);</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                   zip = file;</span><br><span class="line"></span><br><span class="line">                   <span class="keyword">if</span> (!ignoreDexFiles) &#123;</span><br><span class="line">                       <span class="keyword">try</span> &#123;</span><br><span class="line">                           dex = loadDexFile(file, optimizedDirectory, loader, elements);</span><br><span class="line">                       &#125; <span class="keyword">catch</span> (IOException suppressed) &#123;</span><br><span class="line">                           <span class="comment">/*</span></span><br><span class="line"><span class="comment">                            * IOException might get thrown &quot;legitimately&quot; by the DexFile constructor if</span></span><br><span class="line"><span class="comment">                            * the zip file turns out to be resource-only (that is, no classes.dex file</span></span><br><span class="line"><span class="comment">                            * in it).</span></span><br><span class="line"><span class="comment">                            * Let dex == null and hang on to the exception to add to the tea-leaves for</span></span><br><span class="line"><span class="comment">                            * when findClass returns null.</span></span><br><span class="line"><span class="comment">                            */</span></span><br><span class="line">                           suppressedExceptions.add(suppressed);</span><br><span class="line">                       &#125;</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">               System.logW(<span class="string">&quot;ClassLoader referenced unknown path: &quot;</span> + file);</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> ((zip != <span class="keyword">null</span>) || (dex != <span class="keyword">null</span>)) &#123;</span><br><span class="line">               elements[elementsPos++] = <span class="keyword">new</span> Element(dir, <span class="keyword">false</span>, zip, dex);</span><br><span class="line">           &#125;</span><br><span class="line">        &#125;</span><br><span class="line">       <span class="keyword">if</span> (elementsPos != elements.length) &#123;</span><br><span class="line">           elements = Arrays.copyOf(elements, elementsPos);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">return</span> elements;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法的名字也很好的说明了它要做的事，就是装配 <code>Element</code> 数组。装配 <code>Element</code> 数组的工作主要在 <code>for</code> 循环中，除了异常情况，它的每一次循环都构造了一个 <code>Element</code>。<code>Element</code> 是什么东西？你可以大概的把它理解为一个实体类。忽略异常情况，我们现在来分析这些 <code>Element</code> 是如何构造的，首先循环的开始部分定义了构造 <code>Element</code> 要用到的参数，然后对传入的每个 <code>File</code> 判断其类型：</p>
+<ul>
+<li><p>第一个判断我也没看太懂，不知道为什么这么做，好在这不是重点，我们往后看。</p>
+</li>
+<li><p>第二个判断是，如果文件是一个目录，那么直接把这个目录传入 <code>Element</code> 的构造方法构造一个 <code>Element</code>；如果不是就进行下一个判断。</p>
+</li>
+<li><p>第三个判断中又有两个判断：</p>
+<ul>
+<li>根据后缀看它是不是 dex 文件，如果是，那么就通过 <code>loadDexFile()</code> 来加载一个 <a target="_blank" rel="noopener" href="http://androidxref.com/7.0.0_r1/xref/libcore/dalvik/src/main/java/dalvik/system/DexFile.java">DexFile</a> 对象（这个 <code>DexFile</code> 是什么我们等下再讲，你可以把它理解为一个对应着一个 dex 文件的对象）。如果成功加载了，那么就把它传入 <code>Element</code> 构造方法构造一个 <code>Element</code>。</li>
+<li>如果不是 dex 文件，那么不管它什么后缀名，都把它看作是一个 zip，前提是它必须是一个 zip 格式的文件（如 zip，jar，apk），并且这个 zip 格式的文件必须要包含一个 dex 文件，同时这个文件须位于 zip 内部的根目录下。然后又会利用这个 zip 文件加载一个 <code>DexFile</code> 对象。最后将这个 zip 和连同加载出来的 <code>DexFile</code> 对象一起传入 <code>Element</code> 的构造方法构造一个 <code>Element</code> 对象。</li>
+</ul>
+</li>
+</ul>
+<p><code>Element</code> 数组的构造我们大概理解清楚了。现在看下 <code>loadDexFile()</code> 怎样加载 <code>DexFile</code> 的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> DexFile <span class="title">loadDexFile</span><span class="params">(File file, File optimizedDirectory, ClassLoader loader,</span></span></span><br><span class="line"><span class="params"><span class="function">                                      Element[] elements)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">       <span class="keyword">if</span> (optimizedDirectory == <span class="keyword">null</span>) &#123;</span><br><span class="line">           <span class="keyword">return</span> <span class="keyword">new</span> DexFile(file, loader, elements);</span><br><span class="line">       &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">           String optimizedPath = optimizedPathFor(file, optimizedDirectory);</span><br><span class="line">           <span class="keyword">return</span> DexFile.loadDex(file.getPath(), optimizedPath, <span class="number">0</span>, loader, elements);</span><br><span class="line">       &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先说明下，无论是 <code>DexFile(File file, Classloader loader, Elements[] elements)</code> 还是<br><code>DexFile.loadDex()</code> 最终都会调用 <code>DexFile(String sourceName, String outputName, int flags, ClassLoader loader, DexPathList.Element[] elements)</code> 这个构造方法。所以 <code>loadDexFile()</code> 这个方法的逻辑就是：如果 <code>optimizedDirectory</code> 为 null，那么就直接利用 dex 文件对应的 <code>file</code> 构造一个 <code>DexFile</code>；否则就根据要加载的 dex（或者包含了 dex 的 zip） 的文件名和优化后的 dex 存放的目录组合成优化后的 dex（也就是 odex）文件的输出路径，然后利用原始路径和优化后的输出路径构造出一个 <code>DexFile</code>。关于 <code>DexFile</code> 内部的细节到时候分析类加载过程的时候会讲，这里就不细说了。</p>
+<p>通过前面的分析我们知道，我们可以知道 <code>dexElements</code> 主要作用就是用来保存和 dex 文件对应的 <code>DexFile</code> 对象的。 </p>
+<ul>
+<li><code>nativeLibraryPathElements</code> 产生的方法和 <code>pathList</code> 差不多，它保存的主要是本地方法库（本地方法库的存在形式一般是 <code>.so</code> 文件）对应的对象，包括应用程序的本地方法库和系统的本地方法库。这里就不对它过多讲解了。</li>
+</ul>
+<p>分析完这两字段，现在我们回过头来看看 <code>DexPathList</code> 这个对象，这个对象持有 <code>dexElements</code> 和 <code>nativeLibraryPathElements</code> 这两个属性，也就是说它保存了 dex 和 本地方法库。而 dex 保存着类的字节码信息，这样的话如果我们的类加载器要加载某个类的话，是不是只要操作这个对象就可以了呢？事实上的确如此，我们看看 <code>DexPathList</code> 的文档说明：</p>
+<blockquote>
+<p>A pair of lists of entries, associated with a {@code ClassLoader}.<br>One of the lists is a dex/resource path &mdash; typically referred<br>to as a “class path” &mdash; list, and the other names directories<br>containing native code libraries. Class path entries may be any of:<br>a {@code .jar} or {@code .zip} file containing an optional<br>top-level {@code classes.dex} file as well as arbitrary resources,<br>or a plain {@code .dex} file (with no possibility of associated<br>resources).</br>This class also contains methods to use these lists to look up<br>classes and resources.</p>
+</blockquote>
+<p>大概的意思就是 <code>DexPathList</code> 的作用和 JVM 中的 <code>classpath</code> 的作用类似，JVM 根据 <code>classpath</code> 来查找类，而 Dalvik 利用 <code>DexPathList</code> 来查找并加载类。<code>DexPathList</code> 包含的路径可以是 <code>.dex </code>文件的路径，也可以是包含了 dex 的 <code>.jar</code> 和 <code>.zip</code> 文件的路径。</p>
+<p>对于类加载器的分析先到这里，现在我们看看 <code>BaseDexClassLoader</code> 是如何加载类的。</p>
+<h3 id="BaseClassLoader-加载类的过程"><a href="#BaseClassLoader-加载类的过程" class="headerlink" title="BaseClassLoader 加载类的过程"></a>BaseClassLoader 加载类的过程</h3><p>我们知道，一个类加载器的入口方法是 <code>loadClass()</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> Class&lt;?&gt; loadClass(String className, <span class="keyword">boolean</span> resolve) <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">        Class&lt;?&gt; clazz = findLoadedClass(className);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (clazz == <span class="keyword">null</span>) &#123;</span><br><span class="line">            ClassNotFoundException suppressed = <span class="keyword">null</span>;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                clazz = parent.loadClass(className, <span class="keyword">false</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">                suppressed = e;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (clazz == <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    clazz = findClass(className);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">                    e.addSuppressed(suppressed);</span><br><span class="line">                    <span class="keyword">throw</span> e;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> clazz;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法封装了委派式加载机制，所以一般不重写。<code>CLassLoader</code> 的子类通常重写 <code>findClass()</code> 来定义自己的类加载策略。<code>BaseDexClassLoader</code> 也继承自 <code>ClassLoader</code>，因此我们就从 <code>findClass()</code> 方法来分析下 <code>BaseClassLoader</code> 加载类的过程。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">protected</span> Class&lt;?&gt; findClass(String name) <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">       List&lt;Throwable&gt; suppressedExceptions = <span class="keyword">new</span> ArrayList&lt;Throwable&gt;();</span><br><span class="line">       Class c = pathList.findClass(name, suppressedExceptions);</span><br><span class="line">       <span class="keyword">if</span> (c == <span class="keyword">null</span>) &#123;</span><br><span class="line">           ClassNotFoundException cnfe = <span class="keyword">new</span> ClassNotFoundException(<span class="string">&quot;Didn&#x27;t find class \&quot;&quot;</span> + name + <span class="string">&quot;\&quot; on path: &quot;</span> + pathList);</span><br><span class="line">           <span class="keyword">for</span> (Throwable t : suppressedExceptions) &#123;</span><br><span class="line">               cnfe.addSuppressed(t);</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="keyword">throw</span> cnfe;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">return</span> c;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法的重点就是 <code>Class c = pathList.findClass(name, suppressedException)</code>，<code>pathList</code> 很熟悉对不对？它就是前面分析的 <code>BaseDexClassLoader</code> 中的 <code>DexPathList</code> 对象。这里 <code>BaseClassLoader</code> 把查找类的任务委托给了 <code>pathList</code>。</p>
+<p>我们看看 <code>DexPathList</code> 的 <code>findClass()</code> 对象做了哪些事：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Class <span class="title">findClass</span><span class="params">(String name, List&lt;Throwable&gt; suppressed)</span> </span>&#123;</span><br><span class="line">       <span class="keyword">for</span> (Element element : dexElements) &#123;</span><br><span class="line">           DexFile dex = element.dexFile;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (dex != <span class="keyword">null</span>) &#123;</span><br><span class="line">               Class clazz = dex.loadClassBinaryName(name, definingContext, suppressed);</span><br><span class="line">               <span class="keyword">if</span> (clazz != <span class="keyword">null</span>) &#123;</span><br><span class="line">                   <span class="keyword">return</span> clazz;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">if</span> (dexElementsSuppressedExceptions != <span class="keyword">null</span>) &#123;</span><br><span class="line">           suppressed.addAll(Arrays.asList(dexElementsSuppressedExceptions));</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>方法的逻辑很清晰，它遍历了 <code>dexElements</code> 中的所有 <code>DexFile</code>，通过 <code>DexFile</code> 的 <code>loadClassBinaryName()</code> 方法加载目标类。可见，<code>dexElements</code> 又把查找类的任务委托给了 <code>DexFile</code>，看来 <code>DexFile</code> 这个对象的地位最低，大佬们都假装把活干完了，暗地里却把活丢给了它。前面说了，<code>DexFile</code> 对应着一个 dex 文件(或者包含 dex 文件的 zip 格式文件)，那么我们看看他是怎样在对应的 dex 文件中查找类的。</p>
+<p>首先分析它的构造方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">DexFile</span><span class="params">(String sourceName, String outputName, <span class="keyword">int</span> flags, ClassLoader loader,</span></span></span><br><span class="line"><span class="params"><span class="function">           DexPathList.Element[] elements)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">       <span class="keyword">if</span> (outputName != <span class="keyword">null</span>) &#123;</span><br><span class="line">           <span class="keyword">try</span> &#123;</span><br><span class="line">               String parent = <span class="keyword">new</span> File(outputName).getParent();</span><br><span class="line">               <span class="keyword">if</span> (Libcore.os.getuid() != Libcore.os.stat(parent).st_uid) &#123;</span><br><span class="line">                   <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Optimized data directory &quot;</span> + parent</span><br><span class="line">                           + <span class="string">&quot; is not owned by the current user. Shared storage cannot protect&quot;</span></span><br><span class="line">                           + <span class="string">&quot; your application from code injection attacks.&quot;</span>);</span><br><span class="line">               &#125;</span><br><span class="line">           &#125; <span class="keyword">catch</span> (ErrnoException ignored) &#123;</span><br><span class="line">               <span class="comment">// assume we&#x27;ll fail with a more contextual error later</span></span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       mCookie = openDexFile(sourceName, outputName, flags, loader, elements);</span><br><span class="line">       mFileName = sourceName;</span><br><span class="line">       <span class="comment">//System.out.println(&quot;DEX FILE cookie is &quot; + mCookie + &quot; sourceName=&quot; + sourceName + &quot; outputName=&quot; + outputName);</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>估计你已经找到这个方法的重点了，没错，就是 <code>openDexFile()</code>，它最终会调用 <code>openDexFileNative()</code>，这家伙是个本地方法，我们就不<a target="_blank" rel="noopener" href="http://blog.csdn.net/jltxgcy/article/details/50552674">深究</a>了。它做的事就是把对应的 dex 文件加载到内存中，然后返回给 Java 层一个 <code>Object:mCookie</code> 用来标识本次和 Java 层的交互，后续的操作包括从 dex 文件中加载目标类和关闭 <code>DexFile</code> 对象释放资源都用到了这个 <code>mCookie</code>。此外，这个本地方法还做了一件重要的事，那就是优化 dex 并将其输出到指定文件夹。</p>
+<p>在构造方法中 <code>DexFile</code> 就完成了 dex 文件的加载过程。现在我们回到 <code>DexFile</code> 对象的 <code>loadClassBinaryName()</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Class <span class="title">loadClassBinaryName</span><span class="params">(String name, ClassLoader loader, List&lt;Throwable&gt; suppressed)</span> </span>&#123;</span><br><span class="line">       <span class="keyword">return</span> defineClass(name, loader, mCookie, <span class="keyword">this</span>, suppressed);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Class <span class="title">defineClass</span><span class="params">(String name, ClassLoader loader, Object cookie,</span></span></span><br><span class="line"><span class="params"><span class="function">                                    DexFile dexFile, List&lt;Throwable&gt; suppressed)</span> </span>&#123;</span><br><span class="line">       Class result = <span class="keyword">null</span>;</span><br><span class="line">       <span class="keyword">try</span> &#123;</span><br><span class="line">           result = defineClassNative(name, loader, cookie, dexFile);</span><br><span class="line">       &#125; <span class="keyword">catch</span> (NoClassDefFoundError e) &#123;</span><br><span class="line">           <span class="keyword">if</span> (suppressed != <span class="keyword">null</span>) &#123;</span><br><span class="line">               suppressed.add(e);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">           <span class="keyword">if</span> (suppressed != <span class="keyword">null</span>) &#123;</span><br><span class="line">               suppressed.add(e);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>终于看到了尽头，没错，class 对象在 java 层加载过程的尽头就是这个 <code>defineClass()</code> 方法。这个方法调用本地方法 <code>defineClassNative()</code> 从 dex 中查找目标类，如果找到了，就把这个代表这个类的 <code>Class</code> 对象返回。至此，Dalvik 虚拟机加载类的整个过程就结束了。现在我们回过头看看 <code>DexClassLoader()</code> 和 <code>PathClassLoader()</code>，这两个类加载器的唯一区别就是前者指定了优化后的 dex 文件的输出路径，后者没有指定。也就这一点差异造成了它们不同的使用场景：<code>DexClassLoader</code> 用来加载 .dex 文件以及包含 dex 文件的 .jar、.zip 和未安装的 .apk 文件，因此需要指定优化后的 dex 文件的输出路径；<code>PathClassLoader</code> 一般用来加载已经安装到设备上的 <code>.apk</code>，因为应用在安装的时候已经对 apk 文件中的 dex 进行了优化，并且会输出到 <code>/data/dalvik-cache</code> 目录下（android M 在这目录下找不到，应该是改成了 <code>/data/app/com.example.app-x/oat</code> 目录下），所以它不需要指定优化后 dex 的输出路径。下面用一张图来总结下安卓的类加载机制：</p>
+<p><img src="/img/in-post/post_android_load_class_dynamically/android-load-class-dynamically-2.png"></p>
+<p>对这个模型作一下说明：</p>
+<ul>
+<li><p><code>BootClassLoader</code> 是顶级的类加载器，这个类加载器在系统启动时就已经建立了，整个系统只有一个实例，它用来加载安卓核心类库。</p>
+</li>
+<li><p><code>PathClassLoader</code> 是每个应用进程的 Dalvik 虚拟机私有的类加载器，在应用启动时创建。它的 <code>DexPathList</code> 的 dex 加载路径是 <code>/data/app/apk-package-name-x/base.apk</code>（android M），用来加载我们已安装应用的 apk 中的 dex 文件。我们在应用中编写的的类默认是委托此类加载。</p>
+</li>
+<li><p>Custom ClassLoader，这是开发人员自己实现的类加载器，通常是 <code>PathClassLoader</code> 或者 <code>DexClassLoader</code>。如果使用前者通常用来加载已经安装过的插件 apk 中的 dex 文件，如果使用后者通常用来加载 <code>.dex</code> 文件以及包含 dex 的 <code>.jar</code>、<code>.zip</code> 和 未安装的 <code>.apk</code> 文件。</p>
+</li>
+<li><p>我们可以做如下类比：</p>
+<ul>
+<li>把 <strong>Dalvik</strong> 类比于 <strong>JVM</strong></li>
+<li>把 <strong>dex</strong> 文件 类比于 <strong>class</strong> 文件</li>
+<li>把 <strong>dex 文件的路径（<code>DexPathList</code>）</strong> 类比于 <strong>类加载路径（<code>classpath</code>）</strong> 。</li>
+</ul>
+</li>
+</ul>
+<p>相信现在大家对安卓的类加载机制有了大概的了解，为了避免文章篇幅过长，我打算把动态加载在安卓中的应用放在下一篇博客当中，感谢大家的阅读。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>lwenkun
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2016/11/11/2016-11-11-android-load-class-dynamically/" title="安卓动态加载入门">https://lwenkun.github.io/2016/11/11/2016-11-11-android-load-class-dynamically/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android/" rel="tag"># Android</a>
+              <a href="/tags/%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD/" rel="tag"># 动态加载</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/11/05/2016-11-5-compile-java-through-command-line/" rel="prev" title="命令行编译制作一个 Java 程序">
+      <i class="fa fa-chevron-left"></i> 命令行编译制作一个 Java 程序
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/12/05/2016-12-05-how-android-apps-get-system-services/" rel="next" title="安卓应用获取系统服务的过程">
+      安卓应用获取系统服务的过程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+            <li class="tab"><a href="#comment-changyan">changyan</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+            <div class="tab-pane changyan" id="comment-changyan">
+              
+  <div class="comments">
+    <div id="SOHUCS"></div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E5%8D%93%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD%E5%85%A5%E9%97%A8"><span class="nav-number">1.</span> <span class="nav-text">安卓动态加载入门</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD%E6%8A%80%E6%9C%AF"><span class="nav-number">1.1.</span> <span class="nav-text">什么是动态加载技术</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.2.</span> <span class="nav-text">动态加载技术详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JVM-%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6"><span class="nav-number">1.2.1.</span> <span class="nav-text">JVM 类加载机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DexClassLoader-amp-PathClassLoader"><span class="nav-number">1.2.2.</span> <span class="nav-text">DexClassLoader &amp; PathClassLoader</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BaseClassLoader-%E5%8A%A0%E8%BD%BD%E7%B1%BB%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="nav-number">1.2.3.</span> <span class="nav-text">BaseClassLoader 加载类的过程</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李文坤"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">李文坤</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/lwenkun" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李文坤</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">217k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:18</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  <script>
+  NexT.utils.loadComments(document.querySelector('#SOHUCS'), () => {
+    var appid = 'cysUmzEyu';
+    var conf = '2459465628a99f57dac524f945fb682a';
+    var width = window.innerWidth || document.documentElement.clientWidth;
+    if (width < 960) {
+      window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="https://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>');
+    } else {
+      var loadJs=function(d,a){var c=document.getElementsByTagName("head")[0]||document.head||document.documentElement;var b=document.createElement("script");b.setAttribute("type","text/javascript");b.setAttribute("charset","UTF-8");b.setAttribute("src",d);if(typeof a==="function"){if(window.attachEvent){b.onreadystatechange=function(){var e=b.readyState;if(e==="loaded"||e==="complete"){b.onreadystatechange=null;a()}}}else{b.onload=a}}c.appendChild(b)};loadJs("https://changyan.sohu.com/upload/changyan.js",function(){window.changyan.api.config({appid:appid,conf:conf})});
+    }
+  });
+  </script>
+  <script src="https://assets.changyan.sohu.com/upload/plugins/plugins.count.js"></script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://lwenkun.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://lwenkun.github.io/2016/11/11/2016-11-11-android-load-class-dynamically/";
+    this.page.identifier = "2016/11/11/2016-11-11-android-load-class-dynamically/";
+    this.page.title = "安卓动态加载入门";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://lwenkun.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

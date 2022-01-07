@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2},"changyan":{"order":-1}},"activeClass":"disqus"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="android 记坑调用相机获取图片有两种方法获取图片，分别对应不同的需求：一种是获取缩略图，适合用来做头像或者其他比较小的 icon ；另一种是获取原图，如果有保存或查看原图的需求，就应该用这种方法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="android 记坑">
+<meta property="og:url" content="https://lwenkun.github.io/2017/02/24/2017-02-24-android-dev-log/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="android 记坑调用相机获取图片有两种方法获取图片，分别对应不同的需求：一种是获取缩略图，适合用来做头像或者其他比较小的 icon ；另一种是获取原图，如果有保存或查看原图的需求，就应该用这种方法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-02-24T00:00:00.000Z">
+<meta property="article:modified_time" content="2022-01-07T19:24:27.558Z">
+<meta property="article:author" content="李文坤">
+<meta property="article:tag" content="Android">
+<meta property="article:tag" content="记坑">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://lwenkun.github.io/2017/02/24/2017-02-24-android-dev-log/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>android 记坑 | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2017/02/24/2017-02-24-android-dev-log/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="李文坤">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          android 记坑
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+00:00">2017-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-01-07 19:24:27" itemprop="dateModified" datetime="2022-01-07T19:24:27+00:00">2022-01-07</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2017/02/24/2017-02-24-android-dev-log/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2017/02/24/2017-02-24-android-dev-log/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2017/02/24/2017-02-24-android-dev-log/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/02/24/2017-02-24-android-dev-log/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="android-记坑"><a href="#android-记坑" class="headerlink" title="android 记坑"></a>android 记坑</h1><h2 id="调用相机获取图片"><a href="#调用相机获取图片" class="headerlink" title="调用相机获取图片"></a>调用相机获取图片</h2><p>有两种方法获取图片，分别对应不同的需求：一种是获取缩略图，适合用来做头像或者其他比较小的 icon ；另一种是获取原图，如果有保存或查看原图的需求，就应该用这种方法。</p>
+<span id="more"></span>
+
+<h3 id="获取缩略图"><a href="#获取缩略图" class="headerlink" title="获取缩略图"></a>获取缩略图</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Intent getThumbnail = <span class="keyword">new</span> Intent(MediaStore.ACTION_IMAGE_CAPTURE);</span><br><span class="line">File file = createEmptyFile();</span><br><span class="line"><span class="keyword">if</span> (getThumbnail.resolveActivity(getPackageManager()) != <span class="keyword">null</span>)</span><br><span class="line">    startActivityForResult(getThumbnail, REQUEST_GET_THUMBNAIL);</span><br></pre></td></tr></table></figure>
+
+<p>这样就调用了相机拍照，然后我们在 <code>onActivityResult()</code> 中获取图片：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onActivityResult</span><span class="params">(<span class="keyword">int</span> requestCode, <span class="keyword">int</span> resultCode, Intent data)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (requestCode == REQUEST_GET_THUMBNAIL) &#123;</span><br><span class="line">        <span class="keyword">if</span> (resultCode == RESULT_OK) &#123;</span><br><span class="line">            Bitmap bitamp;</span><br><span class="line">            <span class="keyword">if</span> (data != <span class="keyword">null</span>) </span><br><span class="line">                bitmap = (Bitmap) data.getExtras().get(<span class="string">&quot;data&quot;</span>);</span><br><span class="line">            thumbnail.setImageBitmap(bitmap);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="获取原图"><a href="#获取原图" class="headerlink" title="获取原图"></a>获取原图</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Intent getBigPhoto = <span class="keyword">new</span> Intent(MediaStore.ACTION_IMAGE_CAPTURE);</span><br><span class="line">File file = createEmptyFile(); <span class="comment">//用于输出原图</span></span><br><span class="line">currentFile = file;</span><br><span class="line">Uri uri = Uri.fromFile(file);<span class="comment">//将 file 转换成 uri 格式</span></span><br><span class="line">getBigPhoto.putExtra(MediaStore.EXTRA_OUTPUT, uri);</span><br><span class="line">startActivityForResult(Intent, REQUEST_GET_BIG_PHOTO);</span><br></pre></td></tr></table></figure>
+<p>然后图片就会自动输出到你指定的文件，如果同时你又想获取原图，你就会这样做：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onActivityResult</span><span class="params">(<span class="keyword">int</span> requestCode, <span class="keyword">int</span> resultCode, Intent data)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (requestCode == REQUEST_GET_BIG_PHOTO) &#123;</span><br><span class="line">        <span class="keyword">if</span> (resultCode == RESULT_OK) &#123;</span><br><span class="line">            Bitmap bitamp;</span><br><span class="line">            <span class="keyword">if</span> (data != <span class="keyword">null</span>) </span><br><span class="line">                bitmap = (Bitmap) data.getExtras().get(<span class="string">&quot;data&quot;</span>);</span><br><span class="line">            thumbnail.setImageBitmap(bitmap);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>好了，看似一切正常，但是总有一些你意想不到的异常发生，我来指出这之中有问题的几个坑吧（权限问题就不讲了）吧：</p>
+<ul>
+<li><code>File</code> 转换成 <code>Uri</code> 格式这一步时，如果你是上面那样转换的，那么在 android N 上你就会得到 <code>FileUriExposedException</code>，因为这样做是不安全的，你将文件的真实 <code>Uri</code> 暴露出去了，其他应用可能对这个文件有完全的控制权。安全的做法是通过 [FileProvider.getUriForFile(Context, String, File)](<a target="_blank" rel="noopener" href="https://developer.android.google.cn/reference/android/support/v4/content/FileProvider.html#getUriForFile">https://developer.android.google.cn/reference/android/support/v4/content/FileProvider.html#getUriForFile</a>(android.content.Context, java.lang.String, java.io.File)) 暴露所要提供的 <code>Uri</code>。这样提供给其他的应用的 <code>Uri</code> 不会暴露出文件的真实位置，因为这只是这是文件的一个 “镜像地址”，其他应用只能调用系统功能才能将此 <code>Uri</code> 定位到实际位置。</li>
+<li>如果你想同时获取原图和缩略图，那么你就错了，这二者不可兼得。每次调用相机，只能获取缩略图或者原图，这和你是否指定 <code>MediaStore.EXTRA_OUTPUT</code> 附加字段有关：如果没有指定，说明你并不想将获取的图片输出（即保存为原图)，此时 <code>onActivityResult()</code> 的第三个参数就不为 <code>null</code>，你可以从中取出缩略图；但是如果指定了，说明你想将照片输出为原图，那么第三个参数就为 <code>null</code>，你并不能从中获取缩略图。</li>
+</ul>
+<h2 id="将图片添加至媒体库"><a href="#将图片添加至媒体库" class="headerlink" title="将图片添加至媒体库"></a>将图片添加至媒体库</h2><p>我们的应用经常有将图片保存到磁盘的需求，但是保存的图片在下一次开机前媒体库是检测不到的，也就是说我们在图库中是看不到刚才保存的图片的，因此也就无法和其他应用共享。要将保存的图片加入媒体库中需要做一点额外的工作，下面介绍实现方法：</p>
+<h3 id="发送广播通知媒体库扫描此图片"><a href="#发送广播通知媒体库扫描此图片" class="headerlink" title="发送广播通知媒体库扫描此图片"></a>发送广播通知媒体库扫描此图片</h3><p>这一方法在安卓官方培训<a target="_blank" rel="noopener" href="https://developer.android.google.cn/training/camera/photobasics.html">教程</a>中有提到，它是这样做的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">galleryAddPic</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Intent mediaScanIntent = <span class="keyword">new</span> Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);</span><br><span class="line">    File f = <span class="keyword">new</span> File(mCurrentPhotoPath);</span><br><span class="line">    Uri contentUri = Uri.fromFile(f);</span><br><span class="line">    mediaScanIntent.setData(contentUri);</span><br><span class="line">    <span class="keyword">this</span>.sendBroadcast(mediaScanIntent);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="和系统进程通信将图片添加至媒体库"><a href="#和系统进程通信将图片添加至媒体库" class="headerlink" title="和系统进程通信将图片添加至媒体库"></a>和系统进程通信将图片添加至媒体库</h3><p>另外一种是通过 <code>MediaScannerConnection</code> 实现的，这一方法的原理就是和系统进程进行通信，具体做法是这样的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Class Client implements MediaScannerConnectionClient &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> MediaScannerConnection conn;</span><br><span class="line">    <span class="keyword">private</span> String filePath;</span><br><span class="line">    <span class="keyword">private</span> String mimeType;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Client</span><span class="params">(Context c, String filePath, String mimeType)</span> </span>&#123;</span><br><span class="line">        conn = <span class="keyword">new</span> MediaScannrConnection(context, <span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onMediaScannerConnected</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        conn.scanFile(filePath, mimeType);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onScanCompleted</span><span class="params">(String path, Uri uri)</span> </span>&#123;</span><br><span class="line">        Log.d(<span class="string">&quot;Client&quot;</span>, <span class="string">&quot;path:&quot;</span> + path + <span class="string">&quot;; uri:&quot;</span> + uri);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">scanFile</span><span class="params">(String path, String mimeType)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.filePath = filePath;</span><br><span class="line">        <span class="keyword">this</span>.mimeType = mimeType;</span><br><span class="line">        conn.connect();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="直接操作媒体库的数据库"><a href="#直接操作媒体库的数据库" class="headerlink" title="直接操作媒体库的数据库"></a>直接操作媒体库的数据库</h3><p>第三种方法是直接将图片信息直接添加媒体库的数据库中，其实前面两种方法的底层实现也是这样的，只是屏蔽了相关细节，避免我们直接接触数据库。因为要操作其他应用的数据库，所以要用到 <code>ContentResolver</code>，具体实现是这样的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ContentValues values = <span class="keyword">new</span> ContentValues();</span><br><span class="line"></span><br><span class="line">values.put(Images.Media.DATE_TAKEN, System.currentTimeMillis());</span><br><span class="line">values.put(Images.Media.MIME_TYPE, <span class="string">&quot;image/jpeg&quot;</span>);</span><br><span class="line">values.put(MediaStore.MediaColumns.DATA, filePath);</span><br><span class="line"></span><br><span class="line">context.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values);</span><br></pre></td></tr></table></figure>
+<p>下面分别介绍其中遇到的坑：</p>
+<ul>
+<li>第一种方法在 android 4.4 以下时是可以的，但是有个问题就是通过广播将单个文件添加至媒体库性能上不划算；在 android 4.4 会出现 <code>SecurityException</code>，原因是 android 4.4 禁止非系统应用发送系统广播，而扫描媒体文件的广播属于系统广播，因此运行时会崩溃；但是我在 android 5.0 至 7.1 上实测却可行，或许系统已经开放了此权限。</li>
+<li>第二种和第三种方法没有版本限制，是通用的方法。</li>
+<li>前两种方法有一点要注意，如果该图片存放至应用的私有目录下（无论内部存储还是外部存储），媒体库都无法扫描到该文件（没有权限）；第三种方法则没有这种限制，因为它不是通过扫描，而是直接操作数据库的方式添加的。</li>
+</ul>
+<h2 id="通知"><a href="#通知" class="headerlink" title="通知"></a>通知</h2><p>###创建通知</p>
+<ul>
+<li>如果你的 target sdk 大于 26 (O)，那么发布通知时应该指定通知渠道，否则通知不能发送成功。</li>
+<li>发送通知时必须指定 smallIcon，并且 smallIcon 必须是 drawable 资源 ID ，否则会导致系统的 SystemUI 崩溃。</li>
+<li>设置通知的 PendingIntent 时需要注意，如果 Intent 中有附加字段需要传递，一定记得带 FLAG_UPDATE_CURRENT 这个标志，至于为什么，可以看看这篇文章：<a target="_blank" rel="noopener" href="https://www.kancloud.cn/digest/androidframeworks/127784">说说 PendingIntent 的内部机制</a>。</li>
+</ul>
+<p>— 未完待续</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>lwenkun
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2017/02/24/2017-02-24-android-dev-log/" title="android 记坑">https://lwenkun.github.io/2017/02/24/2017-02-24-android-dev-log/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android/" rel="tag"># Android</a>
+              <a href="/tags/%E8%AE%B0%E5%9D%91/" rel="tag"># 记坑</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/12/15/2016-12-13-process-of-starting-a-service/" rel="prev" title="安卓中 Service 的启动过程（上）">
+      <i class="fa fa-chevron-left"></i> 安卓中 Service 的启动过程（上）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2017/02/25/2017-02-25-how-does-messenger-work/" rel="next" title="Messenger 的工作原理">
+      Messenger 的工作原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+            <li class="tab"><a href="#comment-changyan">changyan</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+            <div class="tab-pane changyan" id="comment-changyan">
+              
+  <div class="comments">
+    <div id="SOHUCS"></div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#android-%E8%AE%B0%E5%9D%91"><span class="nav-number">1.</span> <span class="nav-text">android 记坑</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E7%94%A8%E7%9B%B8%E6%9C%BA%E8%8E%B7%E5%8F%96%E5%9B%BE%E7%89%87"><span class="nav-number">1.1.</span> <span class="nav-text">调用相机获取图片</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E7%BC%A9%E7%95%A5%E5%9B%BE"><span class="nav-number">1.1.1.</span> <span class="nav-text">获取缩略图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E5%8E%9F%E5%9B%BE"><span class="nav-number">1.1.2.</span> <span class="nav-text">获取原图</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%86%E5%9B%BE%E7%89%87%E6%B7%BB%E5%8A%A0%E8%87%B3%E5%AA%92%E4%BD%93%E5%BA%93"><span class="nav-number">1.2.</span> <span class="nav-text">将图片添加至媒体库</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%91%E9%80%81%E5%B9%BF%E6%92%AD%E9%80%9A%E7%9F%A5%E5%AA%92%E4%BD%93%E5%BA%93%E6%89%AB%E6%8F%8F%E6%AD%A4%E5%9B%BE%E7%89%87"><span class="nav-number">1.2.1.</span> <span class="nav-text">发送广播通知媒体库扫描此图片</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%92%8C%E7%B3%BB%E7%BB%9F%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1%E5%B0%86%E5%9B%BE%E7%89%87%E6%B7%BB%E5%8A%A0%E8%87%B3%E5%AA%92%E4%BD%93%E5%BA%93"><span class="nav-number">1.2.2.</span> <span class="nav-text">和系统进程通信将图片添加至媒体库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B4%E6%8E%A5%E6%93%8D%E4%BD%9C%E5%AA%92%E4%BD%93%E5%BA%93%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">1.2.3.</span> <span class="nav-text">直接操作媒体库的数据库</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E7%9F%A5"><span class="nav-number">1.3.</span> <span class="nav-text">通知</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李文坤"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">李文坤</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/lwenkun" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李文坤</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">217k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:18</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  <script>
+  NexT.utils.loadComments(document.querySelector('#SOHUCS'), () => {
+    var appid = 'cysUmzEyu';
+    var conf = '2459465628a99f57dac524f945fb682a';
+    var width = window.innerWidth || document.documentElement.clientWidth;
+    if (width < 960) {
+      window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="https://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>');
+    } else {
+      var loadJs=function(d,a){var c=document.getElementsByTagName("head")[0]||document.head||document.documentElement;var b=document.createElement("script");b.setAttribute("type","text/javascript");b.setAttribute("charset","UTF-8");b.setAttribute("src",d);if(typeof a==="function"){if(window.attachEvent){b.onreadystatechange=function(){var e=b.readyState;if(e==="loaded"||e==="complete"){b.onreadystatechange=null;a()}}}else{b.onload=a}}c.appendChild(b)};loadJs("https://changyan.sohu.com/upload/changyan.js",function(){window.changyan.api.config({appid:appid,conf:conf})});
+    }
+  });
+  </script>
+  <script src="https://assets.changyan.sohu.com/upload/plugins/plugins.count.js"></script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://lwenkun.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://lwenkun.github.io/2017/02/24/2017-02-24-android-dev-log/";
+    this.page.identifier = "2017/02/24/2017-02-24-android-dev-log/";
+    this.page.title = "android 记坑";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://lwenkun.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2},"changyan":{"order":-1}},"activeClass":"disqus"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="RxJava 原理探究关于 RxJava 的文章网上有很多，这里只是个人的学习总结，阅读前需要对 RxJava 有一定的了解，并不能作为学习资料，如果想要入门这里有更好的选择：给 Android 开发者的 RxJava 详解（虽然版本有点久，很多 API 都已过时，但原理差不多，不影响理解）。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RxJava 原理探究">
+<meta property="og:url" content="https://lwenkun.github.io/2016/09/03/2016-09-04-rxjava/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="RxJava 原理探究关于 RxJava 的文章网上有很多，这里只是个人的学习总结，阅读前需要对 RxJava 有一定的了解，并不能作为学习资料，如果想要入门这里有更好的选择：给 Android 开发者的 RxJava 详解（虽然版本有点久，很多 API 都已过时，但原理差不多，不影响理解）。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_rxjava/map_1.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_rxjava/map_2.png">
+<meta property="article:published_time" content="2016-09-03T00:00:00.000Z">
+<meta property="article:modified_time" content="2022-01-07T19:24:27.558Z">
+<meta property="article:author" content="李文坤">
+<meta property="article:tag" content="开源库">
+<meta property="article:tag" content="Java">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lwenkun.github.io/img/in-post/post_rxjava/map_1.png">
+
+<link rel="canonical" href="https://lwenkun.github.io/2016/09/03/2016-09-04-rxjava/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>RxJava 原理探究 | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2016/09/03/2016-09-04-rxjava/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="李文坤">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RxJava 原理探究
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2016-09-03 00:00:00" itemprop="dateCreated datePublished" datetime="2016-09-03T00:00:00+00:00">2016-09-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-01-07 19:24:27" itemprop="dateModified" datetime="2022-01-07T19:24:27+00:00">2022-01-07</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2016/09/03/2016-09-04-rxjava/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2016/09/03/2016-09-04-rxjava/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2016/09/03/2016-09-04-rxjava/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/09/03/2016-09-04-rxjava/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="RxJava-原理探究"><a href="#RxJava-原理探究" class="headerlink" title="RxJava 原理探究"></a>RxJava 原理探究</h1><p>关于 RxJava 的文章网上有很多，这里只是个人的学习总结，阅读前需要对 RxJava 有一定的了解，并不能作为学习资料，如果想要入门这里有更好的选择：<a target="_blank" rel="noopener" href="https://gank.io/post/560e15be2dca930e00da1083">给 Android 开发者的 RxJava 详解</a>（虽然版本有点久，很多 API 都已过时，但原理差不多，不影响理解）。</p>
+<span id="more"></span>
+
+<p>如果只是想了解 API 的使用，可以看看 <a target="_blank" rel="noopener" href="https://mcxiaoke.gitbooks.io/rxdocs/content/">ReactiveX/RxJava文档中文版</a>。</p>
+<h2 id="什么是-RxJava"><a href="#什么是-RxJava" class="headerlink" title="什么是 RxJava"></a>什么是 RxJava</h2><blockquote>
+<p>RxJava is a Java VM implementation of ReactiveX (Reactive Extensions): a library for composing asynchronous and event-based programs by using observable sequences.</p>
+</blockquote>
+<p>翻译一下就是：RxJava 是响应式扩展库在 Java 虚拟机上的实现，它使用观察者模式为异步和基于事件程序的编写提供便利。</p>
+<h2 id="为什么是-RxJava"><a href="#为什么是-RxJava" class="headerlink" title="为什么是 RxJava"></a>为什么是 RxJava</h2><p>关于 RxJava 的优点网上总结了很多，总的说来就是使得代码整洁、逻辑清晰。它能将本来一段逻辑复杂、外观参差错落的代码，变成一条逻辑清晰的长链，使得可阅读性和可维护性大大提高。</p>
+<p>以下例子改编自《给 Android 开发者的 RxJava 详解》：</p>
+<blockquote>
+<p>界面上有一个自定义的视图 imageCollectorView ，它的作用是显示多张图片，并能使用 addImage(Bitmap) 方法来任意增加显示的图片。现在需要程序将一个给出的目录数组 File[] folders 中每个目录下的 png 图片都加载出来并显示在 imageCollectorView 中。需要注意的是，由于读取图片的这一过程较为耗时，需要放在后台执行，而图片的显示则必须在 UI 线程执行。常用的实现方式有多种，我这里贴出其中一种：</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">new</span> Thread() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.run();</span><br><span class="line">        <span class="keyword">for</span> (File folder : folders) &#123;</span><br><span class="line">            File[] files = folder.listFiles();</span><br><span class="line">            <span class="keyword">for</span> (File file : files) &#123;</span><br><span class="line">                <span class="keyword">if</span> (file.getName().endsWith(<span class="string">&quot;.png&quot;</span>)) &#123;</span><br><span class="line">                    <span class="keyword">final</span> Bitmap bitmap = getBitmapFromFile(file);</span><br><span class="line">                    getActivity().runOnUiThread(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">                        <span class="meta">@Override</span></span><br><span class="line">                        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                            imageCollectorView.addImage(bitmap);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;.start();</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>而如果使用 RxJava ，实现方式是这样的：</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">Observable.from(folders)</span><br><span class="line">    .flatMap(<span class="keyword">new</span> Function&lt;File, Observable&lt;File&gt;&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> Observable&lt;File&gt; <span class="title">apply</span><span class="params">(File file)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> Observable.from(file.listFiles());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">    .filter(<span class="keyword">new</span> Function&lt;File, Boolean&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> Boolean <span class="title">apply</span><span class="params">(File file)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> file.getName().endsWith(<span class="string">&quot;.png&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">    .map(<span class="keyword">new</span> Function&lt;File, Bitmap&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> Bitmap <span class="title">apply</span><span class="params">(File file)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> getBitmapFromFile(file);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">    .subscribeOn(Schedulers.io())</span><br><span class="line">    .observeOn(AndroidSchedulers.mainThread())</span><br><span class="line">    .subscribe(<span class="keyword">new</span> Consumer&lt;Bitmap&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">accept</span><span class="params">(Bitmap bitmap)</span> </span>&#123;</span><br><span class="line">            imageCollectorView.addImage(bitmap);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br></pre></td></tr></table></figure>
+<p>简单解释下这段代码：观察者发出数据源，然后对数据源进行三次数据类型变换，之后指定被观察者和观察者所在线程，最后对观察者进行订阅。</p>
+<p>如果对 java 8 引入的 <a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/">Stream</a> 熟悉的话，就会发现这与对 <code>Stream</code> 的操作很像，从<br><code>flatMap()</code> 到 <code>observeOn()</code> 的操作相当于对流的 Intermediate 操作，而最后的 <code>subscribe()</code> 相当是对流的 Terminal 操作。而且前面的操作也都是惰性化(lazy)的，最后的订阅才会触发前面一系列的变换操作（其实 <code>subscribeOn()</code> 和 <code>observeOn()</code> 这两个方法也是基于变换的）。怎么理解呢，就相当于 RxJava 库将这些操作先 “缓存” 起来了，直到最后的订阅观察者才将那些操作执行，怎么 “缓存” 是库做的事，逻辑上我们可以把那些操作看作是从上到下按顺序执行的。</p>
+<p>可见，RxJava 虽然增加了程序代码，但是可阅读性和可扩展性大大增强。</p>
+<p>了解过 RxJava 的人都会觉得 RxJava 很神奇，几行代码便完成了数据流的转换和线程的切换。那么它的内部原理是怎样的呢，通过阅读源码和网上的资料，我对 RxJava 的实现原理有了大概的了解，接下来就和大家分享一下。</p>
+<h2 id="对-RxJava-实现原理的粗浅理解"><a href="#对-RxJava-实现原理的粗浅理解" class="headerlink" title="对 RxJava 实现原理的粗浅理解"></a>对 RxJava 实现原理的粗浅理解</h2><h3 id="约定"><a href="#约定" class="headerlink" title="约定"></a>约定</h3><p>由于 RxJava 同时应用了观察者模式（别名：发布-订阅模式）和生产者-消费者模式，所以其 API 的名称有点混乱。为了避免读者理解困难，这里约定如下：</p>
+<ul>
+<li><code>Observable</code> 及其子类称为 <strong>被观察者</strong>；</li>
+<li><code>Comsumer</code>（消费者） 和 <code>Observer</code>（观察者） 及其子类统称为 <strong>观察者</strong>（两者在 RxJava 含义相似）；</li>
+<li>由于 RxJava 订阅的动作（subscribe）定义在 <code>Observale</code> 中，给我们的感觉是 <strong>被观察者</strong> 订阅 <strong>观察者</strong>，因此为了叙述方便和避免含义混乱，<strong>被观察者</strong> 订阅 <strong>观察者</strong> 和 <strong>观察者</strong> 订阅 <strong>观被察者</strong> 是同样的意思；</li>
+<li>本文基于 RxJava 2.0.7 版。</li>
+</ul>
+<h3 id="变换"><a href="#变换" class="headerlink" title="变换"></a>变换</h3><p>变换是 RxJava 的亮点和理解上的难点，变换的作用是将一种数据类型转换成另一种数据类型。当被观察者发出的原始数据类型并不是观察者想要的数据类型时，我们就可以用变换来实现源数据类型和目的数据类型的转换。RxJava 中有很多种变换，如 map 变换、flatMap 变换、filter 变换等。其中 map 变换比较基础也较易理解，因此我们先从 map 变换讲起。</p>
+<h4 id="map-变换"><a href="#map-变换" class="headerlink" title="map 变换"></a>map 变换</h4><p> map 变换能够将一种类型的数据源转换成另一种类型的数据源，比如要将 <code>int</code> 类型的图片资源 id 转换成 <code>Bitmap</code> 类型的对象并将其设置给一个  <code>ImageView</code> ，我们可以这样做：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Observble.just(R.id.img_example) <span class="comment">// 1</span></span><br><span class="line">         .map(<span class="keyword">new</span> Function&lt;Integer, Bitmap&gt;() &#123; <span class="comment">// 2</span></span><br><span class="line">              <span class="meta">@Override</span></span><br><span class="line">              <span class="function"><span class="keyword">public</span> Bitmap <span class="title">apply</span><span class="params">(Integer resourceId)</span> </span>&#123;</span><br><span class="line">                 <span class="keyword">return</span> BitmapFactory.decodeResource(resourceId);</span><br><span class="line">              &#125;</span><br><span class="line">          &#125;)</span><br><span class="line">          .subscribe(<span class="keyword">new</span> Consumer&lt;String&gt;() &#123; <span class="comment">// 4</span></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">accept</span><span class="params">(<span class="meta">@NonNull</span> Bitmap b)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                imageView.setImageBitmap(b);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br></pre></td></tr></table></figure>
+
+<p>上面的例子里将上游的 <code>int</code> 数据类型转换成了 <code>Bitmap</code> 类型的数据，供下游的观察者接收。这个过程涉及了一次 map 变换，我们将透过这个例子分析 map 变换的原理。</p>
+<p>首先从变换方法 <code>public Bitmap apply(Integer resourceId)</code> 看起，这个方法的参数类型是 <code>Integer</code>，返回值类型是 <code>Bitmap</code> ，因此我们很容易猜想到它就是实现变换的核心方法。这个方法被包装后就传入了 <code>map()</code> 中，<code>map()</code> 的源码是这样的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> &lt;R&gt; <span class="function">Observable&lt;R&gt; <span class="title">map</span><span class="params">(Function&lt;? <span class="keyword">super</span> T, ? extends R&gt; mapper)</span> </span>&#123;</span><br><span class="line">     ObjectHelper.requireNonNull(mapper, <span class="string">&quot;mapper is null&quot;</span>);</span><br><span class="line">     <span class="keyword">return</span> RxJavaPlugins.onAssembly(<span class="keyword">new</span> ObservableMap&lt;T, R&gt;(<span class="keyword">this</span>, mapper)); <span class="comment">// 3</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>方法中第一行验证 <code>mapper</code> 是否为空；第二行中的 <code>RxJavaPlugin.onAssenbly()</code> 是一个钩子方法，据说是用来调试 RxJava 库用的，你可以把它理解为什么都没做，因此 <code>map()</code> 方法可以简化为：<code>return new ObservableMap&lt;T, R&gt;(this, mapper);</code>，它返回的是一个 <code>Observable</code> 子类 <code>ObservableMap</code> 的一个实例。现在我重点看看 <code>ObservableMap</code> 这个类：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">ObservableMap</span>&lt;<span class="title">T</span>, <span class="title">U</span>&gt; <span class="keyword">extends</span> <span class="title">AbstractObservableWithUpstream</span>&lt;<span class="title">T</span>, <span class="title">U</span>&gt; </span>&#123;</span><br><span class="line">    <span class="comment">//用来做数据变换的函数式对象，就是 map() 的参数，且称其为变换器</span></span><br><span class="line">    <span class="keyword">final</span> Function&lt;? <span class="keyword">super</span> T, ? extends U&gt; function;</span><br><span class="line">    <span class="comment">//source 是实际 Observalbe 对象，也就是 map 变换之前的那个 Observable</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">ObservableMap</span><span class="params">(ObservableSource&lt;T&gt; source, Function&lt;? <span class="keyword">super</span> T, ? extends U&gt; function)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(source);</span><br><span class="line">        <span class="keyword">this</span>.function = function;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//调用 Observable 的 subscribe() 方法发起订阅时，subscribe() 最终会调用此方法</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">subscribeActual</span><span class="params">(Observer&lt;? <span class="keyword">super</span> U&gt; t)</span> </span>&#123;  <span class="comment">// 5</span></span><br><span class="line">        <span class="comment">//新建一个 MapObserver 观察者，用来订阅实际 Observable 对象 source</span></span><br><span class="line">        source.subscribe(<span class="keyword">new</span> MapObserver&lt;T, U&gt;(t, function)); <span class="comment">// 6</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//此类的构造方法传入的参数是变换器 mapper 和真实观察者 actual</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">MapObserver</span>&lt;<span class="title">T</span>, <span class="title">U</span>&gt; <span class="keyword">extends</span> <span class="title">BasicFuseableObserver</span>&lt;<span class="title">T</span>, <span class="title">U</span>&gt; </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> Function&lt;? <span class="keyword">super</span> T, ? extends U&gt; mapper;</span><br><span class="line"></span><br><span class="line">        MapObserver(Observer&lt;? <span class="keyword">super</span> U&gt; actual, Function&lt;? <span class="keyword">super</span> T, ? extends U&gt; mapper) &#123;</span><br><span class="line">            <span class="keyword">super</span>(actual);</span><br><span class="line">            <span class="keyword">this</span>.mapper = mapper;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onNext</span><span class="params">(T t)</span> </span>&#123; <span class="comment">// 7</span></span><br><span class="line">            ......</span><br><span class="line">            U v;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="comment">//通过转换器把从原 Observable 对象发出的数据转化成真实观察者要求的数据</span></span><br><span class="line">                v = ObjectHelper.requireNonNull(mapper.apply(t), <span class="string">&quot;The mapper function returned a null value.&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">                <span class="comment">//如果出错，最终会调用 actual 的 onError() 方法</span></span><br><span class="line">                fail(ex); <span class="comment">// 8.1</span></span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//将转换后的数据传给真实观察者</span></span><br><span class="line">            actual.onNext(v); <span class="comment">// 8.2</span></span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因为代码不多，我全部贴上来，便于大家理解。在上面的过程中，有这几类角色：1）实际被观察者；2）新创建的被观察者；3）实际观察者；4）新创建的观察者；5）转换器 mapper。它们的关系比较复杂，我们按照代码的执行顺序来将思路理一遍：</p>
+<ul>
+<li><code>Observable</code> 通过 <code>just()</code> 这个静态工厂方法创建了一个 <code>Observable</code> 对象，此对象即“实际被观察者”；</li>
+<li><code>map()</code> 方法接受一个转换器对象，在内部新建了一个被观察者后将其返回，也就是 “新创建的被观察者”；</li>
+<li>用 map 变换后返回的那个 “新创建的被观察者” 订阅 “实际观察者”，最终 “新创建的被观察者” 的 <code>subscribeActual()</code> 方法被调用，此方法触发的操作有：</li>
+<li>创建一个观察者，也就是 “新创建的观察者”，向 “实际的被观察者” 订阅；</li>
+<li>实际的被观察者发出数据，通过调用 “新创建的观察者” 的 <code>onNext()</code> 方法向其传递数据；</li>
+<li>在新创建的被观察者的内部先用 “转换器” 的 <code>apply()</code> 方法将数据类型进行转换，然后调用 “实际观察者” 的 <code>onNext()</code> 方法将转换后的数据传给 “实际观察者”</li>
+</ul>
+<p>整个过程有点复杂，所以我在上述代码片段中用序号来表示各个过程的调用顺序，同时用一张图来表示 map 变换过程中以上几个角色的交互过程：</p>
+<p><img src="/img/in-post/post_rxjava/map_1.png" alt="map 变换"></p>
+<p>说明：</p>
+<ul>
+<li>A 表示实际被观察者，B 表示新创建的观察者，C 表示新创建的被观察者，D 表示实际的观察者，E 代表转换器；</li>
+<li>虚线框中的 B 和 C 是 map 变换导致的新创建的角色，它们没有发生订阅关系，但是 C 一旦被订阅就会导致 B 的创建和对实际观察者的订阅；</li>
+<li>B 和 D 都是观察者，它们进行了直接的接触：B 将信息转换后交给 D;</li>
+</ul>
+<p>如果大家理解了一次 map 变换的原理，连续两次 map 变换的的原理就不难理解了，在这里就不赘述了，贴一张和上面类似的交互图，请大家自行理解：</p>
+<p><img src="/img/in-post/post_rxjava/map_2.png" alt="2次连续 map 变换"></p>
+<h4 id="flatMap-变换"><a href="#flatMap-变换" class="headerlink" title="flatMap 变换"></a>flatMap 变换</h4><p>此处先占坑，日后来填</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>lwenkun
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2016/09/03/2016-09-04-rxjava/" title="RxJava 原理探究">https://lwenkun.github.io/2016/09/03/2016-09-04-rxjava/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%BC%80%E6%BA%90%E5%BA%93/" rel="tag"># 开源库</a>
+              <a href="/tags/Java/" rel="tag"># Java</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/05/03/2016-05-03-java-hashcode-and-equals/" rel="prev" title="浅析 hashcode() 和 equals()">
+      <i class="fa fa-chevron-left"></i> 浅析 hashcode() 和 equals()
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/10/28/2016-10-28-android-IPC-AIDL/" rel="next" title="安卓进程通信机制之 AIDL">
+      安卓进程通信机制之 AIDL <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+            <li class="tab"><a href="#comment-changyan">changyan</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+            <div class="tab-pane changyan" id="comment-changyan">
+              
+  <div class="comments">
+    <div id="SOHUCS"></div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#RxJava-%E5%8E%9F%E7%90%86%E6%8E%A2%E7%A9%B6"><span class="nav-number">1.</span> <span class="nav-text">RxJava 原理探究</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-RxJava"><span class="nav-number">1.1.</span> <span class="nav-text">什么是 RxJava</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-RxJava"><span class="nav-number">1.2.</span> <span class="nav-text">为什么是 RxJava</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9-RxJava-%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E7%9A%84%E7%B2%97%E6%B5%85%E7%90%86%E8%A7%A3"><span class="nav-number">1.3.</span> <span class="nav-text">对 RxJava 实现原理的粗浅理解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BA%A6%E5%AE%9A"><span class="nav-number">1.3.1.</span> <span class="nav-text">约定</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%98%E6%8D%A2"><span class="nav-number">1.3.2.</span> <span class="nav-text">变换</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#map-%E5%8F%98%E6%8D%A2"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">map 变换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#flatMap-%E5%8F%98%E6%8D%A2"><span class="nav-number">1.3.2.2.</span> <span class="nav-text">flatMap 变换</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李文坤"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">李文坤</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/lwenkun" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李文坤</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">217k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:18</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  <script>
+  NexT.utils.loadComments(document.querySelector('#SOHUCS'), () => {
+    var appid = 'cysUmzEyu';
+    var conf = '2459465628a99f57dac524f945fb682a';
+    var width = window.innerWidth || document.documentElement.clientWidth;
+    if (width < 960) {
+      window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="https://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>');
+    } else {
+      var loadJs=function(d,a){var c=document.getElementsByTagName("head")[0]||document.head||document.documentElement;var b=document.createElement("script");b.setAttribute("type","text/javascript");b.setAttribute("charset","UTF-8");b.setAttribute("src",d);if(typeof a==="function"){if(window.attachEvent){b.onreadystatechange=function(){var e=b.readyState;if(e==="loaded"||e==="complete"){b.onreadystatechange=null;a()}}}else{b.onload=a}}c.appendChild(b)};loadJs("https://changyan.sohu.com/upload/changyan.js",function(){window.changyan.api.config({appid:appid,conf:conf})});
+    }
+  });
+  </script>
+  <script src="https://assets.changyan.sohu.com/upload/plugins/plugins.count.js"></script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://lwenkun.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://lwenkun.github.io/2016/09/03/2016-09-04-rxjava/";
+    this.page.identifier = "2016/09/03/2016-09-04-rxjava/";
+    this.page.title = "RxJava 原理探究";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://lwenkun.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

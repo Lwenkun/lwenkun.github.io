@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2},"changyan":{"order":-1}},"activeClass":"disqus"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Glide 之磁盘缓存Glide 提供了灵活的磁盘缓存策略，用户可以定义自己的缓存策略，只需要实现 DiskCache 接口即可。Glide 中已经有两个 DiskCache 实现，一个是 DiskCacheWrapper，这个类什么都没干，就是一个空壳，用来包装其他的 DiskCache 实现类；另一个类是 DiskLruCaheWrapper，它是基于 DiskLruCache 实现的。接下来">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Glide 之磁盘缓存">
+<meta property="og:url" content="https://lwenkun.github.io/2017/08/29/2017-08-29-glide-disk-cache-strategy/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="Glide 之磁盘缓存Glide 提供了灵活的磁盘缓存策略，用户可以定义自己的缓存策略，只需要实现 DiskCache 接口即可。Glide 中已经有两个 DiskCache 实现，一个是 DiskCacheWrapper，这个类什么都没干，就是一个空壳，用来包装其他的 DiskCache 实现类；另一个类是 DiskLruCaheWrapper，它是基于 DiskLruCache 实现的。接下来">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-08-29T00:00:00.000Z">
+<meta property="article:modified_time" content="2022-01-07T19:24:27.558Z">
+<meta property="article:author" content="李文坤">
+<meta property="article:tag" content="Android">
+<meta property="article:tag" content="开源库">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://lwenkun.github.io/2017/08/29/2017-08-29-glide-disk-cache-strategy/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Glide 之磁盘缓存 | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2017/08/29/2017-08-29-glide-disk-cache-strategy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="李文坤">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Glide 之磁盘缓存
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-08-29 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-29T00:00:00+00:00">2017-08-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-01-07 19:24:27" itemprop="dateModified" datetime="2022-01-07T19:24:27+00:00">2022-01-07</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2017/08/29/2017-08-29-glide-disk-cache-strategy/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2017/08/29/2017-08-29-glide-disk-cache-strategy/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2017/08/29/2017-08-29-glide-disk-cache-strategy/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/08/29/2017-08-29-glide-disk-cache-strategy/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>9.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Glide-之磁盘缓存"><a href="#Glide-之磁盘缓存" class="headerlink" title="Glide 之磁盘缓存"></a>Glide 之磁盘缓存</h1><p>Glide 提供了灵活的磁盘缓存策略，用户可以定义自己的缓存策略，只需要实现 DiskCache 接口即可。Glide 中已经有两个 DiskCache 实现，一个是 DiskCacheWrapper，这个类什么都没干，就是一个空壳，用来包装其他的 DiskCache 实现类；另一个类是 DiskLruCaheWrapper，它是基于 DiskLruCache 实现的。接下来从 DiskLruCahce 分析一下 Glide 的磁盘缓存。</p>
+<span id="more"></span>
+<h2 id="磁盘缓存核心-——-DiskLruCahce"><a href="#磁盘缓存核心-——-DiskLruCahce" class="headerlink" title="磁盘缓存核心 —— DiskLruCahce"></a>磁盘缓存核心 —— DiskLruCahce</h2><p>DiskLruCache 的分析分为两部分：分别是日志，读、写缓存。</p>
+<h3 id="日志"><a href="#日志" class="headerlink" title="日志"></a>日志</h3><p>DiskLruCache 的日志就是一个操作记录。例如，删除一条缓存条目，就会在日志文件中记录一条 REMOVE 记录；新建一条缓存，缓存文件刚建立时会增加一条 DIRTY 记录，缓存写入成功后再增加一条 CLEAN 记录；缓存被读取，会增加 READ 记录。日志文件的格式如下：</p>
+<table>
+<thead>
+<tr>
+<th>记录类型</th>
+<th>key</th>
+<th>length1</th>
+<th>length2</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CLEAN</td>
+<td>3400330d1dfc7f3f7f4b8d4d803dfcf6</td>
+<td>832</td>
+<td>21054</td>
+</tr>
+<tr>
+<td>DIRTY</td>
+<td>335c4c6028171cfddfbaae1a9c313c52</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>CLEAN</td>
+<td>335c4c6028171cfddfbaae1a9c313c52</td>
+<td>3934</td>
+<td>2342</td>
+</tr>
+<tr>
+<td>REMOVE</td>
+<td>335c4c6028171cfddfbaae1a9c313c52</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>DIRTY</td>
+<td>1ab96a171faeeee38496d8b330771a7a</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>CLEAN</td>
+<td>1ab96a171faeeee38496d8b330771a7a</td>
+<td>1600</td>
+<td>234</td>
+</tr>
+<tr>
+<td>READ</td>
+<td>335c4c6028171cfddfbaae1a9c313c52</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>READ</td>
+<td>3400330d1dfc7f3f7f4b8d4d803dfcf6</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>之所以记录日志，就是为了在 DiskLruCache 初始化时建立起缓存的 LRU 结构。DiskLruCache 内部使用了 lruEntries:LinkHashMap 来存储所有的缓存项，在初始化的时候，DiskLruCache 会读日志文件上的记录，根据该日志文件的记录将所有历史操作“重做”一遍：在执行历史操作时，会根据日志记录对缓存项进行添加和删除操作。为什么这样能保证缓存项是按 LRU 的顺序排序的呢？因为构造 LinkedHashMap 的时候选择使用 Access Order（访问顺序）来保持元素的顺序，因此只需遍历日志根据日志记录向 LinkedHashMap 中放入缓存项（Entry）自然而然地就保持了 LRU 的顺序。读区日志记录的文件如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">readJournalLine</span><span class="params">(String line)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> firstSpace = line.indexOf(<span class="string">&#x27; &#x27;</span>);</span><br><span class="line">  <span class="keyword">if</span> (firstSpace == -<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">&quot;unexpected journal line: &quot;</span> + line);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">int</span> keyBegin = firstSpace + <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">int</span> secondSpace = line.indexOf(<span class="string">&#x27; &#x27;</span>, keyBegin);</span><br><span class="line">  <span class="keyword">final</span> String key;</span><br><span class="line">  <span class="keyword">if</span> (secondSpace == -<span class="number">1</span>) &#123;</span><br><span class="line">    key = line.substring(keyBegin);</span><br><span class="line">    <span class="keyword">if</span> (firstSpace == REMOVE.length() &amp;&amp; line.startsWith(REMOVE)) &#123;</span><br><span class="line">      lruEntries.remove(key);</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    key = line.substring(keyBegin, secondSpace);</span><br><span class="line">  &#125;</span><br><span class="line">  Entry entry = lruEntries.get(key);</span><br><span class="line">  <span class="keyword">if</span> (entry == <span class="keyword">null</span>) &#123;</span><br><span class="line">    entry = <span class="keyword">new</span> Entry(key);</span><br><span class="line">    lruEntries.put(key, entry);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (secondSpace != -<span class="number">1</span> &amp;&amp; firstSpace == CLEAN.length() &amp;&amp; line.startsWith(CLEAN)) &#123;</span><br><span class="line">    String[] parts = line.substring(secondSpace + <span class="number">1</span>).split(<span class="string">&quot; &quot;</span>);</span><br><span class="line">    entry.readable = <span class="keyword">true</span>;</span><br><span class="line">    entry.currentEditor = <span class="keyword">null</span>;</span><br><span class="line">    entry.setLengths(parts);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (secondSpace == -<span class="number">1</span> &amp;&amp; firstSpace == DIRTY.length() &amp;&amp; line.startsWith(DIRTY)) &#123;</span><br><span class="line">    entry.currentEditor = <span class="keyword">new</span> Editor(entry);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (secondSpace == -<span class="number">1</span> &amp;&amp; firstSpace == READ.length() &amp;&amp; line.startsWith(READ)) &#123;</span><br><span class="line">    <span class="comment">// This work was already done by calling lruEntries.get().</span></span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">&quot;unexpected journal line: &quot;</span> + line);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法根据记录类型进行缓存的添加和删除：读取到 REMOVE 记录便从 lruEntries 删除对应的缓存项；然后通过 lruEntries.get() 方法尝试获取键值为 key 所对应的缓存项，如果不存在便新建一个并放入 lruEntries 中；判断记录的类型是不是 CLEAN 类型，是则对 entry 的 readable 和 currentEditor 字段进行更新，表示该缓存可供读取；如果类型是 DIRTY 类型，那么为 currentEditor 赋值；如果时 READ 记录，那么什么也不干，原因在注释里已经写明了：因为前面调用 lruEntries.get() 方法时，已经是对缓存元素进行了一次访问，因此可以保证这个被访问的元素排在最前面，即保证了元素按照 LRU 的次序排列。</p>
+<p>读取完之后还会对 lruEntries 中的元素进一步处理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">processJournal</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  deleteIfExists(journalFileTmp);</span><br><span class="line">  <span class="keyword">for</span> (Iterator&lt;Entry&gt; i = lruEntries.values().iterator(); i.hasNext(); ) &#123;</span><br><span class="line">    Entry entry = i.next();</span><br><span class="line">    <span class="keyword">if</span> (entry.currentEditor == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> t = <span class="number">0</span>; t &lt; valueCount; t++) &#123;</span><br><span class="line">        size += entry.lengths[t];</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      entry.currentEditor = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> t = <span class="number">0</span>; t &lt; valueCount; t++) &#123;</span><br><span class="line">        deleteIfExists(entry.getCleanFile(t));</span><br><span class="line">        deleteIfExists(entry.getDirtyFile(t));</span><br><span class="line">      &#125;</span><br><span class="line">      i.remove();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法会将其中 currentEditor 不为 null 的 entry 全部删除。原因就是这些缓存项是脏数据，是上次缓存未成功提交的结果。一般来说，一条 DIRTY 记录后会紧跟着一条 key 值相同的 CLEAN 或者 REMOVE 记录，这表明了缓存经历了从被写入到之后成功提交或者删除的过程，这样一来，lruEntries 中要么就不存在该记录对应的 Entry 对象，要么该 Entry 对象的 currentEditor 为 null，即该缓存项有效。如果不清楚这一点可以先往下读再回来理解。</p>
+<p>现在，假设有如下日志记录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DIRTY KEY1；CLEAN KEY1；DIRTY KEY2；CLEAN KEY2；DIRTY KEY3；CLEAN KEY3；</span><br><span class="line">READ KEY3；READ KEY2 ；DIRTY KEY4；CLEAN KEY4；REMOVE KEY1</span><br></pre></td></tr></table></figure>
+<p>这个日志反映的历史操作是：首先依次建立了 key 分别为 KEY1，KEY2，KEY3 的三个缓存文件，然后读取了 key 为 KEY2 和 KEY3 的两个文件，之后又建立了 key 为 KEY4 的文件，最后删除了 key 为 KEY1 的那个缓存文件。这样一来读取该日志文件时 LinkHashMap 添加和删除缓存项的过程就是这样的：首先依次添加 KEY1，KEY2，KEY3 对应的缓存项，再依次分别读取一次 KEY3，KEY2 对应的缓存项，再添加 KEY4 对应的缓存项，最后删除 KEY1 对应的缓存项。最终 lruEntries 中的缓存项的顺序为：KEY3，KEY2，KEY4，其中 KEY4 排在最前面，即最不容易被淘汰。</p>
+<h3 id="读写缓存"><a href="#读写缓存" class="headerlink" title="读写缓存"></a>读写缓存</h3><p>首先看 DiskLruCache 读缓存的方式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">DiskLruCache cache = DiskLruCache.open(directory, appVersion, valueCount, maxSize);</span><br><span class="line">Value v = cache.get(key);</span><br><span class="line">File cacheFile = v.getFile(0);</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+<p>DisLruCache 的 open() 方法有四个参数：第一个参数是缓存文件的根目录，第二个是应用版本号，第三个是一个 key 对应的缓存文件数目（一般传 1 就可以了，我们通常只需要一份缓存文件），第四个是缓存的最大值，以字节为单位。Value 被称之为“快照”，它包含了缓存项的一些信息，比如缓存项对应的缓存文件。它的 getFile() 方法就是获取该缓存文件，客户端就可以将需要缓存的信息写入该文件。</p>
+<p>写缓存的方式如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Editor editor = cache.edit(key);</span><br><span class="line">File cacheFile = editor.getFile(<span class="number">0</span>);</span><br><span class="line">...</span><br><span class="line">eidtor.commit();</span><br></pre></td></tr></table></figure>
+
+<p>首先调用 edit() 方法开启了在键值为 key 的缓存项上的一次操作，它返回的是一个 Editor 对象，该对象的 getFile() （参数 0 表示的是该 key 对应的缓存项中的第一个缓存文件）方法返回缓存文件供外部执行写缓存操作。需要注意的是，对缓存文件操作完之后需要调用 editor.commit() 方法进行提交，否则这次写在日志文件中只会生成一条 DIRTY 记录与之对应（而不会生成 CLEAN 记录），使得缓存无效。</p>
+<p>现在来看读写缓存的内部原理，首先要理解 DiskLruCache 的几个内部类及其角色。其中一个是 Entry，Entry 代表了一个缓存项，这个缓存项不一定就是一个缓存文件，它对应的是含有相同 key 的所有缓存文件，这些文件有 CLEAN 状态的，也有 DIRTY 状态的。其内部的数据结构大致是这样的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">class Entry &#123;</span><br><span class="line">    String key; // 缓存项对应的 key</span><br><span class="line">    File[] dirtyFiles; // 临时文件，不完整，不可读取，只可写入</span><br><span class="line">    File[] cleanFiles; // 完整缓存文件，已缓存完毕，可供读取</span><br><span class="line">    long[] lengths; // 完整的缓存文件对应的大小</span><br><span class="line">    Editor currentEditor; // 当前在此 Entry 上执行操作的 Editor 对象</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其构造方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">Entry</span><span class="params">(String key)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.key = key;</span><br><span class="line">  <span class="keyword">this</span>.lengths = <span class="keyword">new</span> <span class="keyword">long</span>[valueCount];</span><br><span class="line">  cleanFiles = <span class="keyword">new</span> File[valueCount];</span><br><span class="line">  dirtyFiles = <span class="keyword">new</span> File[valueCount];</span><br><span class="line">  <span class="comment">// The names are repetitive so re-use the same builder to avoid allocations.</span></span><br><span class="line">  StringBuilder fileBuilder = <span class="keyword">new</span> StringBuilder(key).append(<span class="string">&#x27;.&#x27;</span>);</span><br><span class="line">  <span class="keyword">int</span> truncateTo = fileBuilder.length();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; valueCount; i++) &#123;</span><br><span class="line">      fileBuilder.append(i);</span><br><span class="line">      cleanFiles[i] = <span class="keyword">new</span> File(directory, fileBuilder.toString());</span><br><span class="line">      fileBuilder.append(<span class="string">&quot;.tmp&quot;</span>);</span><br><span class="line">      dirtyFiles[i] = <span class="keyword">new</span> File(directory, fileBuilder.toString());</span><br><span class="line">      fileBuilder.setLength(truncateTo);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>它的构造方法利用了 key 去构造那些 File 对象：key.index 就是 Clean File，key.index.tmp 就是 Dirty File。也就是说，在读取日志文件的时候，已经将所有缓存项的对应的缓存文件对象都初始化好了，需要注意的是，这里仅仅是根据文件名来构造相应的缓存文件对象而已，那些 cleanFiles 和 dirtyFiles 并不一定是磁盘上存在的文件。</p>
+<p>另一个类是 Editor，它的内部字段有：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">class Editor &#123;</span><br><span class="line">    Entry entry; //该 Editor 操作的缓存项</span><br><span class="line">    boolean[] written; // 完整文件是否被修改</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>现在我们看看写缓存文件的过程。首先是获取 Editor 对象：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">synchronized</span> Editor <span class="title">edit</span><span class="params">(String key, <span class="keyword">long</span> expectedSequenceNumber)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  checkNotClosed();</span><br><span class="line">  Entry entry = lruEntries.get(key);</span><br><span class="line">  <span class="keyword">if</span> (expectedSequenceNumber != ANY_SEQUENCE_NUMBER &amp;&amp; (entry == <span class="keyword">null</span></span><br><span class="line">      || entry.sequenceNumber != expectedSequenceNumber)) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>; <span class="comment">// Value is stale.</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (entry == <span class="keyword">null</span>) &#123;</span><br><span class="line">    entry = <span class="keyword">new</span> Entry(key);</span><br><span class="line">    lruEntries.put(key, entry);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (entry.currentEditor != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>; <span class="comment">// Another edit is in progress.</span></span><br><span class="line">  &#125;</span><br><span class="line">  Editor editor = <span class="keyword">new</span> Editor(entry);</span><br><span class="line">  entry.currentEditor = editor;</span><br><span class="line">  <span class="comment">// Flush the journal before creating files to prevent file leaks.</span></span><br><span class="line">  journalWriter.append(DIRTY);</span><br><span class="line">  journalWriter.append(<span class="string">&#x27; &#x27;</span>);</span><br><span class="line">  journalWriter.append(key);</span><br><span class="line">  journalWriter.append(<span class="string">&#x27;\n&#x27;</span>);</span><br><span class="line">  journalWriter.flush();</span><br><span class="line">  <span class="keyword">return</span> editor;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法做的事可以描述如下：先从 lruEntries:LinkedHashMap 中获取缓存项，然后对缓存的 sequenceNumber 进行验证，如果不存在该缓存项，便新建一个。然后由该缓存项构造出一个 Editor 对象，最后记录一条 DIRTY 日志并返回 Editor 对象。获取 Editor 对象后，便可通过其 getFile(0) 方法获取到对应的缓存文件对象：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> File <span class="title">getFile</span><span class="params">(<span class="keyword">int</span> index)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">synchronized</span> (DiskLruCache.<span class="keyword">this</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (entry.currentEditor != <span class="keyword">this</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!entry.readable) &#123;</span><br><span class="line">        written[index] = <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    File dirtyFile = entry.getDirtyFile(index);</span><br><span class="line">    <span class="keyword">if</span> (!directory.exists()) &#123;</span><br><span class="line">        directory.mkdirs();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dirtyFile;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>getFile() 返回的是缓存项的第 index 个临时文件对象，客户端便可由该对象建立输出流将缓存写入文件中。因为是写文件，所以在写的时候可能出现异常中断的现象（应用崩溃、应用进程被杀），因此写完缓存之后需要调用 editor.commit() 来提交本次操作：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">commit</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  completeEdit(<span class="keyword">this</span>, <span class="keyword">true</span>);</span><br><span class="line">  committed = <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// suecess 为 true 表示提交本次操作，fale 表示放弃本次操作</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">completeEdit</span><span class="params">(Editor editor, <span class="keyword">boolean</span> success)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  Entry entry = editor.entry;</span><br><span class="line">  <span class="keyword">if</span> (entry.currentEditor != editor) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// If this edit is creating the entry for the first time, every index must have a value.</span></span><br><span class="line">  <span class="keyword">if</span> (success &amp;&amp; !entry.readable) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; valueCount; i++) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!editor.written[i]) &#123;</span><br><span class="line">        editor.abort();</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">&quot;Newly created entry didn&#x27;t create value for index &quot;</span> + i);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (!entry.getDirtyFile(i).exists()) &#123;</span><br><span class="line">        editor.abort();</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 对缓存重命名</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; valueCount; i++) &#123;</span><br><span class="line">    File dirty = entry.getDirtyFile(i);</span><br><span class="line">    <span class="keyword">if</span> (success) &#123;</span><br><span class="line">      <span class="keyword">if</span> (dirty.exists()) &#123;</span><br><span class="line">        File clean = entry.getCleanFile(i);</span><br><span class="line">        dirty.renameTo(clean);</span><br><span class="line">        <span class="keyword">long</span> oldLength = entry.lengths[i];</span><br><span class="line">        <span class="keyword">long</span> newLength = clean.length();</span><br><span class="line">        entry.lengths[i] = newLength;</span><br><span class="line">        size = size - oldLength + newLength;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      deleteIfExists(dirty);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  redundantOpCount++;</span><br><span class="line">  entry.currentEditor = <span class="keyword">null</span>;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 记录日志</span></span><br><span class="line">  <span class="keyword">if</span> (entry.readable | success) &#123;</span><br><span class="line">    entry.readable = <span class="keyword">true</span>;</span><br><span class="line">    journalWriter.append(CLEAN);</span><br><span class="line">    journalWriter.append(<span class="string">&#x27; &#x27;</span>);</span><br><span class="line">    journalWriter.append(entry.key);</span><br><span class="line">    journalWriter.append(entry.getLengths());</span><br><span class="line">    journalWriter.append(<span class="string">&#x27;\n&#x27;</span>);</span><br><span class="line">    <span class="keyword">if</span> (success) &#123;</span><br><span class="line">      entry.sequenceNumber = nextSequenceNumber++;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    lruEntries.remove(entry.key);</span><br><span class="line">    journalWriter.append(REMOVE);</span><br><span class="line">    journalWriter.append(<span class="string">&#x27; &#x27;</span>);</span><br><span class="line">    journalWriter.append(entry.key);</span><br><span class="line">    journalWriter.append(<span class="string">&#x27;\n&#x27;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  journalWriter.flush();</span><br><span class="line">  <span class="keyword">if</span> (size &gt; maxSize || journalRebuildRequired()) &#123;</span><br><span class="line">    executorService.submit(cleanupCallable);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法的逻辑是：先校验一下是不是只有一个 Editor 在操作该缓存项（保证同一时刻一个缓存项上只能有一个写操作），然后判断该缓存项是不是新建的，如果是，那么是不是该缓存项对应的所有的临时缓存文件都存在并且都被写过，如果不是，那么放弃这次操作。验证工作做完后就是重命名的过程了，接下来会把所有的该缓存项的所有实际存在的临时文件的名称都重命名为对应的完整文件的名称（即把后面的 .tmp 后缀去除）。最后就是记录日志，如果成功提交本次操作，那么记下一条 CLEAN 日志，如果选择放弃本次操作，那么记下 REMOVE 日志。通过这个方法可以知道，如果客户端写完缓存后没有调用 Editor#commit() CLEAN 记录是不会被记下的，因此下次读取日志文件的时候，会把该缓存项删除，原因前面已经讲了。</p>
+<p>如果缓存一直持续下去，是不是日志记录越来越大呢？答案是否定的，日志文件有一个上限，如果超过该上限便会重建。同样的，lruEntries 中的缓存项也不会无限增长，它受 maxSize 参数的限制，如果容量太大，便会从 LruEntries 中删除最久未被使用的缓存项，并将结果反映到磁盘上的缓存文件上，具体的细节这里就不再讲述了。</p>
+<h2 id="感谢阅读"><a href="#感谢阅读" class="headerlink" title="感谢阅读"></a>感谢阅读</h2><p>以上便是对 Glide 磁盘缓存的核心类 DiskLruCache 的分析，如有不对还请大家不吝赐教。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>lwenkun
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2017/08/29/2017-08-29-glide-disk-cache-strategy/" title="Glide 之磁盘缓存">https://lwenkun.github.io/2017/08/29/2017-08-29-glide-disk-cache-strategy/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android/" rel="tag"># Android</a>
+              <a href="/tags/%E5%BC%80%E6%BA%90%E5%BA%93/" rel="tag"># 开源库</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2017/08/29/2017-08-29-how-an-android-process-starts/" rel="prev" title="Android 进程启动原理">
+      <i class="fa fa-chevron-left"></i> Android 进程启动原理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2017/09/05/2017-09-05-android-how-motion-event-dispatched/" rel="next" title="Android 事件分发规律总结">
+      Android 事件分发规律总结 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+            <li class="tab"><a href="#comment-changyan">changyan</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+            <div class="tab-pane changyan" id="comment-changyan">
+              
+  <div class="comments">
+    <div id="SOHUCS"></div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Glide-%E4%B9%8B%E7%A3%81%E7%9B%98%E7%BC%93%E5%AD%98"><span class="nav-number">1.</span> <span class="nav-text">Glide 之磁盘缓存</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A3%81%E7%9B%98%E7%BC%93%E5%AD%98%E6%A0%B8%E5%BF%83-%E2%80%94%E2%80%94-DiskLruCahce"><span class="nav-number">1.1.</span> <span class="nav-text">磁盘缓存核心 —— DiskLruCahce</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A5%E5%BF%97"><span class="nav-number">1.1.1.</span> <span class="nav-text">日志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BB%E5%86%99%E7%BC%93%E5%AD%98"><span class="nav-number">1.1.2.</span> <span class="nav-text">读写缓存</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%84%9F%E8%B0%A2%E9%98%85%E8%AF%BB"><span class="nav-number">1.2.</span> <span class="nav-text">感谢阅读</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李文坤"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">李文坤</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/lwenkun" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李文坤</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">217k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:18</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  <script>
+  NexT.utils.loadComments(document.querySelector('#SOHUCS'), () => {
+    var appid = 'cysUmzEyu';
+    var conf = '2459465628a99f57dac524f945fb682a';
+    var width = window.innerWidth || document.documentElement.clientWidth;
+    if (width < 960) {
+      window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="https://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>');
+    } else {
+      var loadJs=function(d,a){var c=document.getElementsByTagName("head")[0]||document.head||document.documentElement;var b=document.createElement("script");b.setAttribute("type","text/javascript");b.setAttribute("charset","UTF-8");b.setAttribute("src",d);if(typeof a==="function"){if(window.attachEvent){b.onreadystatechange=function(){var e=b.readyState;if(e==="loaded"||e==="complete"){b.onreadystatechange=null;a()}}}else{b.onload=a}}c.appendChild(b)};loadJs("https://changyan.sohu.com/upload/changyan.js",function(){window.changyan.api.config({appid:appid,conf:conf})});
+    }
+  });
+  </script>
+  <script src="https://assets.changyan.sohu.com/upload/plugins/plugins.count.js"></script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://lwenkun.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://lwenkun.github.io/2017/08/29/2017-08-29-glide-disk-cache-strategy/";
+    this.page.identifier = "2017/08/29/2017-08-29-glide-disk-cache-strategy/";
+    this.page.title = "Glide 之磁盘缓存";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://lwenkun.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

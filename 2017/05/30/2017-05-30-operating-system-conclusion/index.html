@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2},"changyan":{"order":-1}},"activeClass":"disqus"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="操作系统原理总结对课本知识的概括和总结，来自《操作系统原理》第四版 —— 庞丽萍著">
+<meta property="og:type" content="article">
+<meta property="og:title" content="操作系统原理总结">
+<meta property="og:url" content="https://lwenkun.github.io/2017/05/30/2017-05-30-operating-system-conclusion/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="操作系统原理总结对课本知识的概括和总结，来自《操作系统原理》第四版 —— 庞丽萍著">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-05-30T00:00:00.000Z">
+<meta property="article:modified_time" content="2022-01-07T19:24:27.558Z">
+<meta property="article:author" content="李文坤">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://lwenkun.github.io/2017/05/30/2017-05-30-operating-system-conclusion/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>操作系统原理总结 | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2017/05/30/2017-05-30-operating-system-conclusion/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="李文坤">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          操作系统原理总结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-05-30 00:00:00" itemprop="dateCreated datePublished" datetime="2017-05-30T00:00:00+00:00">2017-05-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-01-07 19:24:27" itemprop="dateModified" datetime="2022-01-07T19:24:27+00:00">2022-01-07</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2017/05/30/2017-05-30-operating-system-conclusion/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2017/05/30/2017-05-30-operating-system-conclusion/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2017/05/30/2017-05-30-operating-system-conclusion/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/05/30/2017-05-30-operating-system-conclusion/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5.6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="操作系统原理总结"><a href="#操作系统原理总结" class="headerlink" title="操作系统原理总结"></a>操作系统原理总结</h1><p>对课本知识的概括和总结，来自《操作系统原理》第四版 —— 庞丽萍著</p>
+<span id="more"></span>
+<h2 id="用户环境"><a href="#用户环境" class="headerlink" title="用户环境"></a>用户环境</h2><p>操作系统的生成：</p>
+<ul>
+<li><p>系统生成</p>
+</li>
+<li><p>根据计算机的硬件配置选择相应的功能模块来组装成一个可利用的操作系统</p>
+</li>
+<li><p>硬件配置信息可通过从文件读取或者系统程序员</p>
+</li>
+<li><p>系统初启</p>
+</li>
+<li><p>引导程序 =&gt; 系统核心 =&gt; 核心初始化</p>
+</li>
+<li><p>核心初始化：先建立 0# 进程（永远处于核心态，换页），再建立 1# 进程（初始化进程，实现系统初始化，负责为终端建立子进程）</p>
+</li>
+<li><p>用户程序的运行过程</p>
+</li>
+<li><p>编写源程序</p>
+</li>
+<li><p>将源程序记录在某种介质上</p>
+</li>
+<li><p>控制计算机工作，加工，得到计算结果</p>
+<ul>
+<li>编译</li>
+<li>链接<ul>
+<li>静态链接：将外部调用函数链接到目标文件中形成一个完整的主存映像文件</li>
+<li>动态链接：运行时将动态链接库加载并链接到目标程序中</li>
+</ul>
+</li>
+<li>运行</li>
+</ul>
+</li>
+<li><p>操作系统的用户界面</p>
+</li>
+<li><p>定义：用户和计算机打交道的外部机制。和用户上机类型和操作系统的的类型有关</p>
+</li>
+<li><p>系统提供的用户界面：操作命令、系统功能调用</p>
+</li>
+<li><p>系统功能调用</p>
+</li>
+<li><p>用户程序调用系统例程，由用户态进入管态</p>
+</li>
+<li><p>系统调用的实现：用户程序（用户态） =&gt; 发出自愿访管命令 =&gt; 访管中断程序保护现场，查找例行子程序入口地址表获取系统例程的入口地址 =&gt; 根据入口地址进行系统调用（管态） =&gt; 结果返回访管中断程序 =&gt; 恢复用户程序现场（用户态）</p>
+</li>
+</ul>
+<h2 id="并发处理"><a href="#并发处理" class="headerlink" title="并发处理"></a>并发处理</h2><p>提高计算机的处理能力和机器的利用率，但容易造成错误。</p>
+<ul>
+<li><p>并发的特点</p>
+</li>
+<li><p>失去程序的封闭性：计算结果不再和时间无关，依赖于各程序的相对执行速率</p>
+</li>
+<li><p>程序和计算不再一一对应：过个计算可以公用一个程序</p>
+</li>
+<li><p>程序并发执行的相互制约</p>
+</li>
+<li><p>进程</p>
+</li>
+<li><p>进程的定义</p>
+<ul>
+<li>一个程序在给定的空间和初始环境下，在一个处理机上的执行过程</li>
+<li>进程是指一个具有一定独立功能的程序关于某个数据集合的一次运行活动</li>
+</ul>
+</li>
+<li><p>进程和程序的区别：</p>
+<ul>
+<li>程序是指令的有序集合，其本身没有任何运行的含义，它是一个静态的概念，可永久保存</li>
+<li>进程是程序（指令）在处理机上的一次执行的过程，是动态的概念，有生命周期，动态地产生和消亡</li>
+<li>进程是独立运行的单位，能与其他进程并行的活动</li>
+<li>进程是竞争计算机系统有限资源的基本单位，也是进行处理机调度额基本单位</li>
+<li>多任务的操作系统中，活动的最小单位是进程，进程一定包含一个程序，程序是进程应完成的功能的逻辑描述；一个程序可以多应多个进程</li>
+</ul>
+</li>
+<li><p>进程的类型</p>
+<ul>
+<li>用户进程：为用户算题任务建立的进程</li>
+<li>系统进程：资源管理和控制作用</li>
+</ul>
+</li>
+<li><p>进程的状态</p>
+<ul>
+<li>进程的基本状态：等待状态=&gt;就绪状态&lt;=&gt;运行状态=&gt;等待状态</li>
+</ul>
+</li>
+<li><p>进程的描述：进程控制块，是一个和进程对应的实体，记录进程的各种状态信息</p>
+</li>
+<li><p>线程概念及特点</p>
+<ul>
+<li>什么是线程<ul>
+<li>线程是比进程更小的活动单位，它是进程中的一个执行路径。一个进程可以有多条的执行路径，每条路径就是一条线程</li>
+<li>线程有自己的堆栈和处理机执行环境（尤其是处理器寄存器）</li>
+<li>共享分配给父进程的主存</li>
+<li>若系统支持线程运行，那么每个进程至少有一个执行线程</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>线程的特点及状态</p>
+<ul>
+<li>线程的特点<ul>
+<li>开销小，共享进程的程序和全局数据</li>
+<li>可以提高系统的并行处理能力</li>
+<li>线程拥有私有的指令计数器、私有的栈区、私有的寄存器集合和地址区域</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>线程的状态以及变迁</p>
+<ul>
+<li>创建，建立一个新的线程，新生的线程处于新建状态</li>
+<li>就绪，线程处于就绪队列中，等待被调度      </li>
+<li>运行，一个线程正占用 CPU，执行它的程序</li>
+<li>等待，一个正在执行的线程如果发生某些事件，如被挂起或者需要执行费时的输入输出操作</li>
+<li>终止，线程已经退出，但该信息还没有被其他线程所收集</li>
+</ul>
+</li>
+<li><p>用户线程和内核线程</p>
+<ul>
+<li>用户线程是在内核的支持下，在用户层通过线程库来实现的。线程库提供对线程的创建、调度和管理等方面的支持。用户线程对内核来说是透明的，即内核并不知道线程的存在。相当于在单线程的进程中模拟多线程，这种线程不是 CPU 调度的单位，调度单位依然是线程</li>
+<li>内核线程是内核可感知的，由操作系统直接支持，在内核空间内执行线程的创建、调度和管理</li>
+<li>内核线程的创建、调度以及管理要比用户线程慢</li>
+</ul>
+</li>
+<li><p>进程控制</p>
+</li>
+<li><p>进程的创建（<a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/4856255/the-difference-between-fork-vfork-exec-and-clone">linux 中 fork，vfork，clone 的区别</a>）、撤销、阻塞、唤醒</p>
+</li>
+<li><p>进程的相互制约关系</p>
+</li>
+<li><p>进程竞争与合作</p>
+<ul>
+<li>竞争系统资源</li>
+<li>进程间合作：信息共享；并行处理</li>
+</ul>
+</li>
+<li><p>进程互斥的概念</p>
+<ul>
+<li>临界资源：共享硬件资源、共享公用变量、共享表格等</li>
+<li>临界区：各个进程访问临界资源的那段程序<ul>
+<li>在有限时间内进入临界区</li>
+<li>至多有一个进进程处于临界区</li>
+<li>进程在临界区内仅逗留有限的时间</li>
+</ul>
+</li>
+<li>互斥：若干进程能够访问和修改的存储单元称为公共变量，公共变量或公共存储区一次只能被一个进程读写</li>
+</ul>
+</li>
+<li><p>进程同步的概念</p>
+<ul>
+<li>同步的例子：病人看病，医生开化验单，病人拿化验单去化验，将化验结果交给医生</li>
+</ul>
+</li>
+<li><p>同步机构</p>
+</li>
+<li><p>锁：上锁原语&amp;开锁原语</p>
+</li>
+<li><p>原语的概念：不可分割的一系列操作。在单处理机上，该功能由操作系统提供支持，即软件方法实现，使得某进程在执行某原语所包含的一系列指令执行时不被中断。在多核处理机上必须要由硬件支持。详见 <a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/6863612/atomic-operations-under-the-hood">stackoverflow</a>、<a target="_blank" rel="noopener" href="http://blog.csdn.net/npy_lp/article/details/7262388">Linux内核同步原语之原子操作</a>、<a target="_blank" rel="noopener" href="http://baike.baidu.com/item/%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C">百度百科-原子操作</a>、<a target="_blank" rel="noopener" href="http://www.cnblogs.com/jiayy/p/3243900.html">并行编程3——内存模型之原子性</a></p>
+<ul>
+<li>单处理器上的原语靠操作系统实现，即使该原语由一系列的指令完成，但只要操作系统不把线程中断（如线程调度）即可保证这一系列指令的原子性；此时其他线程等待的是时间片（处于就绪态）</li>
+<li>多处理器上的原语靠硬件实现，如果某原语由一系列的指令完成，即使执行该原语的线程在其运行的 CPU 上不被调度（或者说被中断），其他 CPU 上可能会有线程操作该原语对应的内存区域，此时并不能保证该 “原语” 的原子性，此时就需要 CPU 提供 LOCK 指令使得原语所操作的内存被锁上，那么其他 CPU 上在线程就不能操作该内存了，从而保证了原语的原子性，此时这些线程等待的是 UNLOCK 指令（处于阻塞状态）</li>
+<li>总的来说原语就是要保证相同内存只能被一个线程所操作</li>
+</ul>
+</li>
+<li><p>信号灯以及 P、V操作</p>
+<ul>
+<li>信号灯：从交通管理应用过来的一个术语，绿灯行（信号量非负），红灯停（信号量小于零）</li>
+<li>P、V操作：P 操作和 V 操作都为原语<ul>
+<li>P 操作使得信号量减 1，如果信号量此时大于等于 0，那么进程继续；否则进入该信号灯的等待队列中</li>
+<li>V 操作使得信号量加一，如果此时信号量大于零进程继续；如果小于零，说明有进程处于等待队列中，因此需要从等待队列中唤醒一个进程（原因：该进程由于等待而挂起，并不能自己唤醒自己）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>进程互斥与同步的实现</p>
+</li>
+<li><p>互斥的实现：1) 上锁原语、开锁原语； 2)信号灯</p>
+</li>
+<li><p>同步的实现：信号灯以及 P、V 操作</p>
+<ul>
+<li>生产者消费者问题</li>
+<li>病人看病问题</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line">//病人看病</span><br><span class="line">main() &#123;</span><br><span class="line">    int s1 = 0; // 表示有无化验单的信号量，初始值为 0，表示没有</span><br><span class="line">    int s2 = 0; // 表示有无化验结果的信号量，初始值为 0，表示没有</span><br><span class="line">    cobegin             </span><br><span class="line">        labora();          </span><br><span class="line">        diagnosis();        </span><br><span class="line">    coend</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">labora() &#123;</span><br><span class="line">    while(化验为完成) &#123;</span><br><span class="line">        p(s1); // 询问有无化验单，无则等待</span><br><span class="line">        化验;</span><br><span class="line">        V(s2); // 送出化验结果</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">diagnosis() &#123;</span><br><span class="line">    while(看病工作未完成) &#123;</span><br><span class="line">        看病；</span><br><span class="line">        V(s1); // 送出化验单</span><br><span class="line">        P(s2); // 等化验结果</span><br><span class="line">        diagnosis; // 诊断</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 生产者消费者</span><br><span class="line">main() &#123;</span><br><span class="line">    int full = 0; // 满缓冲区数目</span><br><span class="line">    int empty = n; // 空缓冲区树木</span><br><span class="line">    int mutex = 1; // 对有界缓冲区进行操作的互斥信号灯</span><br><span class="line">    cobegin</span><br><span class="line">        p1();p2();...;pm(); // 生产</span><br><span class="line">        c1();c2();...;ck(); // 消费</span><br><span class="line">    coend</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">producer() &#123;</span><br><span class="line">    while(生产未完成) &#123;</span><br><span class="line">           .</span><br><span class="line">           .</span><br><span class="line">        生产一个产品；</span><br><span class="line">        P(empty);</span><br><span class="line">        P(mutex);</span><br><span class="line">        送一个产品到有界缓冲区;</span><br><span class="line">        V(mutex);</span><br><span class="line">        V(full);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">consumer() &#123;</span><br><span class="line">    while(还要继续消费) &#123;</span><br><span class="line">        P(full);</span><br><span class="line">        P(mutex);</span><br><span class="line">        从有界缓冲区中取出产品；</span><br><span class="line">        V(mutex);</span><br><span class="line">        V(empty);</span><br><span class="line">           .</span><br><span class="line">           .</span><br><span class="line">        消费一个产品;</span><br><span class="line">    &#125;       </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>进程通信<ul>
+<li>拷贝消息到另一个进程的地址空间</li>
+<li>信箱通信，进程 A 投递消息到进程 B 的信箱中；进程 B 投递从自己的信箱中获取消息。信箱可位于 B 的空间，也可位于系统空间<ul>
+<li>send 原语：可同步可异步，同步需等待对方接受；异步不关心对方是否接受</li>
+<li>receive 原语：可以阻塞或非阻塞，如果阻塞，信息到来之前接收进程挂起；如果非阻塞，有消息将消息立即返回，无消息返回标志，表示没有消息可用</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="资源分配与调度"><a href="#资源分配与调度" class="headerlink" title="资源分配与调度"></a>资源分配与调度</h2><ul>
+<li>资源管理概述</li>
+<li>资源管理的目的和任务<ul>
+<li>资源的静态分配和动态分配：运行前一次性分配为静态分配；运行时根据运行情况动态的分配为动态分配</li>
+<li>资源分配的目标<ul>
+<li>保证资源的高利用率</li>
+<li>在合理的时间内使所用的用户有获得所需资源的机会</li>
+<li>对不可共享的资源实施互斥使用</li>
+<li>防止由资源分配不当而引起的死锁</li>
+</ul>
+</li>
+<li>资源管理的任务<ul>
+<li>资源数据结构的描述：资源物理名、逻辑名、类型、地址、分配状态等</li>
+<li>确定请求的分配原则和调度原则：资源分给谁，何时分配，分配数量</li>
+<li>资源分配的执行：按需分配资源，回收资源</li>
+<li>存取控制和安全保护</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>资源的分类方法<ul>
+<li>物理资源和程序资源：各种硬件资源为物理资源，系统服务、文件等为程序资源</li>
+<li>单一访问入口资源和多访问入口资源：单访问入口资源一次只能一个进程用，多访问入口资源一次允许多个进程用</li>
+<li>等同资源：多个资源的实例，如磁盘的各个扇区</li>
+<li>虚拟资源：如虚拟主存，虚拟 CPU 等</li>
+</ul>
+</li>
+<li>资源分配机制</li>
+<li>资源描述器：描述资源最小分配单位的信息，如资源名、资源类型、分配标志等</li>
+<li>资源信息块（rib）<ul>
+<li>等待队列头指针：指向等待该资源的的进程队列</li>
+<li>可利用资源队列头指针：指向资源描述器组成的队列</li>
+<li>资源分配程序入口地址：执行分配任务，把对应的资源分配给请求者</li>
+</ul>
+</li>
+<li>资源分配策略</li>
+<li>先请求先服务（先进先出，FIFO）</li>
+<li>优先调度（针对处理机而言）：优先照顾需要尽快处理的作业或进程</li>
+<li>针对设备特性的调度：如对磁盘资源的请求会考虑移臂距离和旋转次数</li>
+<li>死锁</li>
+<li>同类资源的死锁：A、B 为两个进程，C 资源两个实例，A、B 各自拥有一个 C 资源的实例，它们不释放已有的资源实例，并且继续申请 C 资源，此时产生同类资源的死锁</li>
+<li>非同类资源的死锁：A、B 为两个进程，C、D 两个资源各有一个实例。A 占有 C 资源，B 占有 D 资源，它们都不释放已有的资源，同时 A 申请 D 资源，B 申请 C 资源，此时产生非同类资源的死锁</li>
+<li>死锁的原因和条件<ul>
+<li>产生死锁的根本原因：系统提供的资源数少于申请该资源的数目</li>
+<li>产生死锁的必要条件：<ul>
+<li>互斥条件：资源为非共享的，或者说单一入口资源</li>
+<li>不剥夺条件：资源使用完之前，其他进程不能强行剥夺其他进程的资源</li>
+<li>占有并等待：进程申请其他资源时，不会释放已占有的资源</li>
+<li>环路条件：A 进程需要的资源被 B 进程占有，而 B 进程需要的资源被进程 C 占有 …… * 进程需要的资源被 A 进程占有</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>死锁的解决策略<ul>
+<li>破坏死锁的必要条件之一</li>
+</ul>
+</li>
+<li>死锁的避免：<ul>
+<li>静态预防：从根源避免死锁，作业在运行前说明所需要的所有资源，如果系统能够提供，那么投入运行，否则不能投入运行</li>
+<li>动态避免<ul>
+<li>有序资源分配法：给资源标序号，一个进程对于同类资源需一次性申请完，对不同类资源需要按序申请。该方法避免死锁的原因：每一时刻，总有一个进程 A 占有已分配资源中序号最高的那一个，此进程继续申请的资源的序号必定更高，这些资源必定处于空闲，因此进程 A 可以推进，在执行完后释放已有资源；进程 A 执行完后，又有一个进程 B 和进程 A 之前的状态一样，占有已分配资源中序号最高的那一个，于是 B 进程也可顺利执行结束；以此类推，所有进程都可顺利执行而不会发生死锁</li>
+<li><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E9%93%B6%E8%A1%8C%E5%AE%B6%E7%AE%97%E6%B3%95">银行家算法</a>：某个进程将来需要的各类资源当前系统能够满足，则将此进程投入运行。该方法避免死锁的原因：（1）进程 A 在运行时最多需要 5 个资源 B，此时系统拥有 B 的实例有 10 个，满足条件，将 A 投入运行，A 暂时只用到了 2 个 B 资源实例；（2）此时 C 进程想投入运行，它所需资源 B 的最大个数为 7 个，而系统此时有 8 个，故 C 投入运行，C 暂时只用了 6 个；（3）A 此时又想获取 3 个 B 实例，但是 B 资源只有 2 个不够，于是等待；（4）C 再次申请 1 个资源，成功，C 执行完毕并释放所有 B 资源实例；（4）A 获得 2 个资源，执行完毕后释放所有 B 资源实例。该算法成功避免死锁的原因在于后来的申请者一定会释放所申请资源，使得系统所拥有资源量符合对较早申请者的承诺。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="处理机调度"><a href="#处理机调度" class="headerlink" title="处理机调度"></a>处理机调度</h2><ul>
+<li><p>处理机的多级调度</p>
+</li>
+<li><p>批处理中的处理机调度</p>
+<ul>
+<li>先作业调度（宏观调度）：根据一定的策略挑选作业，建作业对应的进程，使其投入运行</li>
+<li>后进程调度（微观调度）：对于进入主存的进程的调度，什么时候把处理机分配给该进程</li>
+</ul>
+</li>
+<li><p>多任务操作系统的处理机调度：处理机空闲时，选择一个就绪的进程投入运行</p>
+</li>
+<li><p>多线程操作系统的处理机调度：处理机空闲时，选择一个就绪的线程投入运行</p>
+</li>
+<li><p>作业调度</p>
+</li>
+<li><p>作业的状态：后备状态（进入磁盘队列），执行状态（进入主存执行），完成状态（从完成到善后处理结束并退出）。</p>
+</li>
+<li><p>作业调度的功能：确定数据结构，确定调度算法，资源分配，善后处理</p>
+</li>
+<li><p>作业控制块：记录作业的有关信息，如作业名、作业类型、作业状态、作业对资源的要求等</p>
+</li>
+<li><p>调度算法的衡量：平均周转时间和平均带权周转时间</p>
+<ul>
+<li>平均周转时间为各个作业从进入磁盘到完成作业所花时间的平均值</li>
+<li>平均带权周转时间为各个作业的周转时间和运行时间（不包括在磁盘队列中的等待时间）的比值的平均值</li>
+</ul>
+</li>
+<li><p>作业调度算法</p>
+</li>
+<li><p>先来先服务（FIFO）：考虑等待时间</p>
+</li>
+<li><p>短作业优先：运行所花时间最短的作业优先执行，考虑运行时间</p>
+</li>
+<li><p>相应比高者优先：（等待时间／运行时间） 最大者优先，同时考虑等待时间和运行时间</p>
+</li>
+<li><p>优先调度算法：给各个作业分配优先数，优先数高者优先执行，优先数 = waiting_time<sup>2</sup> - running_time - 16 * output</p>
+</li>
+<li><p>进程调度</p>
+</li>
+<li><p>进程调度的功能和准则</p>
+<ul>
+<li>功能</li>
+</ul>
+</li>
+</ul>
+<h2 id="主存管理"><a href="#主存管理" class="headerlink" title="主存管理"></a>主存管理</h2><p>未完待续。。。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>lwenkun
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2017/05/30/2017-05-30-operating-system-conclusion/" title="操作系统原理总结">https://lwenkun.github.io/2017/05/30/2017-05-30-operating-system-conclusion/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># 操作系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2017/03/23/2017-03-23-java-8-method-references/" rel="prev" title="Java 8 方法引用">
+      <i class="fa fa-chevron-left"></i> Java 8 方法引用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2017/07/20/2017-7-20-android-open-source-library-glide/" rel="next" title="Glide 源码探究">
+      Glide 源码探究 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+            <li class="tab"><a href="#comment-changyan">changyan</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+            <div class="tab-pane changyan" id="comment-changyan">
+              
+  <div class="comments">
+    <div id="SOHUCS"></div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93"><span class="nav-number">1.</span> <span class="nav-text">操作系统原理总结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%A8%E6%88%B7%E7%8E%AF%E5%A2%83"><span class="nav-number">1.1.</span> <span class="nav-text">用户环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86"><span class="nav-number">1.2.</span> <span class="nav-text">并发处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B5%84%E6%BA%90%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6"><span class="nav-number">1.3.</span> <span class="nav-text">资源分配与调度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6"><span class="nav-number">1.4.</span> <span class="nav-text">处理机调度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BB%E5%AD%98%E7%AE%A1%E7%90%86"><span class="nav-number">1.5.</span> <span class="nav-text">主存管理</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李文坤"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">李文坤</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/lwenkun" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李文坤</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">217k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:18</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  <script>
+  NexT.utils.loadComments(document.querySelector('#SOHUCS'), () => {
+    var appid = 'cysUmzEyu';
+    var conf = '2459465628a99f57dac524f945fb682a';
+    var width = window.innerWidth || document.documentElement.clientWidth;
+    if (width < 960) {
+      window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="https://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>');
+    } else {
+      var loadJs=function(d,a){var c=document.getElementsByTagName("head")[0]||document.head||document.documentElement;var b=document.createElement("script");b.setAttribute("type","text/javascript");b.setAttribute("charset","UTF-8");b.setAttribute("src",d);if(typeof a==="function"){if(window.attachEvent){b.onreadystatechange=function(){var e=b.readyState;if(e==="loaded"||e==="complete"){b.onreadystatechange=null;a()}}}else{b.onload=a}}c.appendChild(b)};loadJs("https://changyan.sohu.com/upload/changyan.js",function(){window.changyan.api.config({appid:appid,conf:conf})});
+    }
+  });
+  </script>
+  <script src="https://assets.changyan.sohu.com/upload/plugins/plugins.count.js"></script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://lwenkun.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://lwenkun.github.io/2017/05/30/2017-05-30-operating-system-conclusion/";
+    this.page.identifier = "2017/05/30/2017-05-30-operating-system-conclusion/";
+    this.page.title = "操作系统原理总结";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://lwenkun.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>
