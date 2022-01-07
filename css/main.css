@@ -1,4 +1,6 @@
 :root {
+  --code-foreground: #555;
+  --code-background: #eee;
   --body-bg-color: #f5f7f9;
   --content-bg-color: #fff;
   --card-bg-color: #f5f5f5;
@@ -19,11 +21,13 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --body-bg-color: #282828;
-    --content-bg-color: #333;
+    --code-foreground: #ada89f;
+    --code-background: #2b2d2f;
+    --body-bg-color: #27292a;
+    --content-bg-color: #222425;
     --card-bg-color: #555;
-    --text-color: #ccc;
-    --link-color: #ccc;
+    --text-color: #ada89f;
+    --link-color: #ada89f;
     --link-hover-color: #eee;
     --brand-color: #ddd;
     --brand-hover-color: #ddd;
@@ -31,10 +35,10 @@
     --table-row-hover-bg-color: #363636;
     --menu-item-bg-color: #555;
     --btn-default-bg: #222;
-    --btn-default-color: #ccc;
+    --btn-default-color: #ada89f;
     --btn-default-border-color: #555;
     --btn-default-hover-bg: #666;
-    --btn-default-hover-color: #ccc;
+    --btn-default-hover-color: #ada89f;
     --btn-default-hover-border-color: #666;
   }
   img {
@@ -204,7 +208,7 @@ body {
   background: var(--body-bg-color);
   color: var(--text-color);
   font-family: 'Monda', "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 0.86em;
+  font-size: 0.83em;
   line-height: 2;
 }
 @media (max-width: 991px) {
@@ -297,7 +301,7 @@ kbd {
   border: 1px solid #ccc;
   border-radius: 0.2em;
   box-shadow: 0.1em 0.1em 0.2em rgba(0,0,0,0.1);
-  color: #555;
+  color: var(--code-foreground);
   font-family: inherit;
   padding: 0.1em 0.3em;
   white-space: nowrap;
@@ -417,7 +421,7 @@ td {
   opacity: 1;
 }
 .copy-btn {
-  color: #333;
+  color: #222425;
   cursor: pointer;
   line-height: 1.6;
   opacity: 0;
@@ -466,9 +470,9 @@ code {
   font-family: 'Source Code Pro', consolas, Menlo, monospace, "PingFang SC", "Microsoft YaHei";
 }
 code {
-  background: #eee;
+  background: var(--code-background);
   border-radius: 3px;
-  color: #555;
+  color: var(--code-foreground);
   padding: 2px 4px;
   overflow-wrap: break-word;
   word-wrap: break-word;
@@ -1247,7 +1251,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #01cc2e;
+  background: #2824bf;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
