@@ -104,7 +104,7 @@ symbols_count_time:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: next
+theme: jekyll-theme-cayman
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
