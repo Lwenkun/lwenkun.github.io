@@ -426,7 +426,7 @@ font:
   global:
     external: true
     family: Monda
-    size: 0.86
+    size: 0.83
 
   # Font settings for site title (.site-title).
   title:
