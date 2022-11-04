@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2},"changyan":{"order":-1}},"activeClass":"disqus"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言这两天为了破解到期魔百盒看了好多帖子，最终成功破解了。为了让大家少走弯路，只看一篇帖子就能完成破解，我汇总了一下这两天学习到的东西，并分享下我的破解经历，希望对大家有所帮助。 盒子型号首先说下盒子型号是 CM201-2 长虹代工 (CH)，具体信息见图片：板子上的硬件信息是：CPU 型号是 HI3890MV300，闪存是 emmc。机型编码和牌照方不同应该没太大关系，因为网上那些教程和我的都不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="移动魔百盒 CM201 CH(长虹带功能) 破解方法分享">
+<meta property="og:url" content="https://lwenkun.github.io/2022/11/04/2022-11-04-CM201-crack/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="前言这两天为了破解到期魔百盒看了好多帖子，最终成功破解了。为了让大家少走弯路，只看一篇帖子就能完成破解，我汇总了一下这两天学习到的东西，并分享下我的破解经历，希望对大家有所帮助。 盒子型号首先说下盒子型号是 CM201-2 长虹代工 (CH)，具体信息见图片：板子上的硬件信息是：CPU 型号是 HI3890MV300，闪存是 emmc。机型编码和牌照方不同应该没太大关系，因为网上那些教程和我的都不">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/box-info.jpg">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/board-ttl-connection.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/putty.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/putty-shell.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/install-apk.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/hitool-conf.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/partition.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/cpu-info.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/pre-flash-recovery.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/flashing-recovery.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/recovery-flashed.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/recovery.jpg">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/google-tv-splash.jpg">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/home.jpg">
+<meta property="article:published_time" content="2022-11-04T00:00:00.000Z">
+<meta property="article:modified_time" content="2022-11-04T16:14:46.284Z">
+<meta property="article:author" content="李文坤">
+<meta property="article:tag" content="搞机">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lwenkun.github.io/img/in-post/cm201_crack/box-info.jpg">
+
+<link rel="canonical" href="https://lwenkun.github.io/2022/11/04/2022-11-04-CM201-crack/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>移动魔百盒 CM201 CH(长虹带功能) 破解方法分享 | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2022/11/04/2022-11-04-CM201-crack/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="李文坤">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          移动魔百盒 CM201 CH(长虹带功能) 破解方法分享
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-11-04 00:00:00 / 修改时间：16:14:46" itemprop="dateCreated datePublished" datetime="2022-11-04T00:00:00+00:00">2022-11-04</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2022/11/04/2022-11-04-CM201-crack/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2022/11/04/2022-11-04-CM201-crack/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2022/11/04/2022-11-04-CM201-crack/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2022/11/04/2022-11-04-CM201-crack/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>这两天为了破解到期魔百盒看了好多帖子，最终成功破解了。为了让大家少走弯路，只看一篇帖子就能完成破解，我汇总了一下这两天学习到的东西，并分享下我的破解经历，希望对大家有所帮助。</p>
+<h1 id="盒子型号"><a href="#盒子型号" class="headerlink" title="盒子型号"></a>盒子型号</h1><p>首先说下盒子型号是 CM201-2 长虹代工 (CH)，具体信息见图片：<br><img src="/img/in-post/cm201_crack/box-info.jpg" alt="盒子信息"><br>板子上的硬件信息是：CPU 型号是 HI3890MV300，闪存是 emmc。机型编码和牌照方不同应该没太大关系，因为网上那些教程和我的都不一样，但我也刷机成功了。大家可以先尝试一下，如果不行再说。</p>
+<span id="more"></span>
+<h1 id="破解方法"><a href="#破解方法" class="headerlink" title="破解方法"></a>破解方法</h1><p>这种盒子有两种破解模式，一种是解除无法安装软件的限制，另一种是是刷第三方系统。两种方式各有利弊，具体如下：<br>第一种破解模式：</p>
+<ul>
+<li>优点：步骤简单；</li>
+<li>缺点：<ul>
+<li>如果按到遥控器上的主页，会跳到订阅关系失效的页面，只能重启，比较麻烦，特别是对于那些不会用机顶盒的老人家来说。</li>
+<li>而且原装系统有一堆用不到的应用在后台运行，占用内存，影响运行速度。<br>第二种破解模式：</li>
+</ul>
+</li>
+<li>优点：<ul>
+<li>系统精简，第三方系统一般会把那些没用的系统应用去除掉，运行速度会有所提升；</li>
+<li>不用担心按到主页需要重启盒子的问题，因为第三方系统一般都会解决该问题；</li>
+</ul>
+</li>
+<li>缺点：刷机步骤稍微复杂。</li>
+</ul>
+<p>这两种破解模式的简单和复杂都是相对而言的，都需要拆机通过 usb 转 ttl 来刷机，如果你想不拆机刷机，那这篇帖子可能对你没啥参考价值。我在网上找的所有的免拆方式都没有成功，包括使用 ZANTI 中间人攻击替换 apk 来安装当贝桌面的，还有通过遥控按键开启 adb 方式刷机的。<br>接下来具体说下这两种刷机模式的步骤。因为涉及到拆机，我把拆机的方法先提前说下：盒子底部有两个垫子，把垫子撕开就能看到螺丝孔了，取下这两个螺丝，然后就可以用指甲、卡片或者其他东西把盒子拆开。</p>
+<h2 id="第一种破解方式"><a href="#第一种破解方式" class="headerlink" title="第一种破解方式"></a>第一种破解方式</h2><ol>
+<li>准备工具：</li>
+</ol>
+<ul>
+<li>U 盘 （大小最好为 8G，文件系统格式化为 fat32）；</li>
+<li>usb 转 ttl 模块（淘宝有售，我买的型号是 CH340G）；</li>
+<li>串口通信工具（windows 上比较知名的有 putty，mac 上有“串口调试助手”，这里以 putty 为例）;</li>
+</ul>
+<ol start="2">
+<li><p>破解步骤：<br>将 usb 转 ttl 模块插入到电脑的 usb 口，然后打开 windows 设备管理器，在端口分类里查看这个模块是在哪个 COM 口，我的设备是在 COM4。</p>
+<p>用杜邦线把 CH340G 的 RXD、TXD 和 GND三个引脚接到板子上。板子上的那四个孔第一个孔没用，其他三个孔从左到右分别是 RXD、TXD、GND，分别和 CH340G 的 TXD、RXD、GND 相对应，顺序不能错，如下图所示。有的博主给那三个孔焊上了排插，这样用杜邦线直接插上去就行，如果和我一样，没有其他工具，直接用那三根导线和三个孔保持良好稳定的接触也行。<br><img src="/img/in-post/cm201_crack/board-ttl-connection.png"><br>打开 putty ，如下图所示：<br><img src="/img/in-post/cm201_crack/putty.png"><br>把通信方式改成串口，Serial line 填写为上面查到的那个，我这里是 COM4，Speed 调整为 115200，Connection type 选择 Serial，其他的不用管，然后点击 右下角的 open，此时会出现一个漆黑的窗口，这个窗口就是用来和盒子进行通信的。打开盒子电源，这时应该能看到窗口上有日志输出：<br><img src="/img/in-post/cm201_crack/putty-shell.png"><br>等日志输出差不多完了之后，按下回车键，这时候会显示命令提示符，这样就进入到了设备的 shell 中了（如果没有显示命令提示符，查看那三根线是否接触良好，或者重新配置 putty 并打开窗口）。然后把当贝桌面下载到 U 盘根目录，把 U 盘插入到盒子靠近网口的 usb 口中，按照如下命令进入到 u 盘目录中，执行命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd /mnt/sda/sda1</span><br><span class="line">pm install 当贝桌面apk文件名</span><br></pre></td></tr></table></figure>
+<p>第一行命令是进入 U 盘，第二行命令是安装 U 盘里的当贝桌面。如图所示：<br><img src="/img/in-post/cm201_crack/install-apk.png"><br>这一步完了之后应该就装好了。你可以通过</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">am start com.dangbei.tvlauncher</span><br></pre></td></tr></table></figure>
+<p>命令直接启动当贝桌面或者重启一下盒子，不出意外的话，启动后就进入当贝桌面了，破解完成。当贝桌面里面可以下载当贝应用市场，然后你就可以安装任意 APP 了。</p>
+</li>
+</ol>
+<h2 id="第二种破解方式"><a href="#第二种破解方式" class="headerlink" title="第二种破解方式"></a>第二种破解方式</h2><ol>
+<li>准备工具：</li>
+</ol>
+<ul>
+<li>U 盘（大小最好为 8G，文件系统格式化为 fat32）；</li>
+<li>usb 转 ttl 模块（淘宝有售，我买的型号是 CH340G）；</li>
+<li>串口通信工具（windows 上比较知名的有 putty，mac 上有“串口调试助手”，这里以 putty 为例）；</li>
+<li>hitool，网上随便搜下就有：<a target="_blank" rel="noopener" href="http://www.winwin7.com/soft/4260.html%E3%80%82">http://www.winwin7.com/soft/4260.html。</a></li>
+</ul>
+<ol start="2">
+<li><p>破解步骤：</p>
+<p>这种破解方式是重刷系统，因为刷机风险比较大，因此建议刷机前先备份下系统，不要怕麻烦，万一失败了呢。备份方法如下：<br>前面的步骤和上面一样：用 CH340G 连接好板子，打开 putty，等日志输出完毕之后，按下回车，进入 shell。然后输入以下命令先进入到分区目录：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cd /dev/block/platform/soc/by-name</span><br></pre></td></tr></table></figure>
+<p>接下来使用以下命令对各个分区进行备份（除了 userdata 分区，其他分区都备份一下）。/mnt/sda/sda1 对应的是 U 盘的根目录，system 是根目录下新建的子目录，这个目录应该是需要提前创建的，否则可能会报错。时间可能会有点久，但是多花点时间也值得，万一刷成砖也有挽救的方法，免得到处求别人要原厂镜像。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">dd if=baseparam of=/mnt/sda/sda1/system/baseparam.img</span><br><span class="line">dd if=bootargs of=/mnt/sda/sda1/system/bootargs.img</span><br><span class="line">dd if=deviceinfo of=/mnt/sda/sda1/system/deviceinfo.img</span><br><span class="line">dd if=fastboot of=/mnt/sda/sda1/system/fastboot.img</span><br><span class="line">dd if=fastplay of=/mnt/sda/sda1/system/fastplay.img</span><br><span class="line">dd if=kernel of=/mnt/sda/sda1/system/kernel.img</span><br><span class="line">dd if=logo of=/mnt/sda/sda1/system/logo.img</span><br><span class="line">dd if=misc of=/mnt/sda/sda1/system/misc.img</span><br><span class="line">dd if=pqparam of=/mnt/sda/sda1/system/pqparam.img</span><br><span class="line">dd if=private of=/mnt/sda/sda1/system/private.img</span><br><span class="line">dd if=recovery of=/mnt/sda/sda1/system/recovery.img</span><br><span class="line">dd if=securestore of=/mnt/sda/sda1/system/securestore.img</span><br><span class="line">dd if=system of=/mnt/sda/sda1/system/system.img</span><br><span class="line">dd if=trustedcore of=/mnt/sda/sda1/system/trustedcore.img</span><br></pre></td></tr></table></figure>
+<p>现在轮到 hitool 上场了，这里使用 hitool 的目的是把官方的 recovery 替换成第三方 recovery，这样就能够刷入第三方系统，否则刷机的时候会校验失败，我相信很多人都遇到这个问题。现在我们看看如何刷第三方 recovery。<br>保持 CH340G 和盒子的连接，关闭 putty（会和 hitool 冲突）。打开 hitool，选择 HiBurn 视图，如下图所示：<br><img src="/img/in-post/cm201_crack/hitool-conf.png"><br>PC 与板端配置如图所示：串口填 CH340G 所在端口，传输方式选串口，其他的不用管。（有的教程使用的是网口方式，速度会快点，但是需要网线连接，还需要配置 ip 地址，简单起见，我直接使用串口，速度慢一点也还好，毕竟 recovery 分区也不是很大）选择 烧写eMMC 页面，需要填写分区表配置，这个配置我已经写好了，大家可以直接拿来用：</p>
+<p><a target="_blank" rel="noopener" href="https://cloud.189.cn/web/share?code=MVNZJzFn2Eb2">CM201-2-CH4_HUNAN分区表文件.xml</a> （访问码：1ift）</p>
+<p>需要注意的是，我这个分区表只适用于这个型号的盒子，其他盒子可能会有一些差异。保险起见大家还是核对一下，万一有不同可以进行修改，具体方法如下：</p>
+<p>还记得连接 putty 的时候会有一堆日志输出吗？这里面就有修改分区表所需的信息：<br><img src="/img/in-post/cm201_crack/partition.png"><br>红框中的日志描述了每个分区的大小，大家先导入上面的分区表文件，然后把各个分区的长度修改成日志输出所示，大家直接修改长度那一列就行，开始地址会自动更改。如果输出日志中的分区和我的分区表不一样，可以手动添加或者删除，以你盒子的输出日志为准，注意顺序保持一致。</p>
+<p>分区表修改完之后，可以点击保存，这样你就拥有了属于自己盒子的分区表了（备份好这个分区表，以后救砖可能还有用）。接下来就可以导入 recovery 分区，在 recovery 那一行的文件一列，将 recovery 文件导入进去。recovery 我这也准备好了：</p>
+<p><a target="_blank" rel="noopener" href="https://cloud.189.cn/web/share?code=2EjmYjMJzUJj">Hi3798MV300H芯片强刷引导</a> （访问码：ts2l）</p>
+<p>你可能会感到疑惑，我的芯片不是 Hi3789MV300 吗，板子上写的也是这个，为啥这里用的引导是 Hi3789MV300H 的？我最开始用的 recovery 也是 Hi3789MV300 的，但是发现没用，后来才从日志里发现了问题：<br><img src="/img/in-post/cm201_crack/cpu-info.png"><br>这是 HiBurn 烧写时的日志输出（putty 输出的日志里也有，但我之前忘记截图了，所以用了 HiBurn 里的日志），里面写着 CPU 型号是 Hi3789MV300H。不知道为啥会这样，如果你的日志输出的 CPU 型号是 Hi3789MV300，那你应该使用 Hi3789MV300 的引导：</p>
+<p><a target="_blank" rel="noopener" href="https://cloud.189.cn/web/share?code=RJn6Fnu2auIb">Hi3798MV300芯片强刷引导</a>  （访问码：bo1f）</p>
+<p>这个文件夹里有三个文件，实测只需要刷 recovery.img 文件就行了，其他两个分区文件不刷也行，如果你失败了，那就按照同样的方法把另外两个对应的分区也刷一下吧。</p>
+<p>recovery 导入完成之后，记得把其他分区取消勾选，只保留 recovery 分区（因为我们只刷 recovery 分区，其他分区暂时不需要，除非你刷成砖了，就需要把之前备份好的分区文件一个一个导进来）。最后点击 烧写，将 recovery 刷到盒子里去：<br><img src="/img/in-post/cm201_crack/pre-flash-recovery.png"><br>如果你的盒子通着电，就会出现上面的提示，我们按照提示重新给盒子通电，不出意外的话，就开始烧写了：<br><img src="/img/in-post/cm201_crack/flashing-recovery.png"><br>左侧输出的是日志，大概等个十几二十分钟就烧好了（如果用网口应该更快）：<br><img src="/img/in-post/cm201_crack/recovery-flashed.png"><br>至此，recovery 的刷写工作就完毕了。现在你就可以选择各种刷机包来进行刷机了。我这里准备了一个基于别人的包制作的精简包，去除了其他 app，把巨丑的当贝影视桌面换成了当贝桌面，并且不会出现某些 rom 按主页时当贝桌面等半天或者无法响应的问题。同时还把开机动画改成了 Google TV，逼格一下子就上来了。</p>
+<p><a target="_blank" rel="noopener" href="https://cloud.189.cn/web/share?code=M7zm6vn6fuau">自制精简版_当贝桌面_Google_tv_开机动画_文件名改成update.zip</a> （访问码：4qxp）</p>
+<p>把文件改成 update.zip 后放到 U 盘根目录中，插入到靠近网口的那个 usb 口。重新启动盒子电源，然后立刻快速交替按遥控器上的菜单键和音量减键，直到进入 recovery 界面（速度一定要快，不行多试几次）：<br><img src="/img/in-post/cm201_crack/recovery.jpg"><br>选择 本地USB升级，不出意外就开始刷机了，不用多久就刷好了，盒子重启，就能看到如下的开机画面：<br><img src="/img/in-post/cm201_crack/google-tv-splash.jpg"><br>欢迎使用 Google TV！</p>
+<p>附一张当贝桌面的图：<br><img src="/img/in-post/cm201_crack/home.jpg"><br>注意：刷机后的盒子通过 putty 进入 shell 时需要用户名和密码，用户名和密码分别是：root 、chcmccch。</p>
+</li>
+</ol>
+<p>分享到此结束，祝大家刷机成功！如果有错误的地方，或者有其他更好的方法，欢迎大家留言指出，这样也能帮助其他人。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>lwenkun
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2022/11/04/2022-11-04-CM201-crack/" title="移动魔百盒 CM201 CH(长虹带功能) 破解方法分享">https://lwenkun.github.io/2022/11/04/2022-11-04-CM201-crack/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%90%9E%E6%9C%BA/" rel="tag"># 搞机</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/04/06/2018-04-06-android-focus/" rel="prev" title="View 的焦点机制">
+      <i class="fa fa-chevron-left"></i> View 的焦点机制
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+            <li class="tab"><a href="#comment-changyan">changyan</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+            <div class="tab-pane changyan" id="comment-changyan">
+              
+  <div class="comments">
+    <div id="SOHUCS"></div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%9B%92%E5%AD%90%E5%9E%8B%E5%8F%B7"><span class="nav-number">2.</span> <span class="nav-text">盒子型号</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A0%B4%E8%A7%A3%E6%96%B9%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">破解方法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E7%A7%8D%E7%A0%B4%E8%A7%A3%E6%96%B9%E5%BC%8F"><span class="nav-number">3.1.</span> <span class="nav-text">第一种破解方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E7%A7%8D%E7%A0%B4%E8%A7%A3%E6%96%B9%E5%BC%8F"><span class="nav-number">3.2.</span> <span class="nav-text">第二种破解方式</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="李文坤"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">李文坤</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/lwenkun" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">李文坤</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">222k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:22</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  <script>
+  NexT.utils.loadComments(document.querySelector('#SOHUCS'), () => {
+    var appid = 'cysUmzEyu';
+    var conf = '2459465628a99f57dac524f945fb682a';
+    var width = window.innerWidth || document.documentElement.clientWidth;
+    if (width < 960) {
+      window.document.write('<script id="changyan_mobile_js" charset="utf-8" type="text/javascript" src="https://changyan.sohu.com/upload/mobile/wap-js/changyan_mobile.js?client_id=' + appid + '&conf=' + conf + '"><\/script>');
+    } else {
+      var loadJs=function(d,a){var c=document.getElementsByTagName("head")[0]||document.head||document.documentElement;var b=document.createElement("script");b.setAttribute("type","text/javascript");b.setAttribute("charset","UTF-8");b.setAttribute("src",d);if(typeof a==="function"){if(window.attachEvent){b.onreadystatechange=function(){var e=b.readyState;if(e==="loaded"||e==="complete"){b.onreadystatechange=null;a()}}}else{b.onload=a}}c.appendChild(b)};loadJs("https://changyan.sohu.com/upload/changyan.js",function(){window.changyan.api.config({appid:appid,conf:conf})});
+    }
+  });
+  </script>
+  <script src="https://assets.changyan.sohu.com/upload/plugins/plugins.count.js"></script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://lwenkun.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://lwenkun.github.io/2022/11/04/2022-11-04-CM201-crack/";
+    this.page.identifier = "2022/11/04/2022-11-04-CM201-crack/";
+    this.page.title = "移动魔百盒 CM201 CH(长虹带功能) 破解方法分享";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://lwenkun.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>
