@@ -9,7 +9,6 @@ header-img: "img/post-bg-android-how-apps-get-system-services.jpg"
 tags:
     - Android
     - View
-    - Focus
 ---
 
 # View 的焦点机制
