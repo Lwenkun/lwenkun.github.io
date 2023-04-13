@@ -4,7 +4,7 @@ title:      "Android LaunchMode 总结"
 subtitle:   "Android LaunchMode 总结"
 catalog:  true
 date:       2017-11-07
-author:     "lwenkun"
+author:     李文坤
 header-img: "img/post-bg-android-event-dispatch.png" 
 tags:
     - Android

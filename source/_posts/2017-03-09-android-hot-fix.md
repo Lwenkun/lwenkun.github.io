@@ -4,7 +4,7 @@ title:      "动态加载应用之简单热更新"
 subtitle:   "动态加载&热更新"
 date:       2017-03-09
 catalog:  true
-author:     "lwenkun"
+author:     李文坤
 header-img: "img/post-bg-android-hot-fix.jpg"
 tags:
     - Android

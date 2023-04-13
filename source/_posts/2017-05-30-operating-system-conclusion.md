@@ -4,7 +4,7 @@ title:      "操作系统原理总结"
 subtitle:   "Operating System conclusion"
 date:       2017-05-30
 catalog:  true
-author:     "lwenkun"
+author:     李文坤
 header-img: "img/post-bg-operating-system-conclusion.jpg"
 tags:
     - 操作系统

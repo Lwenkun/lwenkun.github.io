@@ -3,7 +3,7 @@ layout:     post
 title:      "View 的焦点机制"
 subtitle:  ""
 date:       2018-04-06
-author:     "lwenkun"
+author:     李文坤
 catalog:  true
 header-img: "img/post-bg-android-how-apps-get-system-services.jpg"
 tags:

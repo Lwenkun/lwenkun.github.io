@@ -4,7 +4,7 @@ title:      "命令行编译制作一个 Java 程序"
 subtitle:   "make a Java application through command line"
 date:       2016-11-05
 catalog:  true
-author:     "lwenkun"
+author:     李文坤
 header-img: "img/post-bg-compile-java-through-command-line.png"
 tags:
     - Java

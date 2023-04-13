@@ -3,7 +3,7 @@ layout:     post
 title:      "探究 Java 虚拟机栈"
 subtitle:   "Explore JVM Stack"
 date:       2017-03-06
-author:     "lwenkun"
+author:     李文坤
 catalog:  true
 header-img: "img/post-bg-java-vm-stack.jpg"
 tags:

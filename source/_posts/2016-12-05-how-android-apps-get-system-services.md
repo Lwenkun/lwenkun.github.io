@@ -3,7 +3,7 @@ layout:     post
 title:      "安卓应用获取系统服务的过程"
 subtitle:   "How android apps get system services"
 date:       2016-12-05
-author:     "lwenkun"
+author:     李文坤
 catalog:  true
 header-img: "img/post-bg-android-how-apps-get-system-services.jpg"
 tags:

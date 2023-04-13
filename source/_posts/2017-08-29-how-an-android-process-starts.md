@@ -4,7 +4,7 @@ title:      "Android 进程启动原理"
 subtitle:   "Android 进程启动原理"
 catalog:  true
 date:       2017-08-29
-author:     "lwenkun"
+author:     李文坤
 header-img: "img/post-bg-android-event-dispatch.png" 
 tags:
     - Android

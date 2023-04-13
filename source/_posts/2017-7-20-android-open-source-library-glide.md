@@ -3,7 +3,7 @@ layout:     post
 title:      "Glide 源码探究"
 subtitle:   "Glide 源码探究"
 date:       2017-07-20
-author:     "lwenkun"
+author:     李文坤
 catalog:  true
 header-img: "img/post-bg-how-does-messenger-work.png"
 tags:

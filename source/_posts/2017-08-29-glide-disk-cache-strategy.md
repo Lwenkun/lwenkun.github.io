@@ -4,7 +4,7 @@ title:      "Glide 之磁盘缓存"
 subtitle:   "Glide 之磁盘缓存"
 catalog: true
 date:       2017-08-29
-author:     "lwenkun"
+author:     李文坤
 header-img: "img/post-bg-android-volley.png"
 tags:
     - Android

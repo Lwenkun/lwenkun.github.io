@@ -4,7 +4,7 @@ title:      "RxJava 原理探究"
 subtitle:   "RxJava 原理探究"
 date:       2016-09-03
 catalog:  true
-author:     "lwenkun"
+author:     李文坤
 header-img: "img/post-bg-rxjava.jpg"
 tags:
     - Java

@@ -4,7 +4,7 @@ title:      "安卓进程通信机制之 AIDL"
 subtitle:   "安卓进程通信机制之 AIDL"
 catalog:  true
 date:       2016-10-28
-author:     "lwenkun"
+author:     李文坤
 header-img: "img/post-bg-android-ipc-aidl.png"
 tags:
     - Android

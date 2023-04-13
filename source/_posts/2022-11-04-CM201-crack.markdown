@@ -3,7 +3,7 @@ layout:     post
 title:      "移动魔百盒 CM201 CH(长虹代工) 破解方法分享"
 subtitle:  ""
 date:       2022-11-04
-author:     "lwenkun"
+author:     李文坤
 catalog:  true
 tags:
     - 搞机

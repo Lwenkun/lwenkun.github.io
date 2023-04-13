@@ -4,7 +4,7 @@ title:      "android 记坑"
 subtitle:   "android 记坑"
 date:       2017-02-24
 catalog:  true
-author:     "lwenkun"
+author:     李文坤
 header-img: "img/post-bg-android-dev-log.png"
 tags:
     - Android
