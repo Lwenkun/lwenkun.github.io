@@ -1,5 +1,5 @@
 ---
-title: Gradle 脚本运行原理
+title: Gradle DSL 解密
 date: 2023-04-13 21:14:51
 layout:     post
 subtitle:  ""
@@ -10,131 +10,441 @@ tags:
 ---
 
 # 前言
-相信大家对 gradle 肯定已经是有一定的了解了，gradle 的强大之处不在于它本身提供了多少功能，而是它的扩展性强，几乎任务都可以通过插件的形式集成到构建流程中。我不知道大家是否和我一样，对 gradle 背后的原理很感兴趣，想要知道我们平常的那些傻瓜式的配置，背后到底是如何生效的。这篇文章将会介绍 gralde 脚本的运行原理。
+gradle 的强大之处不在于它本身提供了多少功能，而是它的扩展性强，几乎任务都可以通过插件的形式集成到构建流程中，而且 gradle 借助 groovy 强大的 dsl 定制能力，能够让我们很方便的完成构建脚本的编写。也正是由于 dsl 的可定制化能力强，gradle 脚本的语法经常让我们琢磨不透，无法从传统编程语言的角度去理解它。这篇文章将会从源码探究 gralde 对脚本 dsl 的定制，旨在帮助大家消除心中的各种疑惑，更好地理解和掌握 gradle 脚本。
 
-# 一个简单的 gradle 脚本
-build.gradle
-```groovy
-plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.8.0'
-    id 'application'
-}
+Gradle 会利用 Groovy 编译器将 build.gradle 脚本文件编译成一个叫做 _BuildScript_ 的类，它继承自 ProjectScript，而 ProjectScript 又继承自 Sript，Sript 类是 Groovy 对脚本的建模。Script 有一个方法叫做 run()，脚本中的所有内容都会运行在这个方法里面。Sript 包含两类对象，一是 MetaClass，二是 Bindings。MetaClass 可以认为是对 Script 这个类本身的建模，当我们在脚本中进行各种方法调用和属性访问时，会先通过 MetaClass 来完成，如果 MetaClass 完成不了，那就通过 Bindings 来完成。既然 MetaClass 是对 Script 对象本身的建模，那么通过 MetaClass 中进行方法调用和属性访问就相当于通过反射对 Script 类进行方法调用和属性访问。我们看看 Script 都提供了哪些方法可供使用：
 
-group = 'me.liwenkun'
-version = '1.0-SNAPSHOT'
+主要是 println 和 evaluate，这也就是为什么我们可以直接不通过任何对象，直接调用 println 和 evaluate 的原因，其实这两个对象最终都调到了 Script 类本身的这两个方法上了。
 
-repositories {
-    mavenCentral()
-}
+那么 Bindings 是什么呢？可以认为是让开发者对脚本进行定制化的接口。毕竟 Script 类自己提供的全局函数和变量很有限，如果我们希望脚本能够提供更多的全局函数和变量，就可以通过注入自定义的 Bindings 来实现。
 
-dependencies {
-    testImplementation 'org.jetbrains.kotlin:kotlin-test'
-    implementation gradleApi()
-}
+但是 Gradle 貌似并没有使用 Groovy 提供的这套机制来对脚本进行定制化开发。而是使用了另辟蹊径，利用 Groovy 可手动指定脚本的基类来实现脚本能力的扩展。Groovy 默认将脚本编译成 Script 的直接子类，但也提供方法，让开发者可以指定一个 Script 的子类，让其作为编译后的脚本类的基类。如前文所述，Gradle 指定的这个子类就是 ProjectScript 类，而脚本本身叫做 _BuildScript_。
 
-test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(11)
-}
-
-application {
-    mainClassName = 'MainKt'
-}
-```
-
-这个脚本相信大家很熟悉，groovy 的语法我在这里不再介绍，只是针对这个脚本里出现的语法简单说一下：groovy 的方法调用和 java 其实差不多，方法名+()，只不过可以省略括号。大括号其实是闭包的语法，所以，上面的 plugins {}、repositories {} 之类的配置块其实就是一个方法调用，方法名是大括号前面的标识符，方法参数就是大括号表示的闭包。但是，虽然这些配置块看上去都一样，但其实是有本质区别的，后面我们会讲到。
-
-# groovy 
-在了解脚本的运行原理之前，我们首先需要了解 groovy，因为 gradle 脚本其实就是 groovy 脚本，只是后缀名改了而已。能成为脚本语言的语言，它一定能够解释执行，至少看上去是解释执行的。那么 groovy 解释执行的方法有哪些呢？
-1. 命令行运行脚本文件
-```shell
-grovvy 
-```
-2. 命令行交互式运行
-```shell
-```
-3. 将 groovy 作为项目依赖，在项目中使用其提供的接口来运行
+所以我们知道，Gradle 所有的秘密应该都可以从 ProjectScript 中找到。我们看看 ProjectScript 类的定义：
 ```java
-```
-前两种用法只是单纯的使用，面向的普通用户，使用的是命令行接口；而第三种方式则是面向开发者，将 groovy 集成到第三方应用中，将其作为应用的一部分来使用，使用的是它的编程接口。
-> 其实不仅仅是 groovy，很多的 C 语言编写的工具包都提供这两种使用方式，以 linux 下的软件包为例：bin 目录下的文件是可执行文件，而 lib 目录下则是库。bin 依赖于 lib，是 lib 的包装，bin 用来在命令行使用，如果是工具面向开发者，除了提供 bin 和 lib 还会提供 include 作为编程接口，这样开发时就可以通过引入 include 中的头文件，来调用 lib 下的各种库
+public abstract class ProjectScript extends PluginsAwareScript {
 
-我们知道，虽然是脚本语言，但它最终还是运行在 JVM 之上的，JVM 可不会直接执行源码，它只认识字节码。所以，groovy 必然要先将源代码编译成字节码文件，才能运行。然而，当 gradle 执行我们的脚本文件的时候，我们并不知道它到底把字节码文件生成在了哪里，幸运的是，我们可以通过断点调试来获取。idea 中在任务旁边会有三角形，我们点击这个三角形，选择调试任务，这样 gradle 中的断点就会断住。然后我们通过调用栈可以找到这个 gradle 文件对应的字节码文件的位置。我们将这个字节码文件拖入到 idea 窗口中，就会得到反编译后的源码文件。
+    ......
 
-这个源码文件对应的类叫做 `_BuildScript_`，这个类只有一个方法 `run()`，这个类继承自 `ProjectScript`。这是什么情况，为什么会得到这个类。我们有必要了解下 Groovy 编译机制，默认情况下，它会将所有的脚本通通放在一个继承自 `Script` 类的子类的 `run()` 方法中运行，`Script` 类是 Groovy 提供的类，表示一个脚本对象。这个继承自 `Script` 的类是动态生成的。可以这么认为，`Script` 只是一个模板，需要子类来对这个模板进行填充，填充的过程就是将脚本文件的代码放到 `run()` 中运行。这个子类的名字是可以定义的，除此之外，模板也可以自定义，但必须是 `Script` 的子类。就是这一点，给了 gradle 发挥的空间。下面我们来看看 Gradle 是如何利用这一点来发挥的。
-
-前面讲过了使用 groovy 的第三种方式，前面两种面向普通用户，可定制性差，而第三种面向开发者，可定制性就很强了，因为编程接口远比命令行接口丰富。对于 gradle 开发团队来说，他们就是通过第三种方式来使用 groovy 的。于是我们可以推测一下，gradle 应该是将脚本的模板类指定为了自己的 `ProjectScript` 类，并且将生成的类叫做 `_BuildScript_` ，这些工作在代码中如何实现呢?
-
-实际的实现过程比较复杂，逻辑弯弯绕绕藏得比较深，我将其简化一下，用一下代码来表示：
-
-
-```java
-
-```
-
-可见，Gradle 将脚本的模板类指定为 ProjectScript，而且调用了脚本的 init() 方法来对这个脚本初始化。init() 方法接受两个参数，我们只关注第一个参数，第一个参数是 DefaultProject 对象。如果把这两个类搞清楚了，那么 Gradle 的脚本运行机制可以说基本就掌握了。
-
-我们一个个来。先看 ProjectScript，这个对象中有很多我们熟知的方法：plugins() apply();
-ProjectScript 的继承关系是：ProjectScript -> PluginsAwareScript -> DefaultScript -> BasicScript -> org.gradle.groovy.scripts.Script -> groovy.lang.Script。
-
-先看看 groovy.lang.Script 的源码：
-```java
-class abstract Script extends GroovyObjectSupport {
-    public void setBinding(Binding binding) {
-        this.binding = binding;
+    @Override
+    public void apply(Closure closure) {
+        getScriptTarget().apply(closure);
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public void apply(Map options) {
+        getScriptTarget().apply(options);
+    }
+
+    @Override
+    public void buildscript(Closure configureClosure) {
+        getScriptTarget().buildscript(configureClosure);
+    }
+
+    @Override
+    public LoggingManager getLogging() {
+        return getScriptTarget().getLogging();
+    }
+
+    @Override
+    public Logger getLogger() {
+        return getScriptTarget().getLogger();
+    }
+
+
+    @Override
+    public ProjectInternal getScriptTarget() {
+        return (ProjectInternal) super.getScriptTarget();
+    }
+
+}
+```
+ProjectScript 中定义了 apply() getLogger() buildScript() 等常见方法，这也就是我们为什么可以在脚本中使用 apply{} logger.log() buildScript{} 的原因。
+
+ProjectScript 其实也很简单，它并不是直接继承自 Groovy 的 Script 类的，它的继承链如下：
+
+ProjectScript -> PluginsAwareScript -> DefaultScript -> BasicScript -> org.gradle.groovy.scripts.Script -> groovy.lang.Script
+
+PluginsAwareScript 和 org.gradle.groovy.scripts.Script 很简单，没什么可讲的。重点是 DefaultScript 和 BasicScript 这两个类，前者用来扩充 Gradle 的领域相关能力，而后者用来支持这种扩充能力本身。我们先从 BasicScript 类看：
+
+```java
+public abstract class BasicScript extends org.gradle.groovy.scripts.Script implements org.gradle.api.Script, DynamicObjectAware, GradleScript {
+    ......
+
+    private Object target;
+    private ScriptDynamicObject dynamicObject = new ScriptDynamicObject(this);
+
+    @Override
+    public void init(Object target, ServiceRegistry services) {
+        ......
+        setScriptTarget(target);
+    }
+
+    public Object getScriptTarget() {
+        return target;
+    }
+
+    private void setScriptTarget(Object target) {
+        this.target = target;
+        this.dynamicObject.setTarget(target);
+    }
+
+    public PrintStream getOut() {
+        return System.out;
+    }
+
+    @Override
     public Object getProperty(String property) {
-        try {
-            return binding.getVariable(property);
-        } catch (MissingPropertyException e) {
-            return super.getProperty(property);
-        }
+        return dynamicObject.getProperty(property);
     }
 
+    @Override
     public void setProperty(String property, Object newValue) {
-        if ("binding".equals(property)) {
-            setBinding((Binding) newValue);
-        } else if ("metaClass".equals(property)) {
-            setMetaClass((MetaClass) newValue);
-        } else if (!binding.hasVariable(property)
-                // GROOVY-9554: @Field adds setter
-                && hasSetterMethodFor(property)) {
-            super.setProperty(property, newValue);
-        } else {
-            binding.setVariable(property, newValue);
-        }
+        dynamicObject.setProperty(property, newValue);
     }
 
+    public Map<String, ?> getProperties() {
+        return dynamicObject.getProperties();
+    }
+
+    public boolean hasProperty(String property) {
+        return dynamicObject.hasProperty(property);
+    }
+
+    @Override
     public Object invokeMethod(String name, Object args) {
-        try {
-            return super.invokeMethod(name, args);
-        }
-        //...
+        return dynamicObject.invokeMethod(name, (Object[]) args);
     }
 
-    public void println() {}
-    public void print(Object value) {}
-    public void println(Object value) {}
-    public Object evaluate(String expression) throws CompilationFailedException {}
-    public abstract Object run();
-
-    //...
+    @Override
+    public DynamicObject getAsDynamicObject() {
+        return dynamicObject;
+    }
 }
 ```
 
-这就是我们说的 groovy 编译脚本时提供的模板类，这个类其实上面还有两层继承关系，但是由于比较简单，我这里就没有表示出来。我们的脚本代码最终都会编译到 run 运行。我们看到这里定义了一些熟悉的方法。
+脚本中的所有的方法调用都将会委托给 dynamicObject，它是 ScriptDynamicObject 对象。Gradle 经常出现 DynamicObject，它到底是个什么角色呢？
 
-而 ProjectScript -> PluginsAwareScript -> DefaultScript -> BasicScript 这几个类定义了 gralde 脚本中我们常见的方法：
+Gradle 脚本中的所有对象都将继承自 GroovyObject， Script 对象也不例外。GroovyObject 这个类是 Groovy 语言动态性的基础。Groovy 会把脚本内的所有方法调用和属性访问都编译成对 GroovyObject 的 getProperty setProperty invokeMethod 方法的调用。这就相当于 Groovy 对所有方法调用和属性访问都做了拦截，我们知道拦截的好处之一就是可以做访问控制，而这种访问控制让 Groovy 的动态性成为可能。举个例子，动态语言的特点之一是可运行时修改类的结构，假如我定义了一个 Groovy 对象 A 这个类是个空类，现有以下代码：
 
-这些方法都是脚本可以直接调用的，那么具体脚本是如何利用，我们知道，我们的脚本逻辑最终都是运行在 run() 里面的，脚本是如何调到模板类中的对象的呢？
+```java
+class A {}
+A a = new A()
+a.b = new Object()
+```
+如果这段代码发生在 Java 中，肯定会报错，找不到属性 b。但是在 Groovy 中就不一样了。上面这段代码在逻辑上会被编译成这个样子:
 
-我们就必须看一下 BuildScript 的 run() 方法了：
- ```java
- ```
-可以看到，这里面并没有出现 println，取而代之的是 Callsite，这个是什么呢？我们可以姑且认为这是对 println 的反射调用。
+```java
+class A implements GroovyObject {
+}
+A a = new A()
+a.setProperty("b", new Object())
+```
 
-好了
+当然，最后会通过反射尝试访问 A 的 b 属性，但是很显然，这会失败。但你可以这么做：
+
+```java
+class A {
+
+    Map<String, Object> dynamicProperties = new HashMap<>()
+
+    @Override
+    void setProperty(String propertyName, Object newValue) {
+        try {
+            super.setProperty(propertyName, newValue)
+        } catch (ignored) {
+            dynamicProperties.put(propertyName, newValue)
+        }
+    }
+
+    @Override
+    Object getProperty(String propertyName) {
+        try {
+            return super.getProperty(propertyName)
+        } catch (ignored) {
+            return dynamicProperties.get(propertyName)
+        }
+    }
+}
+A a = new A()
+a.b = new Object()
+```
+
+通过重写 setProperty getProperty 方法，让 Groovy 具备了动态添加属性的能力。有了对方法调用和属性访问的完全掌控，Groovy 就可以为所欲为，偷梁换柱，移花接木，釜底抽薪，暗度陈仓......
+
+Groovy 的动态性也是 Gradle 实现自己 dsl 的基础。Gradle 将 Groovy 对象用来支持的动态性的一组方法桥接到了 DynamicObject 上。我们知道，桥接模式的优点是，让类的某些行为可以朝着独立于类本身的方向泛化，这样脚本类的子类可以专注于脚本本身的能力的扩充，比如给脚本提供各种和 Gradle 本身业务无关的全局函数和属性，这些能力比较固定，适合通过继承的形式进行扩充。而 dsl 的建设对动态性比较高，依赖于运行时的状态，所以 Gradle 利用桥接模式把脚本的动态能力桥接到 DynamicObject 上，为实现 Gradle 的 dsl 打下基础。实际上 ScriptDynamicObject 担任了这样的角色：
+
+```java
+private static final class ScriptDynamicObject extends AbstractDynamicObject {
+
+        private final Binding binding;
+        private final DynamicObject scriptObject;
+        private DynamicObject dynamicTarget;
+
+        ScriptDynamicObject(BasicScript script) {
+            this.binding = script.getBinding();
+            scriptObject = new BeanDynamicObject(script).withNotImplementsMissing();
+            dynamicTarget = scriptObject;
+        }
+
+        public void setTarget(Object target) {
+            dynamicTarget = DynamicObjectUtil.asDynamicObject(target);
+        }
+
+        @Override
+        public Map<String, ?> getProperties() {
+            return dynamicTarget.getProperties();
+        }
+
+        @Override
+        public boolean hasMethod(String name, Object... arguments) {
+            return scriptObject.hasMethod(name, arguments) || dynamicTarget.hasMethod(name, arguments);
+        }
+
+        @Override
+        public boolean hasProperty(String name) {
+            return binding.hasVariable(name) || scriptObject.hasProperty(name) || dynamicTarget.hasProperty(name);
+        }
+
+        @Override
+        public DynamicInvokeResult tryInvokeMethod(String name, Object... arguments) {
+            DynamicInvokeResult result = scriptObject.tryInvokeMethod(name, arguments);
+            if (result.isFound()) {
+                return result;
+            }
+            return dynamicTarget.tryInvokeMethod(name, arguments);
+        }
+
+        @Override
+        public DynamicInvokeResult tryGetProperty(String property) {
+            if (binding.hasVariable(property)) {
+                return DynamicInvokeResult.found(binding.getVariable(property));
+            }
+            DynamicInvokeResult result = scriptObject.tryGetProperty(property);
+            if (result.isFound()) {
+                return result;
+            }
+            return dynamicTarget.tryGetProperty(property);
+        }
+
+        @Override
+        public DynamicInvokeResult trySetProperty(String property, Object newValue) {
+            return dynamicTarget.trySetProperty(property, newValue);
+        }
+        ......
+    }
+```
+ScriptDynamicObject 中有三个重要的对象，bindings，scriptObject，dynamicTarget。bindings 前面已经讲过，scriptObject 是另一个 DynamicObject，这个类由 DefaultScript 包装而来，叫做 BeanDynamicObject，这个类可以认为是对 DefaultScript 的 MetaClass 对象的封装，对这个对象的方法和属性的访问其实最终都会通过脚本类的 MetaClass 来完成的。而 dynamicTarget 默认情况下就是 scriptObject，可以通过 setTarget 方法覆盖默认值，这个对象也同样是个 DynamicObject。可见，ScriptDynamicObject 其实是个包工头而已，它自己几乎没干啥，只是将所有的方法调用和属性访问都转包给 bindings，scriptObject，dynamicTarget 这三个对象了，前两个对象只是继承 Groovy 的动态性方案，毕竟 Gradle 是在 Groovy 平台玩，你可以扩展自己的玩法，但得保留别人的玩法，这样才能算得上是 Groovy 的超集。这三个对象我们主要关注 scriptObject 和 dynamicTarget。
+
+因为 Gradle 的能力主要集中在 DefaultScipt 中，所以可以认为 scriptObject 代表着 DefaultScipt，DefaultScipt 这个类虽然很大，但职责简单，它仅仅是给脚本提供了很多工具方法，方便我们编写脚本。而后者 dynamicTarget 是通过 BasicScript#init() 注入进来的，这个对象到底是何方神圣呢？我们可以在 init 方法里进行断点，然后以调试模式运行 gradle 脚本中任何一个任务，就能通过调用栈追溯到这个对象最终来自于 DefaultProject#getAsDynamicObject()。我们知道，一个 build.gradle 脚本对应着一个 project，我们在脚本中的所有配置都是对这个 project 进行的，而DefaultProject 就是对 project 的建模。
+
+现在，我们可以把焦点放在到 DefaultProject 上了。因为 DefaultScipt 提供的是领域无关的能力，所以我们可以断定，Gralde 脚本中的各种领域相关能力，都是 DefaultProject 实现的。我们从 getAsDynamicObject 方法为入口，对其一探究竟：
+
+```java
+public abstract class DefaultProject extends AbstractPluginAware implements ProjectInternal, DynamicObjectAware {
+    ......
+    private final ExtensibleDynamicObject extensibleDynamicObject;
+    ......
+    public DefaultProject(...) {
+        ......
+
+        services = serviceRegistryFactory.createFor(this);
+        taskContainer = services.get(TaskContainerInternal.class);
+
+        extensibleDynamicObject = new ExtensibleDynamicObject(this, Project.class, services.get(InstantiatorFactory.class).decorateLenient(services));
+        if (parent != null) {
+            extensibleDynamicObject.setParent(parent.getInheritedScope());
+        }
+        extensibleDynamicObject.addObject(taskContainer.getTasksAsDynamicObject(), ExtensibleDynamicObject.Location.AfterConvention);
+        ......
+    }
+    @Override
+    public DynamicObject getAsDynamicObject() {
+        return extensibleDynamicObject;
+    }
+    ......
+}
+```
+
+略去无关代码后，我们一眼就能看出 ExtensibleDynamicObject 是主角。我们看看 ExtensibleDynamicObject 中的逻辑：
+
+```java
+public class ExtensibleDynamicObject extends MixInClosurePropertiesAsMethodsDynamicObject implements org.gradle.api.internal.HasConvention {
+    ......
+    public ExtensibleDynamicObject(Object delegate, Class<?> publicType, InstanceGenerator instanceGenerator) {
+        this(delegate, createDynamicObject(delegate, publicType), new DefaultConvention(instanceGenerator));
+    }
+
+    public ExtensibleDynamicObject(Object delegate, AbstractDynamicObject dynamicDelegate, InstanceGenerator instanceGenerator) {
+        this(delegate, dynamicDelegate, new DefaultConvention(instanceGenerator));
+    }
+
+    public ExtensibleDynamicObject(Object delegate, AbstractDynamicObject dynamicDelegate, Convention convention) {
+        this.dynamicDelegate = dynamicDelegate;
+        this.convention = convention;
+        this.extraPropertiesDynamicObject = new ExtraPropertiesDynamicObjectAdapter(delegate.getClass(), convention.getExtraProperties());
+
+        updateDelegates();
+    }
+
+    private void updateDelegates() {
+        DynamicObject[] delegates = new DynamicObject[6];
+        delegates[0] = dynamicDelegate;
+        delegates[1] = extraPropertiesDynamicObject;
+        int idx = 2;
+        if (beforeConvention != null) {
+            delegates[idx++] = beforeConvention;
+        }
+        if (convention != null) {
+            delegates[idx++] = convention.getExtensionsAsDynamicObject();
+        }
+        if (afterConvention != null) {
+            delegates[idx++] = afterConvention;
+        }
+        boolean addedParent = false;
+        if (parent != null) {
+            addedParent = true;
+            delegates[idx++] = parent;
+        }
+        DynamicObject[] objects = new DynamicObject[idx];
+        System.arraycopy(delegates, 0, objects, 0, idx);
+        setObjects(objects);
+
+        if (addedParent) {
+            idx--;
+            objects = new DynamicObject[idx];
+            System.arraycopy(delegates, 0, objects, 0, idx);
+            setObjectsForUpdate(objects);
+        }
+    }
+
+    public void addObject(DynamicObject object, Location location) {
+        switch (location) {
+            case BeforeConvention:
+                beforeConvention = object;
+                break;
+            case AfterConvention:
+                afterConvention = object;
+        }
+        updateDelegates();
+    }
+    ......
+```
+ExtensibleDynamicObject 也是个不干活的，它是一个 DynamicObject 容器，它把 DefaultProject 封装成 BeanDyanmicObject，把 convention.getExtraProperties() 封装成 ExtraPropertiesDynamicObjectAdapter，还通过 convention.getExtensionsAsDynamicObject() 获取了 
+ExtensionsDynamicObject。在 DefaultProject 的构造函数中我们看到，它还通过 addObject 获取了 taskContainer.getTasksAsDynamicObject()。所以，脚本中所有对 ExtensibleDynamicObject 的方法调用和属性访问，都又会转包给这些对象。
+
+现在我们看看 getExtraProperties()：
+
+```java
+public interface ExtensionContainer {
+    ......
+    /**
+     * The extra properties extension in this extension container.
+     *
+     * This extension is always present in the container, with the name “ext”.
+     *
+     * @return The extra properties extension in this extension container.
+     */
+    ExtraPropertiesExtension getExtraProperties();
+}
+```
+
+# Ext DSL 的支持
+
+很显然，ExtraPropertiesExtension 代表 gradle 中的 ext 扩展，通常我们利用这个扩展设置一些属性。ExtraPropertiesDynamicObjectAdapter 对它进行了封装，然后将属性暴露给脚本，我们在脚本中对 ext 中属性的访问都将透过 ExtraPropertiesDynamicObjectAdapter 来进行，这就是我们为什么可以在脚本中直接使用 ext 块中定义的属性的原因。
+
+我们现在看看 convention.getExtensionsAsDynamicObject() 返回的 ExtensionsDynamicObject。
+
+```java
+private class ExtensionsDynamicObject extends AbstractDynamicObject {
+        @Override
+        public String getDisplayName() {
+            return "extensions";
+        }
+
+        @Override
+        public boolean hasProperty(String name) {
+            if (extensionsStorage.hasExtension(name)) {
+                return true;
+            }
+            ......
+            return false;
+        }
+
+        @Override
+        public Map<String, Object> getProperties() {
+            Map<String, Object> properties = new HashMap<String, Object>();
+            ......
+            properties.putAll(extensionsStorage.getAsMap());
+            return properties;
+        }
+
+        @Override
+        public DynamicInvokeResult tryGetProperty(String name) {
+            Object extension = extensionsStorage.findByName(name);
+            if (extension != null) {
+                return DynamicInvokeResult.found(extension);
+            }
+            ......
+            return DynamicInvokeResult.notFound();
+        }
+
+        public Object propertyMissing(String name) {
+            return getProperty(name);
+        }
+
+        @Override
+        public DynamicInvokeResult trySetProperty(String name, Object value) {
+            checkExtensionIsNotReassigned(name);
+            if (plugins == null) {
+                return DynamicInvokeResult.notFound();
+            }
+            ......
+            return DynamicInvokeResult.notFound();
+        }
+
+        public void propertyMissing(String name, Object value) {
+            setProperty(name, value);
+        }
+
+        @Override
+        public DynamicInvokeResult tryInvokeMethod(String name, Object... args) {
+            if (isConfigureExtensionMethod(name, args)) {
+                return DynamicInvokeResult.found(configureExtension(name, args));
+            }
+            ......
+            return DynamicInvokeResult.notFound();
+        }
+
+        public Object methodMissing(String name, Object args) {
+            return invokeMethod(name, (Object[]) args);
+        }
+
+        @Override
+        public boolean hasMethod(String name, Object... args) {
+            if (isConfigureExtensionMethod(name, args)) {
+                return true;
+            }
+            ......
+            return false;
+        }
+        ......
+
+        private Object configureExtension(String name, Object[] args) {
+            Closure closure = (Closure) args[0];
+            Action<Object> action = ConfigureUtil.configureUsing(closure);
+            return extensionsStorage.configureExtension(name, action);
+        }
+}
+```
+
+# 扩展相关 DSL 的支持
+
+可以看到，当访问属性时，这个对象会寻找对应的扩展，然后将扩展返回，所以我们可以在脚本中直接通过扩展名获取扩展，比如 java.sourceCompatibility；当调用方法时，会使用 configureExtension 对扩展进行配置，这里会假设 args 只包含一个 Closure 类型的参数，ExtensionsStorage#configureExtension 方法的逻辑是：先根据 name 找到对应的扩展，然后对扩展用前面的 Closure 类型的参数进行配置，这就是为什么我们可以使用 java {} 这种方式配置 java 扩展的原因。当我们使用 java {} 语法配置 java 扩展时，此语法结构会被 Groovy 会编译成对脚本对象 DefaultScript#invokeMethod() 方法的调用。调用参数为：invokeMethod(name: "java", args: closure)。前面分析过了，DefaultScript 最终会把调用转发给 ScriptDynamicObject，而 ScriptDynamicObject 又会把调用转发给 ExtensibleDynamicObject，而 ExtensibleDynamicObject 是一个 DynamicObject 容器，它会继续把调用转发给容器中的 DynamicObject，当调用转发到 ExtensionsDynamicObject 时，会根据 name 获取到 java 扩展，然后对 java 扩展进行配置。Gradle 会把扩展对象作为 closure 的 delegate，这样一来，closure 内就可以访问到扩展的属性和方法了。
+
+# Plugin 相关 DSL 的支持
+
+
+# Task 相关 DSL 的支持
+
