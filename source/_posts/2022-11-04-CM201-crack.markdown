@@ -43,7 +43,7 @@ tags:
    将 usb 转 ttl 模块插入到电脑的 usb 口，然后打开 windows 设备管理器，在端口分类里查看这个模块是在哪个 COM 口，我的设备是在 COM4。
 
    用杜邦线把 CH340G 的 RXD、TXD 和 GND三个引脚接到板子上。板子上的那四个孔第一个孔没用，其他三个孔从左到右分别是 RXD、TXD、GND，分别和 CH340G 的 TXD、RXD、GND 相对应，顺序不能错，如下图所示。有的博主给那三个孔焊上了排插，这样用杜邦线直接插上去就行，如果和我一样，没有其他工具，直接用那三根导线和三个孔保持良好稳定的接触也行。
-   ![](/img/in-post/cm201_crack/board-ttl-connection.png)
+   ![](/img/in-post/cm201_crack/board-ttl-connection.jpg)
    打开 putty ，如下图所示：
    ![](/img/in-post/cm201_crack/putty.png)
    把通信方式改成串口，Serial line 填写为上面查到的那个，我这里是 COM4，Speed 调整为 115200，Connection type 选择 Serial，其他的不用管，然后点击 右下角的 open，此时会出现一个漆黑的窗口，这个窗口就是用来和盒子进行通信的。打开盒子电源，这时应该能看到窗口上有日志输出：

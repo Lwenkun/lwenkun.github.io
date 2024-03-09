@@ -579,8 +579,6 @@ comments:
   nav:
     disqus:
      order: -2
-    changyan:
-     order: -1
 
 # Disqus
 disqus:
@@ -605,7 +603,7 @@ disqusjs:
 
 # Changyan
 changyan:
-  enable: true
+  enable: false
   appid: cysUmzEyu
   appkey: 2459465628a99f57dac524f945fb682a
   #post_meta_order: 0
