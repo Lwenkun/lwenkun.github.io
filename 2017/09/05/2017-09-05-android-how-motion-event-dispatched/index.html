@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 6.0.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="Android 事件分发规律总结定义事件序列：手指接触屏幕开始到离开屏幕为止产生的事件为一次事件序列。 规律一从父视图的角度来看，无论他的子视图是 View 还是 ViewGroup，对父视图来说都是透明的。它只知道如果当 ACTION_DOWN 事件传给子视图后子视图的 dispatchTouchEvent () 返回 true，说明子视图想要处理这个事件，那么以后的事件就都交给它，不管以后子视">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2017-09-05T00:00:00.000Z">
-<meta property="article:modified_time" content="2024-02-13T14:46:42.225Z">
+<meta property="article:modified_time" content="2024-03-09T14:25:41.525Z">
 <meta property="article:author" content="Chance Li">
 <meta property="article:tag" content="Android">
 <meta property="article:tag" content="View">
@@ -237,7 +237,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-02-13 14:46:42" itemprop="dateModified" datetime="2024-02-13T14:46:42+00:00">2024-02-13</time>
+                <time title="修改时间：2024-03-09 14:25:41" itemprop="dateModified" datetime="2024-03-09T14:25:41+00:00">2024-03-09</time>
               </span>
 
           
@@ -307,7 +307,7 @@
 <span id="more"></span>
 <h2 id="规律二"><a href="#规律二" class="headerlink" title="规律二"></a>规律二</h2><p>父视图有两种角色，一种是 ViewGroup , 另一种是 View。当父视图的角色是 ViewGroup 时，父视图的主要任务就是分派事件给子视图；当父视图的角色为 View 时，它和普通的 View 一样处理事件。<br>父视图在两种情况下会将事件拿给自己处理：<br>1）如果没有子视图能够处理事件，那么只能由父视图自己处理，此时会把事件传给 super.dispatchTouchEvent()，也就是父类方法来处理（注意是父类，不是父视图）。<br>2）假如本来整个事件序列都是要传给子视图的，但是中途父视图想要拦截的话，从父视图决定拦截开始之后的所以事件都不会再交给子视图处理了，但是决定拦截时的那一次的事件会还是会交给子视图的，只不过是事件的类型是 ACTION_CANCEL，这样做的原因我认为可能是通知一下子视图父视图拦截了你的事件，免得子视图事件被拦截了还蒙在鼓里（其实就是让开发者可以对这种情况加以处理）。从开始拦截的那一次开始，之后的所有事件（不包括拦截的那一次）都不会传给子视图了，都传入 super.dispatchOnToucnEvent() 中，即交给父视图给自己处理。</p>
 <h2 id="规律三"><a href="#规律三" class="headerlink" title="规律三"></a>规律三</h2><p>如果事件是交给自己处理，不管是子视图还是父视图，只要事件交给了自己处理，那么事件的处理流程都是一样的（这个流程在 View 中定义），下面来分析是如它们何处理事件的：<br>如果视图将事件交给自己处理，那么事件首先都是从 dispatchTouchEvent() 传入的（父视图是 super.dispatchTouchEvent()），这个方法的逻辑是：如果该视图注册了OnTouchListener 监听器，并且监听器不为 null，那么就把事件交给监听器中的 onTouch() 方法。下一步就是看 onTouch() 的返回值了，如果返回值为 true，那么说明 onTouch() 消费了该事件，事件的传递到此为止， dispatchTouchEvent() 返回 true；如果返回值为 false，那么说明 onTouch() 方法并没有消耗该事件，那么进行下一步的事件分发。下一步事件会传给 onTouchEvent 方法，这个方法是最常见也最常用的方法，对于一个 自定义 View 来说，这个方法是根据事件来更改 View 的行为的主要场所。dispatchTouchEvent() 同样需要根据 onTouchEvent() 的返回值来决定下一步的事件转发流程。如果 onTouchEvent() 返回 false，那么 dispatchTouchEvent() 返回的就是 false，否则返回的就是 true。这个过程可以用如下代码表示：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">dispatchTouchEvent</span><span class="params">(MotionEvent e)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (onTouchListener != <span class="keyword">null</span>) ? (onTouchListener.onTouch(e) ? <span class="keyword">true</span> : onTouchEvent(ev)) : onTouchEvent(e);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent e)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (onTouchListener != <span class="literal">null</span>) ? (onTouchListener.onTouch(e) ? <span class="literal">true</span> : onTouchEvent(ev)) : onTouchEvent(e);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>之前已经说到，如果当父视图接收到 ACTION_DOWN 事件时，如果没有子视图能够处理该事件，那么后续的事件就不会给该子视图了，并且该事件会交给父视图处理，即传入父视图的 super.dispatchTouchEvent() 方法中。子视图有没有处理该事件就是根据 dispatchTouchEvent() 的返回值来看的。返回 true 表示处理，false 表示未处理。如果子视图对于 ACTION_DOWN 事件进行了处理（dispatchTouchEvent() 返回true），那么之后的事件都会给它处理，不管子视图之后 dispatchTouchEvent() 是否返回 true，也就是说，父视图会忽略子视图接下来的 dispatchTouchEvent() 的返回值，只要事件继续发生就都传给该子视图。但是，返回 false 会导致事件从该子视图返回给上级视图，上级视图也不会处理该事件，该事件会一直上传，直至传到 Activity 中的 onTouchEvent() 方法中。 </p>
 <h2 id="规律四"><a href="#规律四" class="headerlink" title="规律四"></a>规律四</h2><p>关于事件的拦截：<br>父视图可以在任何时候拦截本应该传递子视图的事件，拦截的依据就是 onInterceptTouchEvent() 的返回值，true 表示拦截，false 表示不拦截，父视图每次分发事件时会根据这个方法的返回值决定是否开始拦截：如果返回 false，即不拦截该事件，父视图下次分发事件时依然会调用这个方法来判断是否开始拦截事件；如果返回 true，说明该事件需要拦截，那么以后的事件，包括该事件都会直接交由父视图的 super.dispatchTouchEvent() 方法处理，而不会再传入子视图的 dispatchTouchEvent() 方法中 。但是开始拦截的那个事件还是会交给那个子视图，只是事件的类型变为了 ACTION_CANCEL。</p>
