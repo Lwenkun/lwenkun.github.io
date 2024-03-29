@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言心血来潮打开了尘封已久的 switch，发现软件更新实在太慢，上网找了几种常用的加速方法，各有优劣，但最终都被 pass：  更改 DNS 服务器，缺点是网速提升有限，大概在 34 Mbps 左右，大概提升 1 ~ 2 Mbps 左右 ，相对 switch 几百 M 几个 G 的游戏来说，依然是龟速。唯一的好处是不用借助其他设备。 买加速器。对于喜欢折腾的人来说，花钱永远是最后的选择，况且我自">
+<meta property="og:type" content="article">
+<meta property="og:title" content="树莓派 3B+ 刷 OpenWrt 并安装 OpenClash">
+<meta property="og:url" content="https://lwenkun.github.io/2024/03/29/2024-03-29-install-openwrt-with-openclash-on-raspi-3bplus/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="前言心血来潮打开了尘封已久的 switch，发现软件更新实在太慢，上网找了几种常用的加速方法，各有优劣，但最终都被 pass：  更改 DNS 服务器，缺点是网速提升有限，大概在 34 Mbps 左右，大概提升 1 ~ 2 Mbps 左右 ，相对 switch 几百 M 几个 G 的游戏来说，依然是龟速。唯一的好处是不用借助其他设备。 买加速器。对于喜欢折腾的人来说，花钱永远是最后的选择，况且我自">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_18.29.16-20240326183441-5anzd6b.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_18.34.00-20240326183736-bt1r00z.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_19.12.13-20240326191339-qij64pw.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326194314-eajrdzi.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326194753-8tm3r0q.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326200811-2btw7q2.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326201907-648ify0.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326202341-cq4z8dc.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214821-aaka330.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214928-6h67ux3.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214543-mu1mmpq.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326215639-zem4of6.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327212906-2rovyqk.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326215538-hwck292.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175237-uznxcji.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326220445-i2vek52.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326220558-odd0f0m.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326232628-2vbn56z.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175032-uhrt175.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327154738-dmo7m40.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327000024-x2yn023.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327174856-8qyj9ua.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327000414-devs5oj.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327001159-g637mgk.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175721-f2e296c.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327002040-uww3k9k.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-27_17.44.52-20240327174525-vnc67e7.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327162940-5i85bfe.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327163736-1p10m54.png">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327174028-zp05qsw.png">
+<meta property="article:published_time" content="2024-03-29T00:00:00.000Z">
+<meta property="article:modified_time" content="2024-03-29T17:38:05.440Z">
+<meta property="article:author" content="Chance Li">
+<meta property="article:tag" content="折腾">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_18.29.16-20240326183441-5anzd6b.png">
+
+<link rel="canonical" href="https://lwenkun.github.io/2024/03/29/2024-03-29-install-openwrt-with-openclash-on-raspi-3bplus/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>树莓派 3B+ 刷 OpenWrt 并安装 OpenClash | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2024/03/29/2024-03-29-install-openwrt-with-openclash-on-raspi-3bplus/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="Chance Li">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          树莓派 3B+ 刷 OpenWrt 并安装 OpenClash
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2024-03-29 00:00:00 / 修改时间：17:38:05" itemprop="dateCreated datePublished" datetime="2024-03-29T00:00:00+00:00">2024-03-29</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>心血来潮打开了尘封已久的 switch，发现软件更新实在太慢，上网找了几种常用的加速方法，各有优劣，但最终都被 pass：</p>
+<ul>
+<li>更改 DNS 服务器，缺点是网速提升有限，大概在 34 Mbps 左右，大概提升 1 ~ 2 Mbps 左右 ，相对 switch 几百 M 几个 G 的游戏来说，依然是龟速。唯一的好处是不用借助其他设备。</li>
+<li>买加速器。对于喜欢折腾的人来说，花钱永远是最后的选择，况且我自己有梯子，干嘛花这个冤枉钱。</li>
+<li>把电脑上的代理通过局域网分享给 switch，然而发现网速的提升依然不高，虽然后来发现是 USB 无线网卡的问题，但不管怎样，电脑一直保持开机状态，就是为了给 swtich 做代理，总感觉不太优雅。</li>
+</ul>
+<p>我心想要是能在路由器上跑代理就好了，不过现在的路由器不支持装插件，而且是公用的，不太适合去折腾。这时候突然想起了我还有个同样在吃灰的树莓派，如果能把这台树莓派变成一台软路由，再在这个软路由上跑代理，岂不美哉？于是上网搜索 “如何在树莓派上装软路由”，不出所料，搜出了一堆教程。一番学习后，最后选择了 OpenWrt 这款软路由固件，一是因为它插件比较多，有更多可玩性，二是用户量大，教程多，遇到问题容易找到解决方案。</p>
+<p>话不多说，开干。</p>
+<span id="more"></span>
+
+<p class="notice-info">如果你的设备也是树莓派 3B+ ，且不想折腾的话，我这里准备了一个开箱即用的 OpenWrt 镜像，自带 OpenClash，分区扩容到了 1G，路由器管理密码和 WiFi 密码都是 12345678，WiFi 名为 OpenWrt，路由器地址为 192.168.110.1。烧录运行后，只需要改下密码和 OpenClash 节点信息就行了。  
+<a target="_blank" rel="noopener" href='https://cloud.189.cn/t/3iqiYfYRnA3e'>https://cloud.189.cn/t/3iqiYfYRnA3e（访问码：ba8p）</a></p>
+
+<h1 id="安装-OpenWrt"><a href="#安装-OpenWrt" class="headerlink" title="安装 OpenWrt"></a>安装 OpenWrt</h1><h2 id="准备工具"><a href="#准备工具" class="headerlink" title="准备工具"></a>准备工具</h2><ul>
+<li>1G  以上 micro SD 卡，树莓派 3B+，网线</li>
+<li>镜像烧录工具 <a target="_blank" rel="noopener" href="https://etcher.balena.io/">balenaEtcher</a></li>
+</ul>
+<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><p>首先是去 OpenWRT 官网找自己的设备对应的固件，去到官网<a target="_blank" rel="noopener" href="https://openwrt.org/downloads">下载页</a>：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_18.29.16-20240326183441-5anzd6b.png" alt="iShot_2024-03-26_18.29.16"></p>
+<p>点击 <em>Table of Hardware</em>，进入到硬件列表页面：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_18.34.00-20240326183736-bt1r00z.png" alt="iShot_2024-03-26_18.34.00"></p>
+<p>在输入框里输入关键字筛选，然后在列表中找到自己的型号。我的板子型号是 3B+，因此选择下载 3B+ 对应的固件。一共有四种固件可供选择，分别是 release 和 snapshot 版本的完整镜像及其升级包。由于我是全新安装，因此选择完整镜像就行了，这里我选择的是 release 版本的完整镜像 Factory image。注意，如果你选择 snapshot 版本的镜像，可能会遇到一些坑，因为 snapshot 固件的软件仓库没有进行版本隔离，软件仓库中的软件永远是适配最新版固件的，因此后面你安装软件的时候，可能会出现兼容性问题。当然，你可以手动更换到固定版本的软件仓库来解决这个问题，如何更换后面会提到。</p>
+<h2 id="烧录镜像"><a href="#烧录镜像" class="headerlink" title="烧录镜像"></a>烧录镜像</h2><p>下载好镜像后解压得到 openwrt-23.05.0-bcm27xx-bcm2710-rpi-3-ext4-factory.img，然后使用 balenaEtcher 镜像烧录工具，把固件烧录到我们的存储卡中，存储卡不用很大，1G 足够了：<br><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_19.12.13-20240326191339-qij64pw.png" alt="iShot_2024-03-26_19.12.13"><br>烧录完成之后，把 SD 卡插入树莓派，通上电，就可以开始配置了。</p>
+<h2 id="配置-OpenWrt"><a href="#配置-OpenWrt" class="headerlink" title="配置 OpenWrt"></a>配置 OpenWrt</h2><ol>
+<li><p>登录路由器管理后台</p>
+<p> OpenWrt 无线网卡默认是未启用状态，因此没法通过 WiFi 连接并登录路由器管理界面。我们把树莓派通过网线连接到电脑，然后去电脑的设置里查看有线网络的网关 IP，一般都是 192.168.1.1，在浏览器中输入这个 IP 就可以看到 OpenWrt 的管理界面了：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326194314-eajrdzi.png" alt="image"></p>
+</li>
+<li><p>修改密码，添加 SSH 公钥</p>
+<p> 我们还没有设置过密码，直接点击 Login 就行。登录之后会提示你设置路由器后台密码，点击 <kbd>Go to password configuration...</kbd>。你还可以添加电脑的 SSH 公钥，方便后续 SSH 登录。<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326194753-8tm3r0q.png" alt="image"></p>
+</li>
+<li><p>研究一下初始配置</p>
+<p> 去到 Network -&gt; Interface 界面，可以看到只有一个 lan 接口：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326200811-2btw7q2.png" alt="image"><br> 点击编辑先研究下配置：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326201907-648ify0.png" alt="image"><br> 可以看到这个接口 IP 地址是手动设置的，接口对应的设备是 br-lan 网桥，在这个接口上跑了一个 DHCP 服务器。点击 <kbd>Dismiss</kbd> ，切换到 <kbd>Devices</kbd> 选项卡，研究下 br-lan 网桥的配置。可以看到 br-lan上附加了一个 eth0，eth0 正是我们的有线网卡。这就是为什么电脑连接树莓派后，不需要任何配置就能获取 IP 和网关，访问路由器后台。<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326202341-cq4z8dc.png" alt="image"><br> 然而现在也只能访问路由器后台，没法联网。为了能联网，我们需要完成以下配置：</p>
+<ul>
+<li>创建 wan 接口，并让其作为 DCHP 客户端去连接上层路由器；</li>
+<li>修改现在的 lan 接口，让其底层的设备关联的是无线网卡而非现在的有线网卡；</li>
+<li>激活无线网卡，开启无线网络，让局域网的无线设备能够连接进来；</li>
+</ul>
+<p> 以上是配置思路，接下来说下具体方法。</p>
+</li>
+<li><p>创建 wan 接口。</p>
+<p> 在 Network -&gt; Interface 页面，点击 <kbd>Add new interface...</kbd> ：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214821-aaka330.png" alt="image"><br> 填入下图所示配置，然后点击 <kbd>Create interface</kbd>：</p>
+<p>  Device 选择 br-lan 网桥也行，但网桥上只附加了一个 eth0，就没有使用的必要了，直接用 eth0 就行，br-lan 后面可以直接删了。<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214928-6h67ux3.png" alt="image"><br> 在新弹出的窗口中，点击 <kbd>Save</kbd>：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214543-mu1mmpq.png" alt="image"></p>
+</li>
+<li><p>开启无线网络，创建无线局域网。</p>
+<p> 点击 lan 接口的 <kbd>Edit</kbd> 按钮，修改其配置：</p>
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326215639-zem4of6.png" alt="image"></p>
+<p> 如下图所示，将 Device 改成 <kbd>Wireless Network: Master &quot;OpenWrt&quot; (lan)</kbd>，Device 展示的名称和选项列表中的名称不一样，这个不用管。IPv4 address 改成 192.168.110.1。然后点击  <kbd>Save</kbd> 保存。</p>
+ <p class="notice-warn">如果你上级路由器的网段不是 192.168.1.0/24，这里 IPv4 address 其实可以不改，我这里之所以改成 192.168.110.1 是避免上级路由器网段冲突。如果你的上级路由器网段刚好也是这个，你可以去买彩票了 😃。</p>
+
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327212906-2rovyqk.png" alt="image"></p>
+<p> 然后我们去到 Network -&gt; Wireless ，点击 <kbd>Edit</kbd> 按钮配置一下无线网络：</p>
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326215538-hwck292.png" alt="image"></p>
+<p> 如下图所示，把 Channel 改成 44（最开始我用的是 auto，发现 switch 死活连不上，最后按照网上的方法改成 44 就好了），加密方式我选择的是 <kbd>WPA-PSK/WPA2-PSK Mixed Mode</kbd>，兼容性好一点。 Key 自己看着填就行。最后点击 <kbd>Save</kbd>。</p>
+ <p class="notice-warn">不要在这个配置页面点击 <kbd>Enable</kbd> ，<kbd>Enable</kbd> 不仅会开启无线网络，还是把之前所有的更改自动应用了，这可能会导致无法再连接上路由器。</p>
+
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175237-uznxcji.png" alt="image"></p>
+<p> 退出配置后，回到上级界面，点击 <kbd>Enable</kbd>：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326220445-i2vek52.png" alt="image"></p>
+<p> 这一步会不仅会激活无线网卡并开启其无线 AP 功能，还有将之前所有的配置都应用。页面上会显示 Applying configuration changes 的 90s 倒计时，你需要在 90s 之内连接到 OpenWrt ，否则配置就会回滚。</p>
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326220558-odd0f0m.png" alt="image"></p>
+<p> 找到名为 OpenWrt 的无线网络，连接成功以后页面会自动刷新，配置应用成功。现在可以断开树莓派和电脑的连接，把树莓派连到路由器的 lan 口上。不出意外的话，就能愉快地上网了。</p>
+</li>
+</ol>
+<h1 id="安装-OpenClash"><a href="#安装-OpenClash" class="headerlink" title="安装 OpenClash"></a>安装 OpenClash</h1><p>软路由配置好了，接下来可以装代理软件了，我选择的是 OpenClash，原因也是一样，可玩性还行，并且有一定的用户量。就是配置稍微麻烦点。</p>
+<h2 id="更换-OpenWrt-软件源"><a href="#更换-OpenWrt-软件源" class="headerlink" title="更换 OpenWrt 软件源"></a>更换 OpenWrt 软件源</h2><p>在搭 OpenClash 之前我们需要更换一下 OpenWrt 的软件源，否则软件包的下载可能会很慢。去到 System -&gt; Software，点击 <kbd>Configure opkg...</kbd>，如下图所示：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326232628-2vbn56z.png" alt="image"><br><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175032-uhrt175.png" alt="image"></p>
+<p>然后把下面的文本复制到红框中，取代官方的源，点击 <kbd>Save</kbd>。我这里用的是清华的源，速度还可以。</p>
+ <p class="notice-warn">确认一下版本和 CPU 架构是否能和你的设备对上，否则需要修改</p>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">src/gz openwrt_core https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/targets/bcm27xx/bcm2710/packages</span><br><span class="line">src/gz openwrt_base https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/base</span><br><span class="line">src/gz openwrt_luci https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/luci</span><br><span class="line">src/gz openwrt_packages https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/packages</span><br><span class="line">src/gz openwrt_routing https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/routing</span><br><span class="line">src/gz openwrt_telephony https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/telephony</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装-OpenClash-1"><a href="#安装-OpenClash-1" class="headerlink" title="安装 OpenClash"></a>安装 OpenClash</h2><p>因为 OpenWrt 软件仓库里并没有提供 OpenClash，我们需要去 <a target="_blank" rel="noopener" href="https://github.com/vernesong/OpenClash/releases">OpenClash Github Release</a> 页下载最新的 ipk 包：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327154738-dmo7m40.png" alt="image"></p>
+<p>然后按照 Release 页的说明，先通过 ssh 登录软路由（密码是你一开始设置的路由器管理密码）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ssh root@192.168.1.1</span><br></pre></td></tr></table></figure>
+
+<p>再执行 <code>opkg update</code> 命令以获取最新的软件包列表：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">root@OpenWrt:~<span class="comment"># opkg update</span></span><br></pre></td></tr></table></figure>
+
+<p>接着安装 OpenClash 依赖，根据所使用的防火墙，选择不同的依赖，我用的是 nftables：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">root@OpenWrt:~<span class="comment"># opkg install coreutils-nohup bash dnsmasq-full curl ca-certificates ipset ip-full libcap libcap-bin ruby ruby-yaml kmod-tun kmod-inet-diag unzip kmod-nft-tproxy luci-compat luci luci-base</span></span><br></pre></td></tr></table></figure>
+
+<p>不出意外的话，两三分钟的时间就装好了，你可以先去撒泡尿，喝口水。</p>
+<p>依赖安装好后，就可以安装 OpenClash 了。去到 System -&gt; Software，点击 <kbd>Upload Package...</kbd>：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327000024-x2yn023.png" alt="image"></p>
+<p>点击<kbd>Browse...</kbd> 选择之前下载的 ipk 包，点击 <kbd>Upload</kbd>，然后点击 <kbd>Install</kbd>：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327174856-8qyj9ua.png" alt="image"></p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327000414-devs5oj.png" alt="image"></p>
+<p>这个时候可能会失败：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327001159-g637mgk.png" alt="image"></p>
+<p>看错误信息貌似是 dnsmasq-full 和已经安装的 dnsmasq 有冲突，看名字 dnsmasq-full 应该是比 dnsmasq 功能更全面的包，所以我们可以把 dnsmasq 卸载了。我们在 <kbd>Installed</kbd> 标签页筛出这个包来，点击 <kbd>Remove</kbd>。（直接在 ssh 里执行 <code>opkg remove dnsmasq</code> 也行）</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175721-f2e296c.png" alt="image"></p>
+<p>再次安装 OpenClash ipk 包，不出意外的话就装好了。可能会弹出 XHR 错误，忽略它。重启路由器，会发现顶部菜单栏多出了一个 <kbd>Service</kbd>，OpenClash 入口就在这个菜单下。点击进到 OpenClash 页，这时候 OpenClash 会提示你安装内核，点击 <kbd>Install</kbd> 进行安装。然后会自动跳转到日志页展示内核的安装日志，我这里的日志显示是安装成功了，如果你安装失败了，就得手动下载内核放到指定目录，可以去网上搜一下，很简单。</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327002040-uww3k9k.png" alt="image"></p>
+<h2 id="编辑-OpenClash-配置"><a href="#编辑-OpenClash-配置" class="headerlink" title="编辑 OpenClash 配置"></a>编辑 OpenClash 配置</h2><p>回到 OpenClash，切换到 <kbd>Config Manage</kbd> 选项卡，滑到下面的 <strong>Config File Edit</strong> 编辑你的配置。左边是编辑区，右边的是运行时配置预览区。如果你手里已经有配置文件，只需要把它粘贴到左边就行了：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-27_17.44.52-20240327174525-vnc67e7.png" alt="iShot_2024-03-27_17.44.52"></p>
+<p>这里附上一个我自用的模板，有两个留空的 SS 节点，替换一下就行：</p>
+<p><a target="_blank" rel="noopener" href="https://cloud.189.cn/t/RnyYvymuQzYz">https://cloud.189.cn/t/RnyYvymuQzYz</a>（访问码：7iv6）</p>
+<p>编辑完成后，点击下面的 <kbd>Apply Settings</kbd> ，这时候 OpenClash 会重启，重启完之后，不出意外的话，这时候再让你的 switch 连上 OpenWrt，下载速度应该快到飞起。当然，前提是你的线路本身足够快 : ) 。</p>
+<p>现在 OpenWrt 和 OpenClash 都安装好了，双喜临门。OpenWrt 还有很多可以折腾的地方，可以换语言，换主题，装插件。这个我就不再细说了，大家可以去网上搜索教程。我反正是折腾了一圈，最后还用回了官方的主题。还是官方主题用起来顺手，特别是顶部菜单的设计，鼠标悬浮就能展开二级菜单，有些主题菜单在侧边栏，需要点击一级菜单才能展开二级菜单，要是来回切换一级菜单的话，就有点麻烦。</p>
+<p>如果你还是想继续折腾，折腾之前不妨先接着往下看。</p>
+<h1 id="扩容和备份"><a href="#扩容和备份" class="headerlink" title="扩容和备份"></a>扩容和备份</h1><h2 id="扩容"><a href="#扩容" class="headerlink" title="扩容"></a>扩容</h2><p>不管你的 SD 卡有多大，烧完 OpenWrt 后，rootfs 分区也只剩下几十 M 的空间，折腾的时候极有可能会遇到磁盘空间不足的情况。因此我们先对 OpenWrt 做一下扩容，先把它扩到 1G。</p>
+<p class="notice-info">当然，你也可以扩容到更大，但因为后面要对分区进行备份，分区太大备份要花较长时间，建议折腾完后再扩容到最大。</p>
+
+<p>我用的分区工具是 Linux 平台的 Gparted，Windows 的傲梅分区助手应该也行。打开 Gparted，右上角选择 SD 卡，然后右键 rootfs 分区调出上下文菜单，点击 <kbd>调整大小/移动</kbd>。</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327162940-5i85bfe.png" alt="image"></p>
+<p>输入分区的新大小（也可以用上面的滑块来调整），然后点击 <kbd>调整大小/移动</kbd>，最后点击  <strong><kbd>✔</kbd></strong> 提交。</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327163736-1p10m54.png" alt="image"></p>
+<p>OK，分区现在有 1G 了，你可以尽情去折腾了。</p>
+<h2 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h2><p>折腾的过程中软路由可能会变砖，因此我们要养成一个好习惯，经常做下备份，留个检查点，不至于前功尽弃。其实 OpenWrt 自己就有备份的功能，但它备份的是 &#x2F;etc 目录，假如某个软件的配置文件存在其他地方，恢复的时候就可能出现一些奇奇怪怪的问题。更稳妥的备份方法当然是把分区给备份下来，扩容后分区的总大小也只有 1G 左右，完整备份也不费事。我这里用来备份的工具是 Windows 平台的 Win32DiskImager，Mac 平台和 Linux 平台应该也有类似的工具，大家可以去找一下。</p>
+<p>我们先创建一个名为 openwrt_backup.img 的空文件，然后打开 Win32DiskImager，映像文件选择我们刚创建的 openwrt_backup.img，设备选择 SD 卡对应的盘符，勾选 <kbd>仅读取已分配分区</kbd>，然后点击<kbd>读取</kbd>，接着 SD 卡中的内容就会读入到 openwrt_back.img 中了。备份过程中可能会出现 “剩余空间错误” 的弹窗，直接忽略。</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327174028-zp05qsw.png" alt="image"></p>
+<p>恢复的方法和前面烧录镜像的方法一样。</p>
+<p class="notice-info"> 其实 Win32DiskImager 也能实现烧录，步骤和上面一样，只是把 <kbd>读取</kbd> 改成 <kbd>写入</kbd>。<p>
+
+<h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p>OK，分享到此结束。祝大家玩得开心！</p>
+<p>‍</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Chance
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2024/03/29/2024-03-29-install-openwrt-with-openclash-on-raspi-3bplus/" title="树莓派 3B+ 刷 OpenWrt 并安装 OpenClash">https://lwenkun.github.io/2024/03/29/2024-03-29-install-openwrt-with-openclash-on-raspi-3bplus/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%8A%98%E8%85%BE/" rel="tag"># 折腾</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/09/29/2023-09-29-reading-notes-%209787121085116-1/" rel="prev" title="《程序员的自我修养》读书笔记一">
+      <i class="fa fa-chevron-left"></i> 《程序员的自我修养》读书笔记一
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <script src="https://utteranc.es/client.js"                                     repo="Lwenkun/lwenkun.github.io"                                     issue-term="pathname"                                     theme="github-dark"                                     crossorigin="anonymous"                                     async>                                 </script>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-OpenWrt"><span class="nav-number">2.</span> <span class="nav-text">安装 OpenWrt</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E5%85%B7"><span class="nav-number">2.1.</span> <span class="nav-text">准备工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E9%95%9C%E5%83%8F"><span class="nav-number">2.2.</span> <span class="nav-text">下载镜像</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%83%A7%E5%BD%95%E9%95%9C%E5%83%8F"><span class="nav-number">2.3.</span> <span class="nav-text">烧录镜像</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE-OpenWrt"><span class="nav-number">2.4.</span> <span class="nav-text">配置 OpenWrt</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-OpenClash"><span class="nav-number">3.</span> <span class="nav-text">安装 OpenClash</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9B%B4%E6%8D%A2-OpenWrt-%E8%BD%AF%E4%BB%B6%E6%BA%90"><span class="nav-number">3.1.</span> <span class="nav-text">更换 OpenWrt 软件源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-OpenClash-1"><span class="nav-number">3.2.</span> <span class="nav-text">安装 OpenClash</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%BE%91-OpenClash-%E9%85%8D%E7%BD%AE"><span class="nav-number">3.3.</span> <span class="nav-text">编辑 OpenClash 配置</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%89%A9%E5%AE%B9%E5%92%8C%E5%A4%87%E4%BB%BD"><span class="nav-number">4.</span> <span class="nav-text">扩容和备份</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%A9%E5%AE%B9"><span class="nav-number">4.1.</span> <span class="nav-text">扩容</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%87%E4%BB%BD"><span class="nav-number">4.2.</span> <span class="nav-text">备份</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD"><span class="nav-number">5.</span> <span class="nav-text">结语</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Chance Li"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">Chance Li</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5261683001" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5261683001" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chance Li</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">227k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:26</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 6.3.0">
+<meta name="generator" content="Hexo 7.1.1">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -200,6 +200,92 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2017/07/20/2017-7-20-android-open-source-library-glide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="Chance Li">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/07/20/2017-7-20-android-open-source-library-glide/" class="post-title-link" itemprop="url">Glide 源码探究</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-07-20 00:00:00" itemprop="dateCreated datePublished" datetime="2017-07-20T00:00:00+00:00">2017-07-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
+              </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>50k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>46 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Glide-源码探究"><a href="#Glide-源码探究" class="headerlink" title="Glide 源码探究"></a>Glide 源码探究</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Glide 是安卓平台上媒体管理和图片加载框架，它内部封装了媒体解码工具、内存和磁盘缓存以及资源池等，并向用户暴露简单易用的接口。我们可以用它来获取、解码、并展示视频、图片和 GIF 动画。如果大家有用过 Picasso 应该知道，Glide 的使用方式和 Picasso 非常相似，甚至很多 API 的名称都一样。但是相比 Picasso，Glide 的功能更加强大，内部实现也更加复杂。接下来我们就从源码的角度来探究一下 Glide 的内部原理。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2017/07/20/2017-7-20-android-open-source-library-glide/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2017/05/30/2017-05-30-operating-system-conclusion/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -231,7 +317,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -317,7 +403,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -403,7 +489,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -489,7 +575,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -576,7 +662,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -662,7 +748,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -748,7 +834,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -834,7 +920,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -920,7 +1006,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -952,93 +1038,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2016/11/05/2016-11-5-compile-java-through-command-line/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2016/10/28/2016-10-28-android-IPC-AIDL/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
-      <meta itemprop="name" content="Chance Li">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="李文坤的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2016/10/28/2016-10-28-android-IPC-AIDL/" class="post-title-link" itemprop="url">安卓进程通信机制之 AIDL</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2016-10-28 00:00:00" itemprop="dateCreated datePublished" datetime="2016-10-28T00:00:00+00:00">2016-10-28</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
-              </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>16k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>14 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="安卓进程通信机制之-AIDL"><a href="#安卓进程通信机制之-AIDL" class="headerlink" title="安卓进程通信机制之 AIDL"></a>安卓进程通信机制之 AIDL</h1><h2 id="什么是-AIDL"><a href="#什么是-AIDL" class="headerlink" title="什么是 AIDL"></a>什么是 AIDL</h2><p>AIDL 全称 <em>Android Interface Definition Language</em>，即 <strong>安卓接口描述语言</strong>。听起来很深奥，其实它的本质就是生成进程间通信接口的辅助工具。它的存在形式是一种 <code>.aidl</code> 文件，开发者需要做的就是在该文件中定义进程间通信的接口，编译的时候 IDE 就会根据我们的 <code>.aidl</code> 接口文件生成可供项目使用的 <code>.java</code> 文件，这和我们说的“语法糖”有些类似。</p>
-<p>AIDL 的语法就是 java 的语法，就是导包上有点细微差别。java 中如果两个类在相同的包中，是不需要进行导包操作的，但是在 AIDL 中，则必须进行导包声明。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2016/10/28/2016-10-28-android-IPC-AIDL/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1091,13 +1090,6 @@
   }
 </script>
 
-          <script src="https://utteranc.es/client.js"
-              repo="Lwenkun/lwenkun.github.io"
-              issue-term="pathname"
-              theme="github-dark"
-              crossorigin="anonymous"
-              async>
-          </script>
         </div>
           
   
@@ -1136,7 +1128,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1212,13 +1204,13 @@
       <i class="fa fa-area-chart"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">221k</span>
+    <span title="站点总字数">227k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">3:20</span>
+    <span title="站点阅读时长">3:26</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
   </div>

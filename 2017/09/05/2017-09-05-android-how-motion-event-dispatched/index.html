@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 6.3.0">
+<meta name="generator" content="Hexo 7.1.1">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="Android 事件分发规律总结定义事件序列：手指接触屏幕开始到离开屏幕为止产生的事件为一次事件序列。 规律一从父视图的角度来看，无论他的子视图是 View 还是 ViewGroup，对父视图来说都是透明的。它只知道如果当 ACTION_DOWN 事件传给子视图后子视图的 dispatchTouchEvent () 返回 true，说明子视图想要处理这个事件，那么以后的事件就都交给它，不管以后子视">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2017-09-05T00:00:00.000Z">
-<meta property="article:modified_time" content="2024-03-12T02:43:30.590Z">
+<meta property="article:modified_time" content="2024-03-29T17:38:05.440Z">
 <meta property="article:author" content="Chance Li">
 <meta property="article:tag" content="Android">
 <meta property="article:tag" content="View">
@@ -237,7 +237,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           
@@ -253,7 +253,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3.4k</span>
+              <span>3.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -281,19 +281,19 @@
 
 <p>之前已经说到，如果当父视图接收到 ACTION_DOWN 事件时，如果没有子视图能够处理该事件，那么后续的事件就不会给该子视图了，并且该事件会交给父视图处理，即传入父视图的 super.dispatchTouchEvent() 方法中。子视图有没有处理该事件就是根据 dispatchTouchEvent() 的返回值来看的。返回 true 表示处理，false 表示未处理。如果子视图对于 ACTION_DOWN 事件进行了处理（dispatchTouchEvent() 返回true），那么之后的事件都会给它处理，不管子视图之后 dispatchTouchEvent() 是否返回 true，也就是说，父视图会忽略子视图接下来的 dispatchTouchEvent() 的返回值，只要事件继续发生就都传给该子视图。但是，返回 false 会导致事件从该子视图返回给上级视图，上级视图也不会处理该事件，该事件会一直上传，直至传到 Activity 中的 onTouchEvent() 方法中。 </p>
 <h2 id="规律四"><a href="#规律四" class="headerlink" title="规律四"></a>规律四</h2><p>关于事件的拦截：<br>父视图可以在任何时候拦截本应该传递子视图的事件，拦截的依据就是 onInterceptTouchEvent() 的返回值，true 表示拦截，false 表示不拦截，父视图每次分发事件时会根据这个方法的返回值决定是否开始拦截：如果返回 false，即不拦截该事件，父视图下次分发事件时依然会调用这个方法来判断是否开始拦截事件；如果返回 true，说明该事件需要拦截，那么以后的事件，包括该事件都会直接交由父视图的 super.dispatchTouchEvent() 方法处理，而不会再传入子视图的 dispatchTouchEvent() 方法中 。但是开始拦截的那个事件还是会交给那个子视图，只是事件的类型变为了 ACTION_CANCEL。</p>
-<h2 id="规律五"><a href="#规律五" class="headerlink" title="规律五"></a>规律五</h2><p>事件在系统中的传递流程：ViewRootImpl =&gt; DecorView(调用的方法是 dispatchTouchEvent()) =&gt; WindowCallback(即Activity) =&gt; PhoneWindow =&gt; DecorView(调用的方法是 super.dispatchTouchEvent)</p>
+<h2 id="规律五"><a href="#规律五" class="headerlink" title="规律五"></a>规律五</h2><p>事件在系统中的传递流程：ViewRootImpl &#x3D;&gt; DecorView(调用的方法是 dispatchTouchEvent()) &#x3D;&gt; WindowCallback(即Activity) &#x3D;&gt; PhoneWindow &#x3D;&gt; DecorView(调用的方法是 super.dispatchTouchEvent)</p>
 <h2 id="规律六"><a href="#规律六" class="headerlink" title="规律六"></a>规律六</h2><p>子视图可以调用父视图的 requestDisallowInterceptTouchEvent() 方法来向父视图请求不拦截事件。但是这个方法只对除 ACTION_DOWN 之外的其他事件有效，如果父视图选择拦截 ACTION_DOWN，子视图即使在此之前调用此方法也是没有任何用的。并且需要注意，如果父视图在此方法调用之前就已经对事件进行了拦截，那么这个方法也同样无效。</p>
 <h2 id="规律七"><a href="#规律七" class="headerlink" title="规律七"></a>规律七</h2><p>父视图如何找到能够接受某个事件的子视图？</p>
 <p>假设在父视图中的事件坐标是 (x, y)</p>
 <p>1）首先要转换成相对子视图的坐标，转换的步骤如下：</p>
 <p>首先要考虑父视图是否发生滚动，其次需要考虑子视图是否发生平移，如果用（x’, y’）表示转换后的坐标，那么有：</p>
-<p>x’ = x + scrollX - child.left - child.translationX;<br><br>y’ = y + scrollY - child.top - child.translationY;</p>
+<p>x’ &#x3D; x + scrollX - child.left - child.translationX;<br><br>y’ &#x3D; y + scrollY - child.top - child.translationY;</p>
 <p>其实在源码中上述变换过程分为两步进行：</p>
 <ol>
-<li>第一步不考虑平移：x’ = x + scrollX - child.left; </li>
-<li>第二步通过 TransformationInfo（内含变换矩阵） 将平移考虑进去：x’ = x + scrollX - child.left - child.translationX;</li>
+<li>第一步不考虑平移：x’ &#x3D; x + scrollX - child.left; </li>
+<li>第二步通过 TransformationInfo（内含变换矩阵） 将平移考虑进去：x’ &#x3D; x + scrollX - child.left - child.translationX;</li>
 </ol>
-<p>2）然后根据相对子视图的坐标判断该点是否落在子视图的范围内。判断的依据是：x’ &lt; width &amp;&amp; y’ &lt; height &amp;&amp; x’ &gt;= 0 &amp;&amp; y’ &gt;= 0（width 和 height 是子视图的宽高）。</p>
+<p>2）然后根据相对子视图的坐标判断该点是否落在子视图的范围内。判断的依据是：x’ &lt; width &amp;&amp; y’ &lt; height &amp;&amp; x’ &gt;&#x3D; 0 &amp;&amp; y’ &gt;&#x3D; 0（width 和 height 是子视图的宽高）。</p>
 
     </div>
 
@@ -350,6 +350,7 @@
 
           </div>
           
+    <script src="https://utteranc.es/client.js"                                     repo="Lwenkun/lwenkun.github.io"                                     issue-term="pathname"                                     theme="github-dark"                                     crossorigin="anonymous"                                     async>                                 </script>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -373,13 +374,6 @@
   }
 </script>
 
-          <script src="https://utteranc.es/client.js"
-              repo="Lwenkun/lwenkun.github.io"
-              issue-term="pathname"
-              theme="github-dark"
-              crossorigin="anonymous"
-              async>
-          </script>
         </div>
           
   
@@ -419,7 +413,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -495,13 +489,13 @@
       <i class="fa fa-area-chart"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">221k</span>
+    <span title="站点总字数">227k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">3:20</span>
+    <span title="站点阅读时长">3:26</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
   </div>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 6.3.0">
+<meta name="generator" content="Hexo 7.1.1">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="Android 进程启动原理前言Android 中的应用是支持多进程的，我们只要在 AndroidManifest 中给四大组件指定 android:process 属性即可让其运行在独立的进程当中。那么应用的主进程又是如何被创建的呢？一般来说，当我们的应用没有任何组件处于运行状态，此时其他应用启动我们应用的组件时，应用的主进程就会被创建，进程相当于是提供了组件运行的空间。最常见的触发应用主进程被">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2017-08-29T00:00:00.000Z">
-<meta property="article:modified_time" content="2024-03-12T02:43:30.590Z">
+<meta property="article:modified_time" content="2024-03-29T17:38:05.440Z">
 <meta property="article:author" content="Chance Li">
 <meta property="article:tag" content="Android">
 <meta property="article:tag" content="进程">
@@ -236,7 +236,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           
@@ -276,7 +276,7 @@
 <h2 id="Zygote-进程"><a href="#Zygote-进程" class="headerlink" title="Zygote 进程"></a>Zygote 进程</h2><h3 id="zygote-进程的启动"><a href="#zygote-进程的启动" class="headerlink" title="zygote 进程的启动"></a>zygote 进程的启动</h3><p>Zygote 的中文意思是“受精卵”，它的字面意思很形象的概括了 Zygote 进程在 Android 系统中的作用——“分裂”出其他进程。Zygote 进程是所有 Android 应用的父进程，并且还是 system_server 的父进程。由此看来，Zygote 进程在 Android 系统中发挥了举足轻重的作用。但是 Zygote 并不是 Android  系统中的第一个进程，它也是其他进程 fork 来的，这个进程就是 init 进程，它是用户空间的第一个进程。init 进程就是用来解析并执行 init.rc 配置文件的，这个文件位于系统根目录下，这个配置文件中会导入其他的配置文件如 init.zygote32.rc 或者 init.zygote64_32.rc，具体导入哪一个由 ro.zygote 的值决定。这两个配置文件的作用就是启动 Zygote 进程。在 init.zygote32.rc 中，启动 Zygote 的语句如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">serivce zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-system-server</span><br><span class="line">	class main</span><br><span class="line">	socket zygote stream 660 root system</span><br><span class="line">	onrestart write /sys/android_power/request_state wake</span><br><span class="line">	onrestart write /sys/power/state on</span><br><span class="line">	onrestart restart media</span><br><span class="line">	onrestart restart netd</span><br></pre></td></tr></table></figure>
 
-<p>我们主要看 service 块的第一行，这行命令的语义是：启动一个名为 zygote 的服务，这个服务的可执行文件路径是 /system/bin/app_process。后面跟的都是 app_process 这个可执行文件的参数。app_process 对应的源码文件为你 app_main.c，这个源码文件的 main() 方法中有对这些参数的解释：以 - 开头的都是虚拟机参数，这些参数会传入即将要启动的虚拟机中；接下来是运行目录，有点类似终端执行命令时的当前目录，在这里是 /system/bin；接下来是一些以 – 开头的参数，这些参数表示启动参数，“–zygote” 表示启动的是 zygote 进程，“–application”表示启动的是普通 Java 进程，“–start-system-server” 表示要启动 system_server 进程，“–nice-name”用来指定进程的名字。接下来的参数指明的是要启动的 Java 类，如果前面使用了 “–zygote“参数，那么启动的就是 zygote 进程，这里就可以不指明，因为 zygote 进程默认就是执行 ZygoteInit 类，如果使用了 “–application”，那么启动的就是普通的 Java 进程，这里需要指明要执行的 Java 主类；接下来的参数是都是传入该主类的参数，这些参数只有启动的是普通 Java 进程时才有用。</p>
+<p>我们主要看 service 块的第一行，这行命令的语义是：启动一个名为 zygote 的服务，这个服务的可执行文件路径是 &#x2F;system&#x2F;bin&#x2F;app_process。后面跟的都是 app_process 这个可执行文件的参数。app_process 对应的源码文件为你 app_main.c，这个源码文件的 main() 方法中有对这些参数的解释：以 - 开头的都是虚拟机参数，这些参数会传入即将要启动的虚拟机中；接下来是运行目录，有点类似终端执行命令时的当前目录，在这里是 &#x2F;system&#x2F;bin；接下来是一些以 – 开头的参数，这些参数表示启动参数，“–zygote” 表示启动的是 zygote 进程，“–application”表示启动的是普通 Java 进程，“–start-system-server” 表示要启动 system_server 进程，“–nice-name”用来指定进程的名字。接下来的参数指明的是要启动的 Java 类，如果前面使用了 “–zygote“参数，那么启动的就是 zygote 进程，这里就可以不指明，因为 zygote 进程默认就是执行 ZygoteInit 类，如果使用了 “–application”，那么启动的就是普通的 Java 进程，这里需要指明要执行的 Java 主类；接下来的参数是都是传入该主类的参数，这些参数只有启动的是普通 Java 进程时才有用。</p>
 <p>app_main.c 的 main() 方法的主要逻辑都是在解析相应的参数，它对参数的的解析主要分为以下几个步骤：</p>
 <ul>
 <li>创建 AppRuntime 并解析虚拟机参数：</li>
@@ -362,7 +362,7 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloWorld</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">		System.out.println(<span class="string">&quot;hello world&quot;</span>);</span><br><span class="line">		System.out.println(args[<span class="number">0</span>]);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>现在编译它，记住要用 JDK1.7 编译，因为 Android 目前还不支持 JDK1.8 编译出来的 class 类。编译好后就是一个 HelloWorld.class 文件了，我们知道 DVM 无法运行 class 文件，因此我们需要通过 dx 工具将该 class 文件转换成 dex 文件。dx 工具在 <code>sdk/build-tools/build-tool版本号</code> 目录下。我们将 Test.class 放置在该目录下，然后打开终端，切换到这个目录并执行如下命令：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx --dex --output=test.dex HelloWorld.class</span><br></pre></td></tr></table></figure>
-<p>运行成功的话在这个目录下就能看到 test.dex 文件了，现在我们把这个文件放置在 /sdcard 下，现在通过 adb 执行以下命令：</p>
+<p>运行成功的话在这个目录下就能看到 test.dex 文件了，现在我们把这个文件放置在 &#x2F;sdcard 下，现在通过 adb 执行以下命令：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">adb shell</span><br><span class="line">app_process -Djava.class.path=/sdcard/test.dex HelloWorld first-parameter</span><br></pre></td></tr></table></figure>
 <p>接下来不出意外的话终端会出现这两行：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hello world</span><br><span class="line">first-parameter</span><br></pre></td></tr></table></figure>
@@ -432,6 +432,7 @@
 
           </div>
           
+    <script src="https://utteranc.es/client.js"                                     repo="Lwenkun/lwenkun.github.io"                                     issue-term="pathname"                                     theme="github-dark"                                     crossorigin="anonymous"                                     async>                                 </script>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -455,13 +456,6 @@
   }
 </script>
 
-          <script src="https://utteranc.es/client.js"
-              repo="Lwenkun/lwenkun.github.io"
-              issue-term="pathname"
-              theme="github-dark"
-              crossorigin="anonymous"
-              async>
-          </script>
         </div>
           
   
@@ -501,7 +495,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -577,13 +571,13 @@
       <i class="fa fa-area-chart"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">221k</span>
+    <span title="站点总字数">227k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">3:20</span>
+    <span title="站点阅读时长">3:26</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
   </div>

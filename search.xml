@@ -118,12 +118,12 @@
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onTouchEvent</span><span class="params">(MotionEvent event)</span> &#123;  </span><br><span class="line">    <span class="keyword">final</span> <span class="type">int</span> <span class="variable">viewFlags</span> <span class="operator">=</span> mViewFlags;  </span><br><span class="line">    <span class="keyword">if</span> ((viewFlags &amp; ENABLED_MASK) == DISABLED) &#123;  </span><br><span class="line">        <span class="comment">// A disabled view that is clickable still consumes the touch  </span></span><br><span class="line">        <span class="comment">// events, it just doesn&#x27;t respond to them.  </span></span><br><span class="line">        <span class="keyword">return</span> (((viewFlags &amp; CLICKABLE) == CLICKABLE ||  </span><br><span class="line">                (viewFlags &amp; LONG_CLICKABLE) == LONG_CLICKABLE));  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="keyword">if</span> (mTouchDelegate != <span class="literal">null</span>) &#123;  </span><br><span class="line">        <span class="keyword">if</span> (mTouchDelegate.onTouchEvent(event)) &#123;  </span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="keyword">if</span> (((viewFlags &amp; CLICKABLE) == CLICKABLE ||  </span><br><span class="line">            (viewFlags &amp; LONG_CLICKABLE) == LONG_CLICKABLE)) &#123;  </span><br><span class="line">        <span class="keyword">switch</span> (event.getAction()) &#123;  </span><br><span class="line">            <span class="keyword">case</span> MotionEvent.ACTION_UP:  </span><br><span class="line">                <span class="type">boolean</span> <span class="variable">prepressed</span> <span class="operator">=</span> (mPrivateFlags &amp; PREPRESSED) != <span class="number">0</span>;  </span><br><span class="line">                <span class="keyword">if</span> ((mPrivateFlags &amp; PRESSED) != <span class="number">0</span> || prepressed) &#123;  </span><br><span class="line">                    <span class="comment">// take focus if we don&#x27;t have it already and we should in  </span></span><br><span class="line">                    <span class="comment">// touch mode.  </span></span><br><span class="line">                    <span class="type">boolean</span> <span class="variable">focusTaken</span> <span class="operator">=</span> <span class="literal">false</span>;  </span><br><span class="line">                    <span class="keyword">if</span> (isFocusable() &amp;&amp; isFocusableInTouchMode() &amp;&amp; !isFocused()) &#123;  </span><br><span class="line">                        focusTaken = requestFocus();  </span><br><span class="line">                    &#125;  </span><br><span class="line">                    <span class="keyword">if</span> (!mHasPerformedLongPress) &#123;  </span><br><span class="line">                        <span class="comment">// This is a tap, so remove the longpress check  </span></span><br><span class="line">                        removeLongPressCallback();  </span><br><span class="line">                        <span class="comment">// Only perform take click actions if we were in the pressed state  </span></span><br><span class="line">                        <span class="keyword">if</span> (!focusTaken) &#123;  </span><br><span class="line">                            <span class="comment">// Use a Runnable and post this rather than calling  </span></span><br><span class="line">                            <span class="comment">// performClick directly. This lets other visual  </span></span><br><span class="line">                            <span class="comment">// state of the view update before click actions start.  </span></span><br><span class="line">                            <span class="keyword">if</span> (mPerformClick == <span class="literal">null</span>) &#123;  </span><br><span class="line">                                mPerformClick = <span class="keyword">new</span> <span class="title class_">PerformClick</span>();  </span><br><span class="line">                            &#125;  </span><br><span class="line">                            <span class="keyword">if</span> (!post(mPerformClick)) &#123;  </span><br><span class="line">                                performClick();  </span><br><span class="line">                            &#125;  </span><br><span class="line">                        &#125;  </span><br><span class="line">                    &#125;  </span><br><span class="line">                    <span class="keyword">if</span> (mUnsetPressedState == <span class="literal">null</span>) &#123;  </span><br><span class="line">                        mUnsetPressedState = <span class="keyword">new</span> <span class="title class_">UnsetPressedState</span>();  </span><br><span class="line">                    &#125;  </span><br><span class="line">                    <span class="keyword">if</span> (prepressed) &#123;  </span><br><span class="line">                        mPrivateFlags |= PRESSED;  </span><br><span class="line">                        refreshDrawableState();  </span><br><span class="line">                        postDelayed(mUnsetPressedState,  </span><br><span class="line">                                ViewConfiguration.getPressedStateDuration());  </span><br><span class="line">                    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!post(mUnsetPressedState)) &#123;  </span><br><span class="line">                        <span class="comment">// If the post failed, unpress right now  </span></span><br><span class="line">                        mUnsetPressedState.run();  </span><br><span class="line">                    &#125;  </span><br><span class="line">                    removeTapCallback();  </span><br><span class="line">                &#125;  </span><br><span class="line">                <span class="keyword">break</span>;  </span><br><span class="line">            <span class="keyword">case</span> MotionEvent.ACTION_DOWN:  </span><br><span class="line">                <span class="keyword">if</span> (mPendingCheckForTap == <span class="literal">null</span>) &#123;  </span><br><span class="line">                    mPendingCheckForTap = <span class="keyword">new</span> <span class="title class_">CheckForTap</span>();  </span><br><span class="line">                &#125;  </span><br><span class="line">                mPrivateFlags |= PREPRESSED;  </span><br><span class="line">                mHasPerformedLongPress = <span class="literal">false</span>;  </span><br><span class="line">                postDelayed(mPendingCheckForTap, ViewConfiguration.getTapTimeout());  </span><br><span class="line">                <span class="keyword">break</span>;  </span><br><span class="line">            <span class="keyword">case</span> MotionEvent.ACTION_CANCEL:  </span><br><span class="line">                mPrivateFlags &amp;= ~PRESSED;  </span><br><span class="line">                refreshDrawableState();  </span><br><span class="line">                removeTapCallback();  </span><br><span class="line">                <span class="keyword">break</span>;  </span><br><span class="line">            <span class="keyword">case</span> MotionEvent.ACTION_MOVE:  </span><br><span class="line">                <span class="keyword">final</span> <span class="type">int</span> <span class="variable">x</span> <span class="operator">=</span> (<span class="type">int</span>) event.getX();  </span><br><span class="line">                <span class="keyword">final</span> <span class="type">int</span> <span class="variable">y</span> <span class="operator">=</span> (<span class="type">int</span>) event.getY();  </span><br><span class="line">                <span class="comment">// Be lenient about moving outside of buttons  </span></span><br><span class="line">                <span class="type">int</span> <span class="variable">slop</span> <span class="operator">=</span> mTouchSlop;  </span><br><span class="line">                <span class="keyword">if</span> ((x &lt; <span class="number">0</span> - slop) || (x &gt;= getWidth() + slop) ||  </span><br><span class="line">                        (y &lt; <span class="number">0</span> - slop) || (y &gt;= getHeight() + slop)) &#123;  </span><br><span class="line">                    <span class="comment">// Outside button  </span></span><br><span class="line">                    removeTapCallback();  </span><br><span class="line">                    <span class="keyword">if</span> ((mPrivateFlags &amp; PRESSED) != <span class="number">0</span>) &#123;  </span><br><span class="line">                        <span class="comment">// Remove any future long press/tap checks  </span></span><br><span class="line">                        removeLongPressCallback();  </span><br><span class="line">                        <span class="comment">// Need to switch from pressed to not pressed  </span></span><br><span class="line">                        mPrivateFlags &amp;= ~PRESSED;  </span><br><span class="line">                        refreshDrawableState();  </span><br><span class="line">                    &#125;  </span><br><span class="line">                &#125;  </span><br><span class="line">                <span class="keyword">break</span>;  </span><br><span class="line">        &#125;  </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
 
 <p>在 <code>onTouchEvent()</code> 方法中我们看到，如果这个 <code>View</code> 是可点击的，那么对于 <code>ACTOIN_UP</code> 事件，我们就发送一个异步消息来处理点击事件，如果异步消息没有发送成功，那么就会立即执行点击事件，在源码中也就是 <code>performClick()</code> 方法，<code>performClick()</code> 方法是怎样的呢，如果你看了源码就知道则个方法里执行的是我们 <code>View</code> 注册点击事件，即 <code>OnClickListener的onClick()</code> 方法。当然 <code>ACTOIN_UP</code> 有还有可能会触发长按事件 <code>onLongClick()</code>，这里就不详细介绍了。</p>
-<p><strong>2.</strong> 如果 <code>disallowIntercept</code> 为 <code>false</code> 并且 <code>ViewGroup</code> 没有拦截 event（即返回 <code>false</code> ），或者 <code>disallowIntercept</code> 为 <code>true</code>，那么事件就会传给 <code>ViewGroup</code> 中被点击的那个子视图（这里包括前面所讲的子/父视图都包括 <code>View</code> 和 <code>ViewGroup</code>），这样就回到了事件在 <code>View</code> 或者 <code>ViewGroup</code> 的传递过程了，我们就可以按照前面的分析用递归思想理解后续的过程。</p>
+<p><strong>2.</strong> 如果 <code>disallowIntercept</code> 为 <code>false</code> 并且 <code>ViewGroup</code> 没有拦截 event（即返回 <code>false</code> ），或者 <code>disallowIntercept</code> 为 <code>true</code>，那么事件就会传给 <code>ViewGroup</code> 中被点击的那个子视图（这里包括前面所讲的子&#x2F;父视图都包括 <code>View</code> 和 <code>ViewGroup</code>），这样就回到了事件在 <code>View</code> 或者 <code>ViewGroup</code> 的传递过程了，我们就可以按照前面的分析用递归思想理解后续的过程。</p>
 <p>需要注意的是，在 <code>ViewGroup</code> 的 <code>dispatchTouchEvent()</code> 方法中，我们能够知道，如果当事件  <code>ACTION_DOWN</code> 没有找到目标子视图（可能原因是没有点击到任何子视图或者虽然有子视图被点击但是该子视图没有消耗该事件，即子视图的 <code>dispatchTouchEvent()</code> 方法返回 <code>false</code>）时，<code>ViewGroup</code> 会将事件交给自己处理，并且之后的 <code>ACTION_MOVE</code> 和 <code>ACTION_UP</code> 事件都不会交给任何子视图处理，也是全交给自己处理，也即前面讲的交给 <code>super.dispatchTouchEvent()</code> 来处理。</p>
 <h2 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h2><p><strong>1. 一个视图是否消耗该事件，表现在 <code>dispatchTouchEvent()</code> 的返回值上，如返回 <code>true</code> 表示消耗 <code>false</code> 表示未消耗；而一个消息处理方法（指的是 <code>ouTouch()</code> 和 <code>onEventTouch()</code>，不包括  <code>onInterceptTouchEvent()</code>)是否消耗该事件表现在该方法的返回值上，例如 <code>onTouch()</code> 方法返回 <code>true</code> 表示消耗 <code>false</code> 表示未消耗。</strong></p>
 <p><strong>2. 如果某个视图的某个消息处理方法消耗该事件，会使得该视图的 <code>dispatchTouchEvent()</code> 方法返回 <code>true</code>，即该视图消耗了该事件；如果某个视图的所有消息处理方法都返回 <code>false</code>，那么这个视图的 <code>dispatchTouchEvent()</code> 方法返回 <code>false</code>，即该视图没有消耗该事件。</strong></p>
 <p>到了这里安卓事件的传递就应该结束了，但我在这之中省略了对 <code>ViewGroup</code> 是如何找到被点击的子视图的的分析，这个我会在之后分享。以上便是我对安卓 <code>View</code> 的事件传递机制的理解，有什么疏漏或者错误的地方欢迎大家指出。</p>
-<p>参考文章：<br/><br><a href="http://blog.csdn.net/guolin_blog/article/details/9097463" title="郭霖的博客">http://blog.csdn.net/guolin_blog/article/details/9097463</a>、<a href="http://blog.csdn.net/guolin_blog/article/details/9153761" title="郭霖的博客">http://blog.csdn.net/guolin_blog/article/details/9153761</a></p>
+<p>参考文章：<br/><br><a href="http://blog.csdn.net/guolin_blog/article/details/9097463" title="郭霖的博客">http://blog.csdn.net/guolin_blog&#x2F;article&#x2F;details&#x2F;9097463</a>、<a href="http://blog.csdn.net/guolin_blog/article/details/9153761" title="郭霖的博客">http://blog.csdn.net/guolin_blog&#x2F;article&#x2F;details&#x2F;9153761</a></p>
 <p>参考书籍：《Android 内核剖析》柯元旦 著</p>
 ]]></content>
       <tags>
@@ -159,7 +159,7 @@
 <li><code>equals()</code> 方法的 “关键变量”（比较的依据）是字符串中的每个字符。但是为了程序效率，这个方法一开始并不会逐个比较两个字符串的字符，而是先比较它们长度是否相等，再看它们的 <code>hashcode()</code> 是否相等（按照规范，如果两个对象相等，它们的 <code>hashcode()</code> 一定相等），最后才出 “杀手锏”，逐个地比较它们的字符。</li>
 <li><code>hashcode()</code> 方法返回的是对每个字符的 ascii 码进行加权求和。</li>
 </ul>
-<p>从文档的规范和 <code>String</code> 中两个方法的实现我们可以暂时可以推导出这样的结论：<code>hashcode()</code> 方法的返回值一定是通过对 <code>equals()</code> 中的关键变量进行某种函数变换得到的（简单点说就是和关键变量有关），只有这样才能保证 <strong>equals() 返回 ture</strong> =&gt; <strong>关键变量相等</strong> =&gt; <strong>hashcode() 返回值相等</strong>。</p>
+<p>从文档的规范和 <code>String</code> 中两个方法的实现我们可以暂时可以推导出这样的结论：<code>hashcode()</code> 方法的返回值一定是通过对 <code>equals()</code> 中的关键变量进行某种函数变换得到的（简单点说就是和关键变量有关），只有这样才能保证 <strong>equals() 返回 ture</strong> &#x3D;&gt; <strong>关键变量相等</strong> &#x3D;&gt; <strong>hashcode() 返回值相等</strong>。</p>
 <p>对于我们自定义的类，如果要重写这两个方法，应该首先重写 <code>equals()</code>。因为根据第二点要求，<code>hashcode()</code> 方法的实现应该是建立在 <code>equals()</code> 方法之上的：在重写 <code>equals()</code> 方法之后，我们再去保证对于 <code>euqals()</code> 比较返回 <code>true</code> 的两个对象，如何让它们的 <code>hashcode()</code> 返回值相等。</p>
 <p>例如，定义一个 <code>People</code> 类：</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">People</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> age;</span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">    <span class="keyword">private</span> String hometown;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -203,7 +203,7 @@
     <content><![CDATA[<h1 id="RxJava-原理探究"><a href="#RxJava-原理探究" class="headerlink" title="RxJava 原理探究"></a>RxJava 原理探究</h1><p>关于 RxJava 的文章网上有很多，这里只是个人的学习总结，阅读前需要对 RxJava 有一定的了解，并不能作为学习资料，如果想要入门这里有更好的选择：<a href="https://gank.io/post/560e15be2dca930e00da1083">给 Android 开发者的 RxJava 详解</a>（虽然版本有点久，很多 API 都已过时，但原理差不多，不影响理解）。</p>
 <span id="more"></span>
 
-<p>如果只是想了解 API 的使用，可以看看 <a href="https://mcxiaoke.gitbooks.io/rxdocs/content/">ReactiveX/RxJava文档中文版</a>。</p>
+<p>如果只是想了解 API 的使用，可以看看 <a href="https://mcxiaoke.gitbooks.io/rxdocs/content/">ReactiveX&#x2F;RxJava文档中文版</a>。</p>
 <h2 id="什么是-RxJava"><a href="#什么是-RxJava" class="headerlink" title="什么是 RxJava"></a>什么是 RxJava</h2><blockquote>
 <p>RxJava is a Java VM implementation of ReactiveX (Reactive Extensions): a library for composing asynchronous and event-based programs by using observable sequences.</p>
 </blockquote>
@@ -417,7 +417,7 @@
 </ul>
 <p>我们知道，安卓应用和普通的 java 应用不同，它们运行于 Dalvik 虚拟机。JVM 是基于栈的虚拟机，而 Dalvik 是基于寄存器的虚拟机。因此，java 虚拟机具有更大的指令集，而 Dalvik 虚拟机的指令更长。除此之外，考虑到 Dalvik 虚拟机运行于移动设备，内存空间和 CPU 执行效率有限，因此采用 dex 作为储存类字节码信息的文件。当 java 程序编译成 class 后，编译器会使用 dx 工具将所有的class 文件整合到一个 dex 文件，目的是使其中各个类能够共享数据，在一定程度上降低了冗余，同时也是文件结构更加紧凑。虽然这两种虚拟机有诸多不同，但是 Dalvik 继承了 JVM 的委派式的类加载机制，因此上面的<strong>部分</strong>（主要是后面四条）结论对于安卓来说也是同样适用的。</p>
 <p>因为安卓的类加载机制也是委派式的，所以如果你知道 JVM 的类加载机制，那么通过类比学习安卓的类加载机制就很容易了。本来准备放张图来对比说明安卓的类加载模型的，但是想想我们还是有必要先了解安卓中两个重要的类加载器以及内部的细节：<code>DexClassLoader</code> 和 <code>PathClassLoader</code>。</p>
-<h3 id="DexClassLoader-amp-PathClassLoader"><a href="#DexClassLoader-amp-PathClassLoader" class="headerlink" title="DexClassLoader &amp; PathClassLoader"></a>DexClassLoader &amp; PathClassLoader</h3><p>先看看这两个类加载器的定义（点击超链接可查看注释）：</p>
+<h3 id="DexClassLoader-PathClassLoader"><a href="#DexClassLoader-PathClassLoader" class="headerlink" title="DexClassLoader &amp; PathClassLoader"></a>DexClassLoader &amp; PathClassLoader</h3><p>先看看这两个类加载器的定义（点击超链接可查看注释）：</p>
 <ul>
 <li><a href="http://androidxref.com/7.0.0_r1/xref/libcore/dalvik/src/main/java/dalvik/system/DexClassLoader.java">DexCloassLoader</a></li>
 </ul>
@@ -478,7 +478,7 @@
 </ul>
 <p>分析完这两字段，现在我们回过头来看看 <code>DexPathList</code> 这个对象，这个对象持有 <code>dexElements</code> 和 <code>nativeLibraryPathElements</code> 这两个属性，也就是说它保存了 dex 和 本地方法库。而 dex 保存着类的字节码信息，这样的话如果我们的类加载器要加载某个类的话，是不是只要操作这个对象就可以了呢？事实上的确如此，我们看看 <code>DexPathList</code> 的文档说明：</p>
 <blockquote>
-<p>A pair of lists of entries, associated with a {@code ClassLoader}.<br>One of the lists is a dex/resource path &mdash; typically referred<br>to as a “class path” &mdash; list, and the other names directories<br>containing native code libraries. Class path entries may be any of:<br>a {@code .jar} or {@code .zip} file containing an optional<br>top-level {@code classes.dex} file as well as arbitrary resources,<br>or a plain {@code .dex} file (with no possibility of associated<br>resources).</br>This class also contains methods to use these lists to look up<br>classes and resources.</p>
+<p>A pair of lists of entries, associated with a {@code ClassLoader}.<br>One of the lists is a dex&#x2F;resource path &mdash; typically referred<br>to as a “class path” &mdash; list, and the other names directories<br>containing native code libraries. Class path entries may be any of:<br>a {@code .jar} or {@code .zip} file containing an optional<br>top-level {@code classes.dex} file as well as arbitrary resources,<br>or a plain {@code .dex} file (with no possibility of associated<br>resources).</br>This class also contains methods to use these lists to look up<br>classes and resources.</p>
 </blockquote>
 <p>大概的意思就是 <code>DexPathList</code> 的作用和 JVM 中的 <code>classpath</code> 的作用类似，JVM 根据 <code>classpath</code> 来查找类，而 Dalvik 利用 <code>DexPathList</code> 来查找并加载类。<code>DexPathList</code> 包含的路径可以是 <code>.dex </code>文件的路径，也可以是包含了 dex 的 <code>.jar</code> 和 <code>.zip</code> 文件的路径。</p>
 <p>对于类加载器的分析先到这里，现在我们看看 <code>BaseDexClassLoader</code> 是如何加载类的。</p>
@@ -924,7 +924,7 @@
 <li>Notes 是注意事项：实现 Java 中的 <code>finally</code> 子句时，<code>astore</code> 指令使用的操作数类型是一个 returnAddress，与 <code>astore</code> 对应的 <code>aload</code> 指令（将局部变量表的的引用值压栈）不能将类型为 returnAddress 类型的值加载到操作数栈，而只能是 reference 类型。<code>aload</code> 和 <code>astore</code> 这种不对称的设计是有意而为之的。<code>astore</code> 指令可以和 <code>wide</code> 指令配合使用以用无符号双字节类型的索引来获取局部变量表中的变量。</li>
 </ul>
 <h3 id="局部变量表的第一个变量"><a href="#局部变量表的第一个变量" class="headerlink" title="局部变量表的第一个变量"></a>局部变量表的第一个变量</h3><p>从 Java 语言的层面讲，静态方法和实例方法的本质区别在于是否是对象所共享的。而从 JVM 的角度来看，方法（无论静态方法还是实例方法）其实都是对象共享的，实例变量才是对象私有的。对 JVM 而言，静态方法和实例方法的本质区别在于是否需要和具体对象关联：静态方法可以通过类名来调用，它不需要和具体对象关联；而实例方法必须通过对象来进行调用，它需要和具体对象关联。那么，实例方法和具体对象是如何产生关联的呢？其实很简单，编译器在编译时会将方法接收者作为一个隐含参数传入该实例方法，这个参数在方法中有一个很熟悉的名字，叫做 “this”。之所以实例方法可以访问该类的实例变量和其它实例方法，正是因为它有 “this” 这个隐含参数。举个例子，类 <code>A</code> 中的某个方法 <code>b</code> 需要访问实例变量 <code>x</code>，由于实例变量是对象私有的，如果 <code>b</code> 是静态方法，由于它没有具体对象的引用，它并不知道该访问哪个对象的实例变量 <code>x</code>；如果 <code>b</code> 是实例方法，通过隐含参数 <code>this</code> 就能确定要访问的实例变量是 <code>this.x</code>。那么，为什么静态方法也不能调用该类的实例方法呢？本质原因也是没有 <code>this</code> 引用。因为调用实例方法的前提是要传入一个隐含参数，实例方法本来就有这个引用，所以能够把它作为隐含参数传入另一个实例方法；静态方法没有 <code>this</code> 引用，无法给实例方法提供指向方法接收者的隐含参数，因此不能调用实例方法。</p>
-<p>如果看懂了上面说的那些，第三个问题也就迎刃而解了。因为我们定义的方法是 <code>void foo()</code>，它是实例方法，因此会有一个指向具体对象的隐含参数 <code>this</code>，<code>this</code> 就存放在局部变量表的第一个位置，即存放在索引为 0 的 slot 中，又由于它的作用域从方法开始一直到方法结束，因此它在局部变量表中的位置不会被其他变量覆盖，从而使得我们在方法中定义的变量只能放在局部变量表后面的位置中。需要注意的是，如果方法有参数（非隐含参数），那么参数会按顺序紧接着 <code>this</code> 存放在局部变量表中，由于参数作用域也是整个方法体，所以方法中定义的局部变量就只能放在参数后面了。总的来说局部变量表中变量的存放顺序为： <code>this</code>（如果是实例方法）=&gt; 参数（如果有的话）=&gt; 定义的局部变量（如果有的话）。</p>
+<p>如果看懂了上面说的那些，第三个问题也就迎刃而解了。因为我们定义的方法是 <code>void foo()</code>，它是实例方法，因此会有一个指向具体对象的隐含参数 <code>this</code>，<code>this</code> 就存放在局部变量表的第一个位置，即存放在索引为 0 的 slot 中，又由于它的作用域从方法开始一直到方法结束，因此它在局部变量表中的位置不会被其他变量覆盖，从而使得我们在方法中定义的变量只能放在局部变量表后面的位置中。需要注意的是，如果方法有参数（非隐含参数），那么参数会按顺序紧接着 <code>this</code> 存放在局部变量表中，由于参数作用域也是整个方法体，所以方法中定义的局部变量就只能放在参数后面了。总的来说局部变量表中变量的存放顺序为： <code>this</code>（如果是实例方法）&#x3D;&gt; 参数（如果有的话）&#x3D;&gt; 定义的局部变量（如果有的话）。</p>
 <h2 id="感谢阅读"><a href="#感谢阅读" class="headerlink" title="感谢阅读"></a>感谢阅读</h2><p>关于虚拟机栈就讲这么多了，Java 虚拟机是一个完整的知识体系，仅仅了解虚拟机栈是不够的，这里没有细讲的关于虚拟机的其它知识，如内存模型、运行时常量池、类加载模型等，还需读者自己学习掌握。这篇文章权起激发大家的学习 JVM 兴趣的作用，同时也作为个人的学习记录和知识总结。之后可能还会写些 JVM 其它方面的总结性文章和大家分享。由于个人水平和理解有限，如果有不对的地方还请大家不吝赐教，感谢阅读！</p>
 <p><strong>参考书籍</strong> :《深入理解 Java 虚拟机》周志明 著<br><strong>Java 虚拟机规范</strong> : <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/index.html">The Java® Virtual Machine Specification</a></p>
 ]]></content>
@@ -1034,7 +1034,7 @@
 <p>Wonderful ！程序员正是这么想的。有心的程序员可能会发出疑问：根据编译器的推断思路，对于任意一个方法引用，是不是只要它有两个 <code>String</code> 类型的不确定量和一个 <code>String</code> 类型返回值（当然类型要为 <code>String</code>）就可以作为参数传入 <code>reduce()</code> 了呢？于是程序员想了个方法来测试：</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Stream.of(<span class="string">&quot;A&quot;</span>, <span class="string">&quot;is&quot;</span>, <span class="string">&quot;a&quot;</span>, <span class="string">&quot;dog&quot;</span>).reduce(<span class="string">&quot;&quot;</span>, Test::test);</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Test</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> String <span class="title function_">test</span><span class="params">(String a, String b)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> a.concat(b);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>程序员在 IDE 中写下上面的代码后，编译器没有错误提示 =&gt; 编译后通过 =&gt; 猜想正确。原因是 <code>Test</code> 的 <code>test()</code> 是一个静态方法，它有两个 <code>String</code> 类型的参数，一个 <code>String</code> 类型的返回值，也就是说 <code>Test::test</code> 有两个 <code>String</code> 类型的不确定量和一个 <code>String</code> 类型的返回值，因此编译器推断出程序员的意图是：</p>
+<p>程序员在 IDE 中写下上面的代码后，编译器没有错误提示 &#x3D;&gt; 编译后通过 &#x3D;&gt; 猜想正确。原因是 <code>Test</code> 的 <code>test()</code> 是一个静态方法，它有两个 <code>String</code> 类型的参数，一个 <code>String</code> 类型的返回值，也就是说 <code>Test::test</code> 有两个 <code>String</code> 类型的不确定量和一个 <code>String</code> 类型的返回值，因此编译器推断出程序员的意图是：</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Stream.of(<span class="string">&quot;A&quot;</span>, <span class="string">&quot;is&quot;</span>, <span class="string">&quot;a&quot;</span>, <span class="string">&quot;dog&quot;</span>).reduce(<span class="string">&quot;&quot;</span>, <span class="keyword">new</span> <span class="title class_">BinaryOperator</span>() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">apply</span><span class="params">(String a, String b)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> Test.test(a, b);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
 
 <h3 id="指向构造方法的引用"><a href="#指向构造方法的引用" class="headerlink" title="指向构造方法的引用"></a>指向构造方法的引用</h3><p>形式：<code>ClassName::new</code></p>
@@ -1072,7 +1072,7 @@
 </li>
 <li><p>系统初启</p>
 </li>
-<li><p>引导程序 =&gt; 系统核心 =&gt; 核心初始化</p>
+<li><p>引导程序 &#x3D;&gt; 系统核心 &#x3D;&gt; 核心初始化</p>
 </li>
 <li><p>核心初始化：先建立 0# 进程（永远处于核心态，换页），再建立 1# 进程（初始化进程，实现系统初始化，负责为终端建立子进程）</p>
 </li>
@@ -1103,7 +1103,7 @@
 </li>
 <li><p>用户程序调用系统例程，由用户态进入管态</p>
 </li>
-<li><p>系统调用的实现：用户程序（用户态） =&gt; 发出自愿访管命令 =&gt; 访管中断程序保护现场，查找例行子程序入口地址表获取系统例程的入口地址 =&gt; 根据入口地址进行系统调用（管态） =&gt; 结果返回访管中断程序 =&gt; 恢复用户程序现场（用户态）</p>
+<li><p>系统调用的实现：用户程序（用户态） &#x3D;&gt; 发出自愿访管命令 &#x3D;&gt; 访管中断程序保护现场，查找例行子程序入口地址表获取系统例程的入口地址 &#x3D;&gt; 根据入口地址进行系统调用（管态） &#x3D;&gt; 结果返回访管中断程序 &#x3D;&gt; 恢复用户程序现场（用户态）</p>
 </li>
 </ul>
 <h2 id="并发处理"><a href="#并发处理" class="headerlink" title="并发处理"></a>并发处理</h2><p>提高计算机的处理能力和机器的利用率，但容易造成错误。</p>
@@ -1141,7 +1141,7 @@
 </li>
 <li><p>进程的状态</p>
 <ul>
-<li>进程的基本状态：等待状态=&gt;就绪状态&lt;=&gt;运行状态=&gt;等待状态</li>
+<li>进程的基本状态：等待状态&#x3D;&gt;就绪状态&lt;&#x3D;&gt;运行状态&#x3D;&gt;等待状态</li>
 </ul>
 </li>
 <li><p>进程的描述：进程控制块，是一个和进程对应的实体，记录进程的各种状态信息</p>
@@ -1359,7 +1359,7 @@
 </li>
 <li><p>相应比高者优先：（等待时间／运行时间） 最大者优先，同时考虑等待时间和运行时间</p>
 </li>
-<li><p>优先调度算法：给各个作业分配优先数，优先数高者优先执行，优先数 = waiting_time<sup>2</sup> - running_time - 16 * output</p>
+<li><p>优先调度算法：给各个作业分配优先数，优先数高者优先执行，优先数 &#x3D; waiting_time<sup>2</sup> - running_time - 16 * output</p>
 </li>
 <li><p>进程调度</p>
 </li>
@@ -1489,7 +1489,7 @@
 <h2 id="Zygote-进程"><a href="#Zygote-进程" class="headerlink" title="Zygote 进程"></a>Zygote 进程</h2><h3 id="zygote-进程的启动"><a href="#zygote-进程的启动" class="headerlink" title="zygote 进程的启动"></a>zygote 进程的启动</h3><p>Zygote 的中文意思是“受精卵”，它的字面意思很形象的概括了 Zygote 进程在 Android 系统中的作用——“分裂”出其他进程。Zygote 进程是所有 Android 应用的父进程，并且还是 system_server 的父进程。由此看来，Zygote 进程在 Android 系统中发挥了举足轻重的作用。但是 Zygote 并不是 Android  系统中的第一个进程，它也是其他进程 fork 来的，这个进程就是 init 进程，它是用户空间的第一个进程。init 进程就是用来解析并执行 init.rc 配置文件的，这个文件位于系统根目录下，这个配置文件中会导入其他的配置文件如 init.zygote32.rc 或者 init.zygote64_32.rc，具体导入哪一个由 ro.zygote 的值决定。这两个配置文件的作用就是启动 Zygote 进程。在 init.zygote32.rc 中，启动 Zygote 的语句如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">serivce zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-system-server</span><br><span class="line">	class main</span><br><span class="line">	socket zygote stream 660 root system</span><br><span class="line">	onrestart write /sys/android_power/request_state wake</span><br><span class="line">	onrestart write /sys/power/state on</span><br><span class="line">	onrestart restart media</span><br><span class="line">	onrestart restart netd</span><br></pre></td></tr></table></figure>
 
-<p>我们主要看 service 块的第一行，这行命令的语义是：启动一个名为 zygote 的服务，这个服务的可执行文件路径是 /system/bin/app_process。后面跟的都是 app_process 这个可执行文件的参数。app_process 对应的源码文件为你 app_main.c，这个源码文件的 main() 方法中有对这些参数的解释：以 - 开头的都是虚拟机参数，这些参数会传入即将要启动的虚拟机中；接下来是运行目录，有点类似终端执行命令时的当前目录，在这里是 /system/bin；接下来是一些以 – 开头的参数，这些参数表示启动参数，“–zygote” 表示启动的是 zygote 进程，“–application”表示启动的是普通 Java 进程，“–start-system-server” 表示要启动 system_server 进程，“–nice-name”用来指定进程的名字。接下来的参数指明的是要启动的 Java 类，如果前面使用了 “–zygote“参数，那么启动的就是 zygote 进程，这里就可以不指明，因为 zygote 进程默认就是执行 ZygoteInit 类，如果使用了 “–application”，那么启动的就是普通的 Java 进程，这里需要指明要执行的 Java 主类；接下来的参数是都是传入该主类的参数，这些参数只有启动的是普通 Java 进程时才有用。</p>
+<p>我们主要看 service 块的第一行，这行命令的语义是：启动一个名为 zygote 的服务，这个服务的可执行文件路径是 &#x2F;system&#x2F;bin&#x2F;app_process。后面跟的都是 app_process 这个可执行文件的参数。app_process 对应的源码文件为你 app_main.c，这个源码文件的 main() 方法中有对这些参数的解释：以 - 开头的都是虚拟机参数，这些参数会传入即将要启动的虚拟机中；接下来是运行目录，有点类似终端执行命令时的当前目录，在这里是 &#x2F;system&#x2F;bin；接下来是一些以 – 开头的参数，这些参数表示启动参数，“–zygote” 表示启动的是 zygote 进程，“–application”表示启动的是普通 Java 进程，“–start-system-server” 表示要启动 system_server 进程，“–nice-name”用来指定进程的名字。接下来的参数指明的是要启动的 Java 类，如果前面使用了 “–zygote“参数，那么启动的就是 zygote 进程，这里就可以不指明，因为 zygote 进程默认就是执行 ZygoteInit 类，如果使用了 “–application”，那么启动的就是普通的 Java 进程，这里需要指明要执行的 Java 主类；接下来的参数是都是传入该主类的参数，这些参数只有启动的是普通 Java 进程时才有用。</p>
 <p>app_main.c 的 main() 方法的主要逻辑都是在解析相应的参数，它对参数的的解析主要分为以下几个步骤：</p>
 <ul>
 <li>创建 AppRuntime 并解析虚拟机参数：</li>
@@ -1575,7 +1575,7 @@
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloWorld</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">		System.out.println(<span class="string">&quot;hello world&quot;</span>);</span><br><span class="line">		System.out.println(args[<span class="number">0</span>]);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>现在编译它，记住要用 JDK1.7 编译，因为 Android 目前还不支持 JDK1.8 编译出来的 class 类。编译好后就是一个 HelloWorld.class 文件了，我们知道 DVM 无法运行 class 文件，因此我们需要通过 dx 工具将该 class 文件转换成 dex 文件。dx 工具在 <code>sdk/build-tools/build-tool版本号</code> 目录下。我们将 Test.class 放置在该目录下，然后打开终端，切换到这个目录并执行如下命令：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dx --dex --output=test.dex HelloWorld.class</span><br></pre></td></tr></table></figure>
-<p>运行成功的话在这个目录下就能看到 test.dex 文件了，现在我们把这个文件放置在 /sdcard 下，现在通过 adb 执行以下命令：</p>
+<p>运行成功的话在这个目录下就能看到 test.dex 文件了，现在我们把这个文件放置在 &#x2F;sdcard 下，现在通过 adb 执行以下命令：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">adb shell</span><br><span class="line">app_process -Djava.class.path=/sdcard/test.dex HelloWorld first-parameter</span><br></pre></td></tr></table></figure>
 <p>接下来不出意外的话终端会出现这两行：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hello world</span><br><span class="line">first-parameter</span><br></pre></td></tr></table></figure>
@@ -1641,38 +1641,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Android 事件分发规律总结</title>
-    <url>/2017/09/05/2017-09-05-android-how-motion-event-dispatched/</url>
-    <content><![CDATA[<h1 id="Android-事件分发规律总结"><a href="#Android-事件分发规律总结" class="headerlink" title="Android 事件分发规律总结"></a>Android 事件分发规律总结</h1><h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><p>事件序列：手指接触屏幕开始到离开屏幕为止产生的事件为一次事件序列。</p>
-<h2 id="规律一"><a href="#规律一" class="headerlink" title="规律一"></a>规律一</h2><p>从父视图的角度来看，无论他的子视图是 View 还是 ViewGroup，对父视图来说都是透明的。它只知道如果当 ACTION_DOWN 事件传给子视图后子视图的 dispatchTouchEvent () 返回 true，说明子视图想要处理这个事件，那么以后的事件就都交给它，不管以后子视图的 dispatchTouchEvent() 返回的是 true 还是 false; 如果 ACTION_DOWN 事件传给子视图后子视图返回的是 false，那么以后的事件再也不会传给子视图（子视图没有处理 ACTION_DOWN 就视作它不想处理该事件序列）。如果一个子视图的 dispatchTouchEvent() 在处理 ACTION_DOWN 时返回 true ，只要父视图没有拦截事件, 那么该事件序列中的后续事件都会传入该视图中，也就是传入该视图的 dispatchTouchEvent() 方法中，就算手指的触摸区域已经超出了该视图的范围。并且对于该事件序列的之后所有事件，即使该视图的 dispatchTouchEvent() 返回 false 事件也同样会继续传入该视图，唯一的影响是会将该事件原路返回，最终落到 activity.onTouchEvent() 中。因此建议如果消耗了该事件，除非有特殊情况需要处理，最好不要返回 false，否则上级视图以为下面的视图没有处理事件从而自己处理。</p>
-<span id="more"></span>
-<h2 id="规律二"><a href="#规律二" class="headerlink" title="规律二"></a>规律二</h2><p>父视图有两种角色，一种是 ViewGroup , 另一种是 View。当父视图的角色是 ViewGroup 时，父视图的主要任务就是分派事件给子视图；当父视图的角色为 View 时，它和普通的 View 一样处理事件。<br>父视图在两种情况下会将事件拿给自己处理：<br>1）如果没有子视图能够处理事件，那么只能由父视图自己处理，此时会把事件传给 super.dispatchTouchEvent()，也就是父类方法来处理（注意是父类，不是父视图）。<br>2）假如本来整个事件序列都是要传给子视图的，但是中途父视图想要拦截的话，从父视图决定拦截开始之后的所以事件都不会再交给子视图处理了，但是决定拦截时的那一次的事件会还是会交给子视图的，只不过是事件的类型是 ACTION_CANCEL，这样做的原因我认为可能是通知一下子视图父视图拦截了你的事件，免得子视图事件被拦截了还蒙在鼓里（其实就是让开发者可以对这种情况加以处理）。从开始拦截的那一次开始，之后的所有事件（不包括拦截的那一次）都不会传给子视图了，都传入 super.dispatchOnToucnEvent() 中，即交给父视图给自己处理。</p>
-<h2 id="规律三"><a href="#规律三" class="headerlink" title="规律三"></a>规律三</h2><p>如果事件是交给自己处理，不管是子视图还是父视图，只要事件交给了自己处理，那么事件的处理流程都是一样的（这个流程在 View 中定义），下面来分析是如它们何处理事件的：<br>如果视图将事件交给自己处理，那么事件首先都是从 dispatchTouchEvent() 传入的（父视图是 super.dispatchTouchEvent()），这个方法的逻辑是：如果该视图注册了OnTouchListener 监听器，并且监听器不为 null，那么就把事件交给监听器中的 onTouch() 方法。下一步就是看 onTouch() 的返回值了，如果返回值为 true，那么说明 onTouch() 消费了该事件，事件的传递到此为止， dispatchTouchEvent() 返回 true；如果返回值为 false，那么说明 onTouch() 方法并没有消耗该事件，那么进行下一步的事件分发。下一步事件会传给 onTouchEvent 方法，这个方法是最常见也最常用的方法，对于一个 自定义 View 来说，这个方法是根据事件来更改 View 的行为的主要场所。dispatchTouchEvent() 同样需要根据 onTouchEvent() 的返回值来决定下一步的事件转发流程。如果 onTouchEvent() 返回 false，那么 dispatchTouchEvent() 返回的就是 false，否则返回的就是 true。这个过程可以用如下代码表示：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent e)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (onTouchListener != <span class="literal">null</span>) ? (onTouchListener.onTouch(e) ? <span class="literal">true</span> : onTouchEvent(ev)) : onTouchEvent(e);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>之前已经说到，如果当父视图接收到 ACTION_DOWN 事件时，如果没有子视图能够处理该事件，那么后续的事件就不会给该子视图了，并且该事件会交给父视图处理，即传入父视图的 super.dispatchTouchEvent() 方法中。子视图有没有处理该事件就是根据 dispatchTouchEvent() 的返回值来看的。返回 true 表示处理，false 表示未处理。如果子视图对于 ACTION_DOWN 事件进行了处理（dispatchTouchEvent() 返回true），那么之后的事件都会给它处理，不管子视图之后 dispatchTouchEvent() 是否返回 true，也就是说，父视图会忽略子视图接下来的 dispatchTouchEvent() 的返回值，只要事件继续发生就都传给该子视图。但是，返回 false 会导致事件从该子视图返回给上级视图，上级视图也不会处理该事件，该事件会一直上传，直至传到 Activity 中的 onTouchEvent() 方法中。 </p>
-<h2 id="规律四"><a href="#规律四" class="headerlink" title="规律四"></a>规律四</h2><p>关于事件的拦截：<br>父视图可以在任何时候拦截本应该传递子视图的事件，拦截的依据就是 onInterceptTouchEvent() 的返回值，true 表示拦截，false 表示不拦截，父视图每次分发事件时会根据这个方法的返回值决定是否开始拦截：如果返回 false，即不拦截该事件，父视图下次分发事件时依然会调用这个方法来判断是否开始拦截事件；如果返回 true，说明该事件需要拦截，那么以后的事件，包括该事件都会直接交由父视图的 super.dispatchTouchEvent() 方法处理，而不会再传入子视图的 dispatchTouchEvent() 方法中 。但是开始拦截的那个事件还是会交给那个子视图，只是事件的类型变为了 ACTION_CANCEL。</p>
-<h2 id="规律五"><a href="#规律五" class="headerlink" title="规律五"></a>规律五</h2><p>事件在系统中的传递流程：ViewRootImpl =&gt; DecorView(调用的方法是 dispatchTouchEvent()) =&gt; WindowCallback(即Activity) =&gt; PhoneWindow =&gt; DecorView(调用的方法是 super.dispatchTouchEvent)</p>
-<h2 id="规律六"><a href="#规律六" class="headerlink" title="规律六"></a>规律六</h2><p>子视图可以调用父视图的 requestDisallowInterceptTouchEvent() 方法来向父视图请求不拦截事件。但是这个方法只对除 ACTION_DOWN 之外的其他事件有效，如果父视图选择拦截 ACTION_DOWN，子视图即使在此之前调用此方法也是没有任何用的。并且需要注意，如果父视图在此方法调用之前就已经对事件进行了拦截，那么这个方法也同样无效。</p>
-<h2 id="规律七"><a href="#规律七" class="headerlink" title="规律七"></a>规律七</h2><p>父视图如何找到能够接受某个事件的子视图？</p>
-<p>假设在父视图中的事件坐标是 (x, y)</p>
-<p>1）首先要转换成相对子视图的坐标，转换的步骤如下：</p>
-<p>首先要考虑父视图是否发生滚动，其次需要考虑子视图是否发生平移，如果用（x’, y’）表示转换后的坐标，那么有：</p>
-<p>x’ = x + scrollX - child.left - child.translationX;<br><br>y’ = y + scrollY - child.top - child.translationY;</p>
-<p>其实在源码中上述变换过程分为两步进行：</p>
-<ol>
-<li>第一步不考虑平移：x’ = x + scrollX - child.left; </li>
-<li>第二步通过 TransformationInfo（内含变换矩阵） 将平移考虑进去：x’ = x + scrollX - child.left - child.translationX;</li>
-</ol>
-<p>2）然后根据相对子视图的坐标判断该点是否落在子视图的范围内。判断的依据是：x’ &lt; width &amp;&amp; y’ &lt; height &amp;&amp; x’ &gt;= 0 &amp;&amp; y’ &gt;= 0（width 和 height 是子视图的宽高）。</p>
-]]></content>
-      <tags>
-        <tag>Android</tag>
-        <tag>View</tag>
-        <tag>事件分发</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Android LaunchMode 总结</title>
     <url>/2017/11/07/2017-11-07-android-launch-mode/</url>
     <content><![CDATA[<h1 id="Android-LaunchMode-总结"><a href="#Android-LaunchMode-总结" class="headerlink" title="Android LaunchMode 总结"></a>Android LaunchMode 总结</h1><p>Android 中的 LaunchMode 是一个比较基础的知识点，关于这块之前每次都是先用现学，然后学了之后又忘了，现在把 LaunchMode 的规律记录下来以备后用。</p>
@@ -1680,10 +1648,9 @@
 <ol>
 <li>task 有属性 affinity，Activity 有属性 taskAffinity</li>
 <li>可以存在两个 affinity 一样的 task；</li>
-<li>一个 Activity 的 taskAffnity 默认值为 package name，如果有指定值就会设为指定值<span id="more"></span>
-<h2 id="LuanchMode-规律总结"><a href="#LuanchMode-规律总结" class="headerlink" title="LuanchMode 规律总结"></a>LuanchMode 规律总结</h2></li>
+<li>一个 Activity 的 taskAffnity 默认值为 package name，如果有指定值就会设为指定值<span id="more"></span></li>
 </ol>
-<p>Manifest 中注册了两个 Activity，它们的类型分别为 AActivity 和 BActivity。假设 AActivity 的 taskAffinity 为 a，现在通过 BActivity 的一个实例 B 启动 AActivity：</p>
+<h2 id="LuanchMode-规律总结"><a href="#LuanchMode-规律总结" class="headerlink" title="LuanchMode 规律总结"></a>LuanchMode 规律总结</h2><p>Manifest 中注册了两个 Activity，它们的类型分别为 AActivity 和 BActivity。假设 AActivity 的 taskAffinity 为 a，现在通过 BActivity 的一个实例 B 启动 AActivity：</p>
 <h4 id="如果此时-AActivity-的实例不存在于任何-task-中，那么："><a href="#如果此时-AActivity-的实例不存在于任何-task-中，那么：" class="headerlink" title="如果此时 AActivity 的实例不存在于任何 task 中，那么："></a>如果此时 AActivity 的实例不存在于任何 task 中，那么：</h4><ul>
 <li>如果  AActivity 的启动模式为 singleTask， 那么先会找是否存在 affinity 为 a 的 task，如果存在并且这个 task 中的 Activity 不是 singleInstance，那么就在那个 task 中创建并启动一个 AActivity 的实例 ；如果不存在，那么新建一个 affinity 为 a  的 task，然后在新建的 task 中创建并启动一个 AActivity 的实例；</li>
 <li>如果 AActivity 的启动模式为 singleInstance，那么无论是否存在 affinity 为 a 的 task ，总会新建一个 affinity 也为 a 的 task，并在这个新建的 task 中创建并启动一个 AActivity 的实例；</li>
@@ -1700,7 +1667,7 @@
 </ul>
 </li>
 <li>如果 AActivity 的启动模式为 singleTop 的话 ，同样要看 BActivity 的启动模式：<ul>
-<li>如果 BActivity 的启动模式不为 singleInstance 的话，那么  AActivity  的 taskAffinity 属性会被忽略，然后就会在  B 所在的 task 中启动；但是，如果 BActivity = AActivity，那么就不会创建并启动一个 AActivity 的实例了，此时只会调用 B 的 onNewIntent 方法；</li>
+<li>如果 BActivity 的启动模式不为 singleInstance 的话，那么  AActivity  的 taskAffinity 属性会被忽略，然后就会在  B 所在的 task 中启动；但是，如果 BActivity &#x3D; AActivity，那么就不会创建并启动一个 AActivity 的实例了，此时只会调用 B 的 onNewIntent 方法；</li>
 <li>如果 BActivity 的启动模式为 singleInstance 的话，那么 AActivity 的 taskAffinity 属性不会被忽略，此时系统就会去找一个 affinity 为 a 的 task：如果能找到并且这个 task 中的 Activity 不为 singleInstance，那么就会在那个 task 中启动；但是如果这个 task 的栈顶已经有一个 AActivity 的实例 A，就不会再次创建并启动另一个 AActivity 的实例了，此时只会调用栈顶的这个 A 的 onNewIntent() 方法；</li>
 </ul>
 </li>
@@ -1712,6 +1679,38 @@
       <tags>
         <tag>Android</tag>
         <tag>LaunchMode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Android 事件分发规律总结</title>
+    <url>/2017/09/05/2017-09-05-android-how-motion-event-dispatched/</url>
+    <content><![CDATA[<h1 id="Android-事件分发规律总结"><a href="#Android-事件分发规律总结" class="headerlink" title="Android 事件分发规律总结"></a>Android 事件分发规律总结</h1><h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><p>事件序列：手指接触屏幕开始到离开屏幕为止产生的事件为一次事件序列。</p>
+<h2 id="规律一"><a href="#规律一" class="headerlink" title="规律一"></a>规律一</h2><p>从父视图的角度来看，无论他的子视图是 View 还是 ViewGroup，对父视图来说都是透明的。它只知道如果当 ACTION_DOWN 事件传给子视图后子视图的 dispatchTouchEvent () 返回 true，说明子视图想要处理这个事件，那么以后的事件就都交给它，不管以后子视图的 dispatchTouchEvent() 返回的是 true 还是 false; 如果 ACTION_DOWN 事件传给子视图后子视图返回的是 false，那么以后的事件再也不会传给子视图（子视图没有处理 ACTION_DOWN 就视作它不想处理该事件序列）。如果一个子视图的 dispatchTouchEvent() 在处理 ACTION_DOWN 时返回 true ，只要父视图没有拦截事件, 那么该事件序列中的后续事件都会传入该视图中，也就是传入该视图的 dispatchTouchEvent() 方法中，就算手指的触摸区域已经超出了该视图的范围。并且对于该事件序列的之后所有事件，即使该视图的 dispatchTouchEvent() 返回 false 事件也同样会继续传入该视图，唯一的影响是会将该事件原路返回，最终落到 activity.onTouchEvent() 中。因此建议如果消耗了该事件，除非有特殊情况需要处理，最好不要返回 false，否则上级视图以为下面的视图没有处理事件从而自己处理。</p>
+<span id="more"></span>
+<h2 id="规律二"><a href="#规律二" class="headerlink" title="规律二"></a>规律二</h2><p>父视图有两种角色，一种是 ViewGroup , 另一种是 View。当父视图的角色是 ViewGroup 时，父视图的主要任务就是分派事件给子视图；当父视图的角色为 View 时，它和普通的 View 一样处理事件。<br>父视图在两种情况下会将事件拿给自己处理：<br>1）如果没有子视图能够处理事件，那么只能由父视图自己处理，此时会把事件传给 super.dispatchTouchEvent()，也就是父类方法来处理（注意是父类，不是父视图）。<br>2）假如本来整个事件序列都是要传给子视图的，但是中途父视图想要拦截的话，从父视图决定拦截开始之后的所以事件都不会再交给子视图处理了，但是决定拦截时的那一次的事件会还是会交给子视图的，只不过是事件的类型是 ACTION_CANCEL，这样做的原因我认为可能是通知一下子视图父视图拦截了你的事件，免得子视图事件被拦截了还蒙在鼓里（其实就是让开发者可以对这种情况加以处理）。从开始拦截的那一次开始，之后的所有事件（不包括拦截的那一次）都不会传给子视图了，都传入 super.dispatchOnToucnEvent() 中，即交给父视图给自己处理。</p>
+<h2 id="规律三"><a href="#规律三" class="headerlink" title="规律三"></a>规律三</h2><p>如果事件是交给自己处理，不管是子视图还是父视图，只要事件交给了自己处理，那么事件的处理流程都是一样的（这个流程在 View 中定义），下面来分析是如它们何处理事件的：<br>如果视图将事件交给自己处理，那么事件首先都是从 dispatchTouchEvent() 传入的（父视图是 super.dispatchTouchEvent()），这个方法的逻辑是：如果该视图注册了OnTouchListener 监听器，并且监听器不为 null，那么就把事件交给监听器中的 onTouch() 方法。下一步就是看 onTouch() 的返回值了，如果返回值为 true，那么说明 onTouch() 消费了该事件，事件的传递到此为止， dispatchTouchEvent() 返回 true；如果返回值为 false，那么说明 onTouch() 方法并没有消耗该事件，那么进行下一步的事件分发。下一步事件会传给 onTouchEvent 方法，这个方法是最常见也最常用的方法，对于一个 自定义 View 来说，这个方法是根据事件来更改 View 的行为的主要场所。dispatchTouchEvent() 同样需要根据 onTouchEvent() 的返回值来决定下一步的事件转发流程。如果 onTouchEvent() 返回 false，那么 dispatchTouchEvent() 返回的就是 false，否则返回的就是 true。这个过程可以用如下代码表示：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent e)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (onTouchListener != <span class="literal">null</span>) ? (onTouchListener.onTouch(e) ? <span class="literal">true</span> : onTouchEvent(ev)) : onTouchEvent(e);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之前已经说到，如果当父视图接收到 ACTION_DOWN 事件时，如果没有子视图能够处理该事件，那么后续的事件就不会给该子视图了，并且该事件会交给父视图处理，即传入父视图的 super.dispatchTouchEvent() 方法中。子视图有没有处理该事件就是根据 dispatchTouchEvent() 的返回值来看的。返回 true 表示处理，false 表示未处理。如果子视图对于 ACTION_DOWN 事件进行了处理（dispatchTouchEvent() 返回true），那么之后的事件都会给它处理，不管子视图之后 dispatchTouchEvent() 是否返回 true，也就是说，父视图会忽略子视图接下来的 dispatchTouchEvent() 的返回值，只要事件继续发生就都传给该子视图。但是，返回 false 会导致事件从该子视图返回给上级视图，上级视图也不会处理该事件，该事件会一直上传，直至传到 Activity 中的 onTouchEvent() 方法中。 </p>
+<h2 id="规律四"><a href="#规律四" class="headerlink" title="规律四"></a>规律四</h2><p>关于事件的拦截：<br>父视图可以在任何时候拦截本应该传递子视图的事件，拦截的依据就是 onInterceptTouchEvent() 的返回值，true 表示拦截，false 表示不拦截，父视图每次分发事件时会根据这个方法的返回值决定是否开始拦截：如果返回 false，即不拦截该事件，父视图下次分发事件时依然会调用这个方法来判断是否开始拦截事件；如果返回 true，说明该事件需要拦截，那么以后的事件，包括该事件都会直接交由父视图的 super.dispatchTouchEvent() 方法处理，而不会再传入子视图的 dispatchTouchEvent() 方法中 。但是开始拦截的那个事件还是会交给那个子视图，只是事件的类型变为了 ACTION_CANCEL。</p>
+<h2 id="规律五"><a href="#规律五" class="headerlink" title="规律五"></a>规律五</h2><p>事件在系统中的传递流程：ViewRootImpl &#x3D;&gt; DecorView(调用的方法是 dispatchTouchEvent()) &#x3D;&gt; WindowCallback(即Activity) &#x3D;&gt; PhoneWindow &#x3D;&gt; DecorView(调用的方法是 super.dispatchTouchEvent)</p>
+<h2 id="规律六"><a href="#规律六" class="headerlink" title="规律六"></a>规律六</h2><p>子视图可以调用父视图的 requestDisallowInterceptTouchEvent() 方法来向父视图请求不拦截事件。但是这个方法只对除 ACTION_DOWN 之外的其他事件有效，如果父视图选择拦截 ACTION_DOWN，子视图即使在此之前调用此方法也是没有任何用的。并且需要注意，如果父视图在此方法调用之前就已经对事件进行了拦截，那么这个方法也同样无效。</p>
+<h2 id="规律七"><a href="#规律七" class="headerlink" title="规律七"></a>规律七</h2><p>父视图如何找到能够接受某个事件的子视图？</p>
+<p>假设在父视图中的事件坐标是 (x, y)</p>
+<p>1）首先要转换成相对子视图的坐标，转换的步骤如下：</p>
+<p>首先要考虑父视图是否发生滚动，其次需要考虑子视图是否发生平移，如果用（x’, y’）表示转换后的坐标，那么有：</p>
+<p>x’ &#x3D; x + scrollX - child.left - child.translationX;<br><br>y’ &#x3D; y + scrollY - child.top - child.translationY;</p>
+<p>其实在源码中上述变换过程分为两步进行：</p>
+<ol>
+<li>第一步不考虑平移：x’ &#x3D; x + scrollX - child.left; </li>
+<li>第二步通过 TransformationInfo（内含变换矩阵） 将平移考虑进去：x’ &#x3D; x + scrollX - child.left - child.translationX;</li>
+</ol>
+<p>2）然后根据相对子视图的坐标判断该点是否落在子视图的范围内。判断的依据是：x’ &lt; width &amp;&amp; y’ &lt; height &amp;&amp; x’ &gt;&#x3D; 0 &amp;&amp; y’ &gt;&#x3D; 0（width 和 height 是子视图的宽高）。</p>
+]]></content>
+      <tags>
+        <tag>Android</tag>
+        <tag>View</tag>
+        <tag>事件分发</tag>
       </tags>
   </entry>
   <entry>
@@ -1790,7 +1789,7 @@
 <p>[-&gt;RequestOptions.java]</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RequestOptions</span> <span class="keyword">implements</span> <span class="title class_">Cloneable</span> &#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">UNSET</span> <span class="operator">=</span> -<span class="number">1</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">SIZE_MULTIPLIER</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">DISK_CACHE_STRATEGY</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">2</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">PRIORITY</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">3</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">ERROR_PLACEHOLDER</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">4</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">ERROR_ID</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">5</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">PLACEHOLDER</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">6</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">PLACEHOLDER_ID</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">7</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">IS_CACHEABLE</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">8</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">OVERRIDE</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">9</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">SIGNATURE</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">10</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">TRANSFORMATION</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">11</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">RESOURCE_CLASS</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">12</span>;</span><br><span class="line">  ......</span><br><span class="line">  <span class="keyword">private</span> <span class="type">int</span> fields;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">float</span> <span class="variable">sizeMultiplier</span> <span class="operator">=</span> <span class="number">1f</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">DiskCacheStrategy</span> <span class="variable">diskCacheStrategy</span> <span class="operator">=</span> DiskCacheStrategy.AUTOMATIC;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">Priority</span> <span class="variable">priority</span> <span class="operator">=</span> Priority.NORMAL;</span><br><span class="line">  <span class="keyword">private</span> Drawable errorPlaceholder;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">int</span> errorId;</span><br><span class="line">  <span class="keyword">private</span> Drawable placeholderDrawable;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">int</span> placeholderId;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">boolean</span> <span class="variable">isCacheable</span> <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">int</span> <span class="variable">overrideHeight</span> <span class="operator">=</span> RequestOptions.UNSET;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">int</span> <span class="variable">overrideWidth</span> <span class="operator">=</span> RequestOptions.UNSET;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">Key</span> <span class="variable">signature</span> <span class="operator">=</span> EmptySignature.obtain();</span><br><span class="line">  <span class="keyword">private</span> <span class="type">boolean</span> isTransformationRequired;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">boolean</span> <span class="variable">isTransformationAllowed</span> <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">private</span> Drawable fallbackDrawable;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">int</span> fallbackId;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">Options</span> <span class="variable">options</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Options</span>();</span><br><span class="line">  <span class="keyword">private</span> Map&lt;Class&lt;?&gt;, Transformation&lt;?&gt;&gt; transformations = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">  <span class="keyword">private</span> Class&lt;?&gt; resourceClass = Object.class;</span><br><span class="line">  ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>可以看出，请求的附加选项包括底盘缓存策略，请求优先级，占位图，兜底图等常见选项，这些选项全部通过标志位来标识是否设立新值，为什么通过标志位来表示？因为很多选项都有默认值，通过判空来判断它们是否设定了新值是行不通的。RequestOptions 是可以合并的，两个 RequestOptions 可以合并成一个 RequestOptions，这个功能由 RequestOptions#apply(RequestOptions) 来实现。例如 A 想合并 B，可以这样： C = A.apply(B) ，结果是 B 中的新值会覆盖 A 中的值，B 中的默认值不会覆盖 A 中的值。</p>
+<p>可以看出，请求的附加选项包括底盘缓存策略，请求优先级，占位图，兜底图等常见选项，这些选项全部通过标志位来标识是否设立新值，为什么通过标志位来表示？因为很多选项都有默认值，通过判空来判断它们是否设定了新值是行不通的。RequestOptions 是可以合并的，两个 RequestOptions 可以合并成一个 RequestOptions，这个功能由 RequestOptions#apply(RequestOptions) 来实现。例如 A 想合并 B，可以这样： C &#x3D; A.apply(B) ，结果是 B 中的新值会覆盖 A 中的值，B 中的默认值不会覆盖 A 中的值。</p>
 <p>现在我们回头再看看 RequestManager 的 load() 方法：</p>
 <p>[-&gt;RequestManager.java]</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">public</span> RequestBuilder&lt;Drawable&gt; <span class="title function_">load</span><span class="params">(<span class="meta">@Nullable</span> Drawable drawable)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> asDrawable().load(drawable);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> RequestBuilder&lt;Drawable&gt; <span class="title function_">load</span><span class="params">(<span class="meta">@Nullable</span> Bitmap bitmap)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> asDrawable().load(bitmap);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> RequestBuilder&lt;Drawable&gt; <span class="title function_">load</span><span class="params">(<span class="meta">@Nullable</span> Object model)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> asDrawable().load(model);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> RequestBuilder&lt;Drawable&gt; <span class="title function_">asDrawable</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> as(Drawable.class).transition(<span class="keyword">new</span> <span class="title class_">DrawableTransitionOptions</span>());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;ResourceType&gt; RequestBuilder&lt;ResourceType&gt; <span class="title function_">as</span><span class="params">(Class&lt;ResourceType&gt; resourceClass)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">RequestBuilder</span>&lt;&gt;(glide, <span class="built_in">this</span>, resourceClass, context);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -1883,7 +1882,7 @@
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> DataFetcherGenerator <span class="title function_">getNextGenerator</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="keyword">switch</span> (stage) &#123;</span><br><span class="line">    <span class="keyword">case</span> RESOURCE_CACHE:</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ResourceCacheGenerator</span>(decodeHelper, <span class="built_in">this</span>);</span><br><span class="line">    <span class="keyword">case</span> DATA_CACHE:</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DataCacheGenerator</span>(decodeHelper, <span class="built_in">this</span>);</span><br><span class="line">    <span class="keyword">case</span> SOURCE:</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">SourceGenerator</span>(decodeHelper, <span class="built_in">this</span>);</span><br><span class="line">    <span class="keyword">case</span> FINISHED:</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;Unrecognized stage: &quot;</span> + stage);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>这个方法根据当期的 Stage 返回不同的 DataFetcherGenerator，DataFetcherGenerator 的作用是用注册的 ModelLoader 和 Model 产生 DataFetcher 来加载数据。读到这里大家可能有点难理解，因此，在继续深入下去之前，我们有必要了解下 DecodeJob 加载图片资源的整个过程以及 Model，ModelLoader，DataFetcher 等类的的角色和作用，这样有助于后面的分析和理解。</p>
 <p>首先我们了解一下 DecodeJob 加载资源的流程，DecodeJob 加载资源的过程中资源类型的变化可以这样来表示：</p>
-<p><strong>Model</strong> =&gt; <strong>Data</strong> =&gt; <strong>Decoded Resource</strong> =&gt; <strong>Transcoded Resource</strong>。 </p>
+<p><strong>Model</strong> &#x3D;&gt; <strong>Data</strong> &#x3D;&gt; <strong>Decoded Resource</strong> &#x3D;&gt; <strong>Transcoded Resource</strong>。 </p>
 <ul>
 <li>Model 一开始是通过 RequestManager#load() 穿过来的，它的类型可以有很多种，它可以是 String，Uri，Drawable，Bitmap，byte[]等。我们可以把它理解成图片加载过程的初始对象；</li>
 <li>Data 是原始的数据流，它一般以二进制的形式存在，例如 InputStream，ByteBuffer，byte[]。但也不绝对是二进制流，它也可以是 Bitmap，Drawble 等资源对象，这样看 Model 传入的初始对象是什么；</li>
@@ -1958,7 +1957,7 @@
 <p>这个方法的意图很明了，假设加载还未完成的时候取消了加载，那么便会执行 else 中的代码块，从回调列表中删除该 ResourceCallback，但是移除还不够，因为移除回调仅仅是让 SingleRequest 接收不到最终的结果，我们还必须停止加载任务以节省资源。接下来会继续判断回调列表是否为空，如果为空就调用 cancel() 方法，这个方法就是用来取消加载任务的。这样看来，单单取消一个加载请求并不一定会导致这个加载任务的取消，这很容易理解，因为可能还有其他的请求依赖这个任务的执行。现在看看 EngineJob#cancel() 方法：</p>
 <p>[-&gt;Engine.java]</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">void</span> <span class="title function_">cancel</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> (hasLoadFailed || hasResource || isCancelled) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  isCancelled = <span class="literal">true</span>;</span><br><span class="line">  decodeJob.cancel();</span><br><span class="line">  <span class="comment">// <span class="doctag">TODO:</span> Consider trying to remove jobs that have never been run before from executor queues.</span></span><br><span class="line">  <span class="comment">// Removing jobs that have run before can break things. See #1996.</span></span><br><span class="line">  listener.onEngineJobCancelled(<span class="built_in">this</span>, key);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">cancel</span><span class="params">()</span> &#123;</span><br><span class="line">  isCancelled = <span class="literal">true</span>;</span><br><span class="line">  <span class="type">DataFetcherGenerator</span> <span class="variable">local</span> <span class="operator">=</span> currentGenerator;</span><br><span class="line">  <span class="keyword">if</span> (local != <span class="literal">null</span>) &#123;</span><br><span class="line">    local.cancel();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这个方法调用了 DecodeJob#cancel()，DecodeJob#cancel() 做了两件事，一是设置 isCancelled 为 true，二是停止当前 DataFetcherGenerator 中的任务。isCancelled 是一个标志，那么它对加载任务有什么影响呢？影响主要有两处，一个 DecodeJob#run()，另一个是 DecodeJob#runGenerators()。isCancelled==true 会导致前者发出加载失败的通知，导致后者停止运行后续的 DataFetcherGenerator 并发出加载失败的通知。加载失败的通知最终会传到 EngineJob 中，使得 EngineJob 执行资源的释放工作。</p>
+<p>这个方法调用了 DecodeJob#cancel()，DecodeJob#cancel() 做了两件事，一是设置 isCancelled 为 true，二是停止当前 DataFetcherGenerator 中的任务。isCancelled 是一个标志，那么它对加载任务有什么影响呢？影响主要有两处，一个 DecodeJob#run()，另一个是 DecodeJob#runGenerators()。isCancelled&#x3D;&#x3D;true 会导致前者发出加载失败的通知，导致后者停止运行后续的 DataFetcherGenerator 并发出加载失败的通知。加载失败的通知最终会传到 EngineJob 中，使得 EngineJob 执行资源的释放工作。</p>
 <p>有一个细节不知大家发现没有，DecodeJob 是被投入线程中运行的，也就是说 SingleRequest 和 DecodeJob 是在不同的线程中运行的。isCancelled 的改变是在 SingleRequest 的线程中进行的，而 DecodeJob 读取 isCancelled 的值是在 DecodeJob 的线程中发生的。那么这很容易发生一个问题，就是线程感知问题。那么 Glide 是如何解决这一问题的呢？我们看看 isCancelled 在 DecodeJob 中的定义：</p>
 <p>[-&gt;DecodeJob.java]</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">boolean</span> isCancelled;</span><br></pre></td></tr></table></figure>
@@ -2043,16 +2042,21 @@
     <title>移动魔百盒 CM201 CH(长虹代工) 破解方法分享</title>
     <url>/2022/11/04/2022-11-04-CM201-crack/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>这两天为了破解到期魔百盒看了好多帖子，最终成功破解了。为了让大家少走弯路，只看一篇帖子就能完成破解，我汇总了一下这两天学习到的东西，并分享下我的破解经历，希望对大家有所帮助。</p>
-<h1 id="盒子型号"><a href="#盒子型号" class="headerlink" title="盒子型号"></a>盒子型号</h1><p>首先说下盒子型号是 CM201-2 长虹代工 (CH)，具体信息见图片：<br><img src="/img/in-post/cm201_crack/box-info.jpg" alt="盒子信息"><br>板子上的硬件信息是：CPU 型号是 HI3890MV300，闪存是 emmc。机型编码和牌照方不同应该没太大关系，因为网上那些教程和我的都不一样，但我也刷机成功了。大家可以先尝试一下，如果不行再说。</p>
+<h1 id="盒子型号"><a href="#盒子型号" class="headerlink" title="盒子型号"></a>盒子型号</h1><p>首先说下盒子型号是 CM201-2 长虹代工 (CH)，具体信息见图片：</p>
+<p><img src="/img/in-post/cm201_crack/box-info.jpg" alt="盒子信息"></p>
+<p>板子上的硬件信息是：CPU 型号是 HI3890MV300，闪存是 emmc。机型编码和牌照方不同应该没太大关系，因为网上那些教程和我的都不一样，但我也刷机成功了。大家可以先尝试一下，如果不行再说。</p>
 <span id="more"></span>
 <h1 id="破解方法"><a href="#破解方法" class="headerlink" title="破解方法"></a>破解方法</h1><p>这种盒子有两种破解模式，一种是解除无法安装软件的限制，另一种是是刷第三方系统。两种方式各有利弊，具体如下：<br>第一种破解模式：</p>
 <ul>
 <li>优点：步骤简单；</li>
 <li>缺点：<ul>
 <li>如果按到遥控器上的主页，会跳到订阅关系失效的页面，只能重启，比较麻烦，特别是对于那些不会用机顶盒的老人家来说。</li>
-<li>而且原装系统有一堆用不到的应用在后台运行，占用内存，影响运行速度。<br>第二种破解模式：</li>
+<li>而且原装系统有一堆用不到的应用在后台运行，占用内存，影响运行速度。</li>
 </ul>
 </li>
+</ul>
+<p>第二种破解模式：</p>
+<ul>
 <li>优点：<ul>
 <li>系统精简，第三方系统一般会把那些没用的系统应用去除掉，运行速度会有所提升；</li>
 <li>不用担心按到主页需要重启盒子的问题，因为第三方系统一般都会解决该问题；</li>
@@ -2071,10 +2075,20 @@
 </ul>
 <ol start="2">
 <li><p>破解步骤：<br>将 usb 转 ttl 模块插入到电脑的 usb 口，然后打开 windows 设备管理器，在端口分类里查看这个模块是在哪个 COM 口，我的设备是在 COM4。</p>
-<p>用杜邦线把 CH340G 的 RXD、TXD 和 GND三个引脚接到板子上。板子上的那四个孔第一个孔没用，其他三个孔从左到右分别是 RXD、TXD、GND，分别和 CH340G 的 TXD、RXD、GND 相对应，顺序不能错，如下图所示。有的博主给那三个孔焊上了排插，这样用杜邦线直接插上去就行，如果和我一样，没有其他工具，直接用那三根导线和三个孔保持良好稳定的接触也行。<br><img src="/img/in-post/cm201_crack/board-ttl-connection.jpg"><br>打开 putty ，如下图所示：<br><img src="/img/in-post/cm201_crack/putty.png"><br>把通信方式改成串口，Serial line 填写为上面查到的那个，我这里是 COM4，Speed 调整为 115200，Connection type 选择 Serial，其他的不用管，然后点击 右下角的 open，此时会出现一个漆黑的窗口，这个窗口就是用来和盒子进行通信的。打开盒子电源，这时应该能看到窗口上有日志输出：<br><img src="/img/in-post/cm201_crack/putty-shell.png"><br>等日志输出差不多完了之后，按下回车键，这时候会显示命令提示符，这样就进入到了设备的 shell 中了（如果没有显示命令提示符，查看那三根线是否接触良好，或者重新配置 putty 并打开窗口）。然后把当贝桌面下载到 U 盘根目录，把 U 盘插入到盒子靠近网口的 usb 口中，按照如下命令进入到 u 盘目录中，执行命令：</p>
+<p>用杜邦线把 CH340G 的 RXD、TXD 和 GND三个引脚接到板子上。板子上的那四个孔第一个孔没用，其他三个孔从左到右分别是 RXD、TXD、GND，分别和 CH340G 的 TXD、RXD、GND 相对应，顺序不能错，如下图所示。有的博主给那三个孔焊上了排插，这样用杜邦线直接插上去就行，如果和我一样，没有其他工具，直接用那三根导线和三个孔保持良好稳定的接触也行。</p>
+<p><img src="/img/in-post/cm201_crack/board-ttl-connection.jpg"></p>
+<p>打开 putty ，如下图所示：</p>
+<p><img src="/img/in-post/cm201_crack/putty.png"></p>
+<p>把通信方式改成串口，Serial line 填写为上面查到的那个，我这里是 COM4，Speed 调整为 115200，Connection type 选择 Serial，其他的不用管，然后点击 右下角的 open，此时会出现一个漆黑的窗口，这个窗口就是用来和盒子进行通信的。打开盒子电源，这时应该能看到窗口上有日志输出：</p>
+<p><img src="/img/in-post/cm201_crack/putty-shell.png"></p>
+<p>等日志输出差不多完了之后，按下回车键，这时候会显示命令提示符，这样就进入到了设备的 shell 中了（如果没有显示命令提示符，查看那三根线是否接触良好，或者重新配置 putty 并打开窗口）。然后把当贝桌面下载到 U 盘根目录，把 U 盘插入到盒子靠近网口的 usb 口中，按照如下命令进入到 u 盘目录中，执行命令：</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd /mnt/sda/sda1</span><br><span class="line">pm install 当贝桌面apk文件名</span><br></pre></td></tr></table></figure>
-<p>第一行命令是进入 U 盘，第二行命令是安装 U 盘里的当贝桌面。如图所示：<br><img src="/img/in-post/cm201_crack/install-apk.png"><br>这一步完了之后应该就装好了。你可以通过</p>
+
+<p>第一行命令是进入 U 盘，第二行命令是安装 U 盘里的当贝桌面。如图所示：</p>
+<p><img src="/img/in-post/cm201_crack/install-apk.png"></p>
+<p>这一步完了之后应该就装好了。你可以通过</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">am start com.dangbei.tvlauncher</span><br></pre></td></tr></table></figure>
+
 <p>命令直接启动当贝桌面或者重启一下盒子，不出意外的话，启动后就进入当贝桌面了，破解完成。当贝桌面里面可以下载当贝应用市场，然后你就可以安装任意 APP 了。</p>
 </li>
 </ol>
@@ -2087,31 +2101,52 @@
 <li>串口通信工具（windows 上比较知名的有 putty，mac 上有“串口调试助手”，这里以 putty 为例）；</li>
 <li>hitool，网上随便搜下就有：<a href="http://www.winwin7.com/soft/4260.html%E3%80%82">http://www.winwin7.com/soft/4260.html。</a></li>
 </ul>
-<ol start="2">
+<ol>
 <li><p>破解步骤：</p>
 <p>这种破解方式是重刷系统，因为刷机风险比较大，因此建议刷机前先备份下系统，不要怕麻烦，万一失败了呢。备份方法如下：<br>前面的步骤和上面一样：用 CH340G 连接好板子，打开 putty，等日志输出完毕之后，按下回车，进入 shell。然后输入以下命令先进入到分区目录：</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd /dev/block/platform/soc/by-name</span><br></pre></td></tr></table></figure>
-<p>接下来使用以下命令对各个分区进行备份（除了 userdata 分区，其他分区都备份一下）。/mnt/sda/sda1 对应的是 U 盘的根目录，system 是根目录下新建的子目录，这个目录应该是需要提前创建的，否则可能会报错。时间可能会有点久，但是多花点时间也值得，万一刷成砖也有挽救的方法，免得到处求别人要原厂镜像。</p>
+
+<p>接下来使用以下命令对各个分区进行备份（除了 userdata 分区，其他分区都备份一下）。&#x2F;mnt&#x2F;sda&#x2F;sda1 对应的是 U 盘的根目录，system 是根目录下新建的子目录，这个目录应该是需要提前创建的，否则可能会报错。时间可能会有点久，但是多花点时间也值得，万一刷成砖也有挽救的方法，免得到处求别人要原厂镜像。</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">dd if=baseparam of=/mnt/sda/sda1/system/baseparam.img</span><br><span class="line">dd if=bootargs of=/mnt/sda/sda1/system/bootargs.img</span><br><span class="line">dd if=deviceinfo of=/mnt/sda/sda1/system/deviceinfo.img</span><br><span class="line">dd if=fastboot of=/mnt/sda/sda1/system/fastboot.img</span><br><span class="line">dd if=fastplay of=/mnt/sda/sda1/system/fastplay.img</span><br><span class="line">dd if=kernel of=/mnt/sda/sda1/system/kernel.img</span><br><span class="line">dd if=logo of=/mnt/sda/sda1/system/logo.img</span><br><span class="line">dd if=misc of=/mnt/sda/sda1/system/misc.img</span><br><span class="line">dd if=pqparam of=/mnt/sda/sda1/system/pqparam.img</span><br><span class="line">dd if=private of=/mnt/sda/sda1/system/private.img</span><br><span class="line">dd if=recovery of=/mnt/sda/sda1/system/recovery.img</span><br><span class="line">dd if=securestore of=/mnt/sda/sda1/system/securestore.img</span><br><span class="line">dd if=system of=/mnt/sda/sda1/system/system.img</span><br><span class="line">dd if=trustedcore of=/mnt/sda/sda1/system/trustedcore.img</span><br></pre></td></tr></table></figure>
-<p>现在轮到 hitool 上场了，这里使用 hitool 的目的是把官方的 recovery 替换成第三方 recovery，这样就能够刷入第三方系统，否则刷机的时候会校验失败，我相信很多人都遇到这个问题。现在我们看看如何刷第三方 recovery。<br>保持 CH340G 和盒子的连接，关闭 putty（会和 hitool 冲突）。打开 hitool，选择 HiBurn 视图，如下图所示：<br><img src="/img/in-post/cm201_crack/hitool-conf.png"><br>PC 与板端配置如图所示：串口填 CH340G 所在端口，传输方式选串口，其他的不用管。（有的教程使用的是网口方式，速度会快点，但是需要网线连接，还需要配置 ip 地址，简单起见，我直接使用串口，速度慢一点也还好，毕竟 recovery 分区也不是很大）选择 烧写eMMC 页面，需要填写分区表配置，这个配置我已经写好了，大家可以直接拿来用：</p>
+
+<p>现在轮到 hitool 上场了，这里使用 hitool 的目的是把官方的 recovery 替换成第三方 recovery，这样就能够刷入第三方系统，否则刷机的时候会校验失败，我相信很多人都遇到这个问题。现在我们看看如何刷第三方 recovery。</p>
+<p>保持 CH340G 和盒子的连接，关闭 putty（会和 hitool 冲突）。打开 hitool，选择 HiBurn 视图，如下图所示：</p>
+<p><img src="/img/in-post/cm201_crack/hitool-conf.png"></p>
+<p>PC 与板端配置如图所示：串口填 CH340G 所在端口，传输方式选串口，其他的不用管。（有的教程使用的是网口方式，速度会快点，但是需要网线连接，还需要配置 ip 地址，简单起见，我直接使用串口，速度慢一点也还好，毕竟 recovery 分区也不是很大）选择 烧写eMMC 页面，需要填写分区表配置，这个配置我已经写好了，大家可以直接拿来用：</p>
 <p><a href="https://cloud.189.cn/web/share?code=MVNZJzFn2Eb2">CM201-2-CH4_HUNAN分区表文件.xml</a> （访问码：1ift）</p>
 <p>需要注意的是，我这个分区表只适用于这个型号的盒子，其他盒子可能会有一些差异。保险起见大家还是核对一下，万一有不同可以进行修改，具体方法如下：</p>
-<p>还记得连接 putty 的时候会有一堆日志输出吗？这里面就有修改分区表所需的信息：<br><img src="/img/in-post/cm201_crack/partition.png"><br>红框中的日志描述了每个分区的大小，大家先导入上面的分区表文件，然后把各个分区的长度修改成日志输出所示，大家直接修改长度那一列就行，开始地址会自动更改。如果输出日志中的分区和我的分区表不一样，可以手动添加或者删除，以你盒子的输出日志为准，注意顺序保持一致。</p>
+<p>还记得连接 putty 的时候会有一堆日志输出吗？这里面就有修改分区表所需的信息：</p>
+<p><img src="/img/in-post/cm201_crack/partition.png"></p>
+<p>红框中的日志描述了每个分区的大小，大家先导入上面的分区表文件，然后把各个分区的长度修改成日志输出所示，大家直接修改长度那一列就行，开始地址会自动更改。如果输出日志中的分区和我的分区表不一样，可以手动添加或者删除，以你盒子的输出日志为准，注意顺序保持一致。</p>
 <p>分区表修改完之后，可以点击保存，这样你就拥有了属于自己盒子的分区表了（备份好这个分区表，以后救砖可能还有用）。接下来就可以导入 recovery 分区，在 recovery 那一行的文件一列，将 recovery 文件导入进去。recovery 我这也准备好了：</p>
 <p><a href="https://cloud.189.cn/web/share?code=2EjmYjMJzUJj">Hi3798MV300H芯片强刷引导</a> （访问码：ts2l）</p>
-<p>你可能会感到疑惑，我的芯片不是 Hi3789MV300 吗，板子上写的也是这个，为啥这里用的引导是 Hi3789MV300H 的？我最开始用的 recovery 也是 Hi3789MV300 的，但是发现没用，后来才从日志里发现了问题：<br><img src="/img/in-post/cm201_crack/cpu-info.png"><br>这是 HiBurn 烧写时的日志输出（putty 输出的日志里也有，但我之前忘记截图了，所以用了 HiBurn 里的日志），里面写着 CPU 型号是 Hi3789MV300H。不知道为啥会这样，如果你的日志输出的 CPU 型号是 Hi3789MV300，那你应该使用 Hi3789MV300 的引导：</p>
+<p>你可能会感到疑惑，我的芯片不是 Hi3789MV300 吗，板子上写的也是这个，为啥这里用的引导是 Hi3789MV300H 的？我最开始用的 recovery 也是 Hi3789MV300 的，但是发现没用，后来才从日志里发现了问题：</p>
+<p><img src="/img/in-post/cm201_crack/cpu-info.png"></p>
+<p>这是 HiBurn 烧写时的日志输出（putty 输出的日志里也有，但我之前忘记截图了，所以用了 HiBurn 里的日志），里面写着 CPU 型号是 Hi3789MV300H。不知道为啥会这样，如果你的日志输出的 CPU 型号是 Hi3789MV300，那你应该使用 Hi3789MV300 的引导：</p>
 <p><a href="https://cloud.189.cn/web/share?code=RJn6Fnu2auIb">Hi3798MV300芯片强刷引导</a>  （访问码：bo1f）</p>
 <p>这个文件夹里有三个文件，实测只需要刷 recovery.img 文件就行了，其他两个分区文件不刷也行，如果你失败了，那就按照同样的方法把另外两个对应的分区也刷一下吧。</p>
-<p>recovery 导入完成之后，记得把其他分区取消勾选，只保留 recovery 分区（因为我们只刷 recovery 分区，其他分区暂时不需要，除非你刷成砖了，就需要把之前备份好的分区文件一个一个导进来）。最后点击 烧写，将 recovery 刷到盒子里去：<br><img src="/img/in-post/cm201_crack/pre-flash-recovery.png"><br>如果你的盒子通着电，就会出现上面的提示，我们按照提示重新给盒子通电，不出意外的话，就开始烧写了：<br><img src="/img/in-post/cm201_crack/flashing-recovery.png"><br>左侧输出的是日志，大概等个十几二十分钟就烧好了（如果用网口应该更快）：<br><img src="/img/in-post/cm201_crack/recovery-flashed.png"><br>至此，recovery 的刷写工作就完毕了。现在你就可以选择各种刷机包来进行刷机了。我这里准备了一个基于别人的包制作的精简包，去除了其他 app，把巨丑的当贝影视桌面换成了当贝桌面，并且不会出现某些 rom 按主页时当贝桌面等半天或者无法响应的问题。同时还把开机动画改成了 Google TV，逼格一下子就上来了。</p>
+<p>recovery 导入完成之后，记得把其他分区取消勾选，只保留 recovery 分区（因为我们只刷 recovery 分区，其他分区暂时不需要，除非你刷成砖了，就需要把之前备份好的分区文件一个一个导进来）。最后点击 烧写，将 recovery 刷到盒子里去：</p>
+<p><img src="/img/in-post/cm201_crack/pre-flash-recovery.png"></p>
+<p>如果你的盒子通着电，就会出现上面的提示，我们按照提示重新给盒子通电，不出意外的话，就开始烧写了：</p>
+<p><img src="/img/in-post/cm201_crack/flashing-recovery.png"></p>
+<p>左侧输出的是日志，大概等个十几二十分钟就烧好了（如果用网口应该更快）：</p>
+<p><img src="/img/in-post/cm201_crack/recovery-flashed.png"></p>
+<p>至此，recovery 的刷写工作就完毕了。现在你就可以选择各种刷机包来进行刷机了。我这里准备了一个基于别人的包制作的精简包，去除了其他 app，把巨丑的当贝影视桌面换成了当贝桌面，并且不会出现某些 rom 按主页时当贝桌面等半天或者无法响应的问题。同时还把开机动画改成了 Google TV，逼格一下子就上来了。</p>
 <p><a href="https://cloud.189.cn/web/share?code=M7zm6vn6fuau">自制精简版_当贝桌面_Google_tv_开机动画_文件名改成update.zip</a> （访问码：4qxp）</p>
-<p>把文件改成 update.zip 后放到 U 盘根目录中，插入到靠近网口的那个 usb 口。重新启动盒子电源，然后立刻快速交替按遥控器上的菜单键和音量减键，直到进入 recovery 界面（速度一定要快，不行多试几次）：<br><img src="/img/in-post/cm201_crack/recovery.jpg"><br>选择 本地USB升级，不出意外就开始刷机了，不用多久就刷好了，盒子重启，就能看到如下的开机画面：<br><img src="/img/in-post/cm201_crack/google-tv-splash.jpg"><br>欢迎使用 Google TV！</p>
-<p>附一张当贝桌面的图：<br><img src="/img/in-post/cm201_crack/home.jpg"><br>注意：刷机后的盒子通过 putty 进入 shell 时需要用户名和密码，用户名和密码分别是：root 、chcmccch。</p>
+<p>把文件改成 update.zip 后放到 U 盘根目录中，插入到靠近网口的那个 usb 口。重新启动盒子电源，然后立刻快速交替按遥控器上的菜单键和音量减键，直到进入 recovery 界面（速度一定要快，不行多试几次）：</p>
+<p><img src="/img/in-post/cm201_crack/recovery.jpg"></p>
+<p>选择 本地USB升级，不出意外就开始刷机了，不用多久就刷好了，盒子重启，就能看到如下的开机画面：</p>
+<p><img src="/img/in-post/cm201_crack/google-tv-splash.jpg"></p>
+<p>欢迎使用 Google TV！</p>
+<p>附一张当贝桌面的图：</p>
+<p><img src="/img/in-post/cm201_crack/home.jpg"></p>
+<p>注意：刷机后的盒子通过 putty 进入 shell 时需要用户名和密码，用户名和密码分别是：root 、chcmccch。</p>
 </li>
 </ol>
 <p>分享到此结束，祝大家刷机成功！如果有错误的地方，或者有其他更好的方法，欢迎大家留言指出，这样也能帮助其他人。</p>
 ]]></content>
       <tags>
-        <tag>搞机</tag>
+        <tag>折腾</tag>
       </tags>
   </entry>
   <entry>
@@ -2160,6 +2195,130 @@
       <tags>
         <tag>程序员的自我修养</tag>
         <tag>读书笔记</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>树莓派 3B+ 刷 OpenWrt 并安装 OpenClash</title>
+    <url>/2024/03/29/2024-03-29-install-openwrt-with-openclash-on-raspi-3bplus/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>心血来潮打开了尘封已久的 switch，发现软件更新实在太慢，上网找了几种常用的加速方法，各有优劣，但最终都被 pass：</p>
+<ul>
+<li>更改 DNS 服务器，缺点是网速提升有限，大概在 34 Mbps 左右，大概提升 1 ~ 2 Mbps 左右 ，相对 switch 几百 M 几个 G 的游戏来说，依然是龟速。唯一的好处是不用借助其他设备。</li>
+<li>买加速器。对于喜欢折腾的人来说，花钱永远是最后的选择，况且我自己有梯子，干嘛花这个冤枉钱。</li>
+<li>把电脑上的代理通过局域网分享给 switch，然而发现网速的提升依然不高，虽然后来发现是 USB 无线网卡的问题，但不管怎样，电脑一直保持开机状态，就是为了给 swtich 做代理，总感觉不太优雅。</li>
+</ul>
+<p>我心想要是能在路由器上跑代理就好了，不过现在的路由器不支持装插件，而且是公用的，不太适合去折腾。这时候突然想起了我还有个同样在吃灰的树莓派，如果能把这台树莓派变成一台软路由，再在这个软路由上跑代理，岂不美哉？于是上网搜索 “如何在树莓派上装软路由”，不出所料，搜出了一堆教程。一番学习后，最后选择了 OpenWrt 这款软路由固件，一是因为它插件比较多，有更多可玩性，二是用户量大，教程多，遇到问题容易找到解决方案。</p>
+<p>话不多说，开干。</p>
+<span id="more"></span>
+
+<p class="notice-info">如果你的设备也是树莓派 3B+ ，且不想折腾的话，我这里准备了一个开箱即用的 OpenWrt 镜像，自带 OpenClash，分区扩容到了 1G，路由器管理密码和 WiFi 密码都是 12345678，WiFi 名为 OpenWrt，路由器地址为 192.168.110.1。烧录运行后，只需要改下密码和 OpenClash 节点信息就行了。  
+<a href='https://cloud.189.cn/t/3iqiYfYRnA3e'>https://cloud.189.cn/t/3iqiYfYRnA3e（访问码：ba8p）</a></p>
+
+<h1 id="安装-OpenWrt"><a href="#安装-OpenWrt" class="headerlink" title="安装 OpenWrt"></a>安装 OpenWrt</h1><h2 id="准备工具"><a href="#准备工具" class="headerlink" title="准备工具"></a>准备工具</h2><ul>
+<li>1G  以上 micro SD 卡，树莓派 3B+，网线</li>
+<li>镜像烧录工具 <a href="https://etcher.balena.io/">balenaEtcher</a></li>
+</ul>
+<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><p>首先是去 OpenWRT 官网找自己的设备对应的固件，去到官网<a href="https://openwrt.org/downloads">下载页</a>：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_18.29.16-20240326183441-5anzd6b.png" alt="iShot_2024-03-26_18.29.16"></p>
+<p>点击 <em>Table of Hardware</em>，进入到硬件列表页面：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_18.34.00-20240326183736-bt1r00z.png" alt="iShot_2024-03-26_18.34.00"></p>
+<p>在输入框里输入关键字筛选，然后在列表中找到自己的型号。我的板子型号是 3B+，因此选择下载 3B+ 对应的固件。一共有四种固件可供选择，分别是 release 和 snapshot 版本的完整镜像及其升级包。由于我是全新安装，因此选择完整镜像就行了，这里我选择的是 release 版本的完整镜像 Factory image。注意，如果你选择 snapshot 版本的镜像，可能会遇到一些坑，因为 snapshot 固件的软件仓库没有进行版本隔离，软件仓库中的软件永远是适配最新版固件的，因此后面你安装软件的时候，可能会出现兼容性问题。当然，你可以手动更换到固定版本的软件仓库来解决这个问题，如何更换后面会提到。</p>
+<h2 id="烧录镜像"><a href="#烧录镜像" class="headerlink" title="烧录镜像"></a>烧录镜像</h2><p>下载好镜像后解压得到 openwrt-23.05.0-bcm27xx-bcm2710-rpi-3-ext4-factory.img，然后使用 balenaEtcher 镜像烧录工具，把固件烧录到我们的存储卡中，存储卡不用很大，1G 足够了：<br><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-26_19.12.13-20240326191339-qij64pw.png" alt="iShot_2024-03-26_19.12.13"><br>烧录完成之后，把 SD 卡插入树莓派，通上电，就可以开始配置了。</p>
+<h2 id="配置-OpenWrt"><a href="#配置-OpenWrt" class="headerlink" title="配置 OpenWrt"></a>配置 OpenWrt</h2><ol>
+<li><p>登录路由器管理后台</p>
+<p> OpenWrt 无线网卡默认是未启用状态，因此没法通过 WiFi 连接并登录路由器管理界面。我们把树莓派通过网线连接到电脑，然后去电脑的设置里查看有线网络的网关 IP，一般都是 192.168.1.1，在浏览器中输入这个 IP 就可以看到 OpenWrt 的管理界面了：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326194314-eajrdzi.png" alt="image"></p>
+</li>
+<li><p>修改密码，添加 SSH 公钥</p>
+<p> 我们还没有设置过密码，直接点击 Login 就行。登录之后会提示你设置路由器后台密码，点击 <kbd>Go to password configuration...</kbd>。你还可以添加电脑的 SSH 公钥，方便后续 SSH 登录。<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326194753-8tm3r0q.png" alt="image"></p>
+</li>
+<li><p>研究一下初始配置</p>
+<p> 去到 Network -&gt; Interface 界面，可以看到只有一个 lan 接口：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326200811-2btw7q2.png" alt="image"><br> 点击编辑先研究下配置：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326201907-648ify0.png" alt="image"><br> 可以看到这个接口 IP 地址是手动设置的，接口对应的设备是 br-lan 网桥，在这个接口上跑了一个 DHCP 服务器。点击 <kbd>Dismiss</kbd> ，切换到 <kbd>Devices</kbd> 选项卡，研究下 br-lan 网桥的配置。可以看到 br-lan上附加了一个 eth0，eth0 正是我们的有线网卡。这就是为什么电脑连接树莓派后，不需要任何配置就能获取 IP 和网关，访问路由器后台。<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326202341-cq4z8dc.png" alt="image"><br> 然而现在也只能访问路由器后台，没法联网。为了能联网，我们需要完成以下配置：</p>
+<ul>
+<li>创建 wan 接口，并让其作为 DCHP 客户端去连接上层路由器；</li>
+<li>修改现在的 lan 接口，让其底层的设备关联的是无线网卡而非现在的有线网卡；</li>
+<li>激活无线网卡，开启无线网络，让局域网的无线设备能够连接进来；</li>
+</ul>
+<p> 以上是配置思路，接下来说下具体方法。</p>
+</li>
+<li><p>创建 wan 接口。</p>
+<p> 在 Network -&gt; Interface 页面，点击 <kbd>Add new interface...</kbd> ：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214821-aaka330.png" alt="image"><br> 填入下图所示配置，然后点击 <kbd>Create interface</kbd>：</p>
+<p>  Device 选择 br-lan 网桥也行，但网桥上只附加了一个 eth0，就没有使用的必要了，直接用 eth0 就行，br-lan 后面可以直接删了。<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214928-6h67ux3.png" alt="image"><br> 在新弹出的窗口中，点击 <kbd>Save</kbd>：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214543-mu1mmpq.png" alt="image"></p>
+</li>
+<li><p>开启无线网络，创建无线局域网。</p>
+<p> 点击 lan 接口的 <kbd>Edit</kbd> 按钮，修改其配置：</p>
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326215639-zem4of6.png" alt="image"></p>
+<p> 如下图所示，将 Device 改成 <kbd>Wireless Network: Master &quot;OpenWrt&quot; (lan)</kbd>，Device 展示的名称和选项列表中的名称不一样，这个不用管。IPv4 address 改成 192.168.110.1。然后点击  <kbd>Save</kbd> 保存。</p>
+ <p class="notice-warn">如果你上级路由器的网段不是 192.168.1.0/24，这里 IPv4 address 其实可以不改，我这里之所以改成 192.168.110.1 是避免上级路由器网段冲突。如果你的上级路由器网段刚好也是这个，你可以去买彩票了 😃。</p>
+
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327212906-2rovyqk.png" alt="image"></p>
+<p> 然后我们去到 Network -&gt; Wireless ，点击 <kbd>Edit</kbd> 按钮配置一下无线网络：</p>
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326215538-hwck292.png" alt="image"></p>
+<p> 如下图所示，把 Channel 改成 44（最开始我用的是 auto，发现 switch 死活连不上，最后按照网上的方法改成 44 就好了），加密方式我选择的是 <kbd>WPA-PSK/WPA2-PSK Mixed Mode</kbd>，兼容性好一点。 Key 自己看着填就行。最后点击 <kbd>Save</kbd>。</p>
+ <p class="notice-warn">不要在这个配置页面点击 <kbd>Enable</kbd> ，<kbd>Enable</kbd> 不仅会开启无线网络，还是把之前所有的更改自动应用了，这可能会导致无法再连接上路由器。</p>
+
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175237-uznxcji.png" alt="image"></p>
+<p> 退出配置后，回到上级界面，点击 <kbd>Enable</kbd>：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326220445-i2vek52.png" alt="image"></p>
+<p> 这一步会不仅会激活无线网卡并开启其无线 AP 功能，还有将之前所有的配置都应用。页面上会显示 Applying configuration changes 的 90s 倒计时，你需要在 90s 之内连接到 OpenWrt ，否则配置就会回滚。</p>
+<p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326220558-odd0f0m.png" alt="image"></p>
+<p> 找到名为 OpenWrt 的无线网络，连接成功以后页面会自动刷新，配置应用成功。现在可以断开树莓派和电脑的连接，把树莓派连到路由器的 lan 口上。不出意外的话，就能愉快地上网了。</p>
+</li>
+</ol>
+<h1 id="安装-OpenClash"><a href="#安装-OpenClash" class="headerlink" title="安装 OpenClash"></a>安装 OpenClash</h1><p>软路由配置好了，接下来可以装代理软件了，我选择的是 OpenClash，原因也是一样，可玩性还行，并且有一定的用户量。就是配置稍微麻烦点。</p>
+<h2 id="更换-OpenWrt-软件源"><a href="#更换-OpenWrt-软件源" class="headerlink" title="更换 OpenWrt 软件源"></a>更换 OpenWrt 软件源</h2><p>在搭 OpenClash 之前我们需要更换一下 OpenWrt 的软件源，否则软件包的下载可能会很慢。去到 System -&gt; Software，点击 <kbd>Configure opkg...</kbd>，如下图所示：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326232628-2vbn56z.png" alt="image"><br><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175032-uhrt175.png" alt="image"></p>
+<p>然后把下面的文本复制到红框中，取代官方的源，点击 <kbd>Save</kbd>。我这里用的是清华的源，速度还可以。</p>
+ <p class="notice-warn">确认一下版本和 CPU 架构是否能和你的设备对上，否则需要修改</p>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">src/gz openwrt_core https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/targets/bcm27xx/bcm2710/packages</span><br><span class="line">src/gz openwrt_base https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/base</span><br><span class="line">src/gz openwrt_luci https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/luci</span><br><span class="line">src/gz openwrt_packages https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/packages</span><br><span class="line">src/gz openwrt_routing https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/routing</span><br><span class="line">src/gz openwrt_telephony https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/telephony</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装-OpenClash-1"><a href="#安装-OpenClash-1" class="headerlink" title="安装 OpenClash"></a>安装 OpenClash</h2><p>因为 OpenWrt 软件仓库里并没有提供 OpenClash，我们需要去 <a href="https://github.com/vernesong/OpenClash/releases">OpenClash Github Release</a> 页下载最新的 ipk 包：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327154738-dmo7m40.png" alt="image"></p>
+<p>然后按照 Release 页的说明，先通过 ssh 登录软路由（密码是你一开始设置的路由器管理密码）：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">➜  ssh root@192.168.1.1</span><br></pre></td></tr></table></figure>
+
+<p>再执行 <code>opkg update</code> 命令以获取最新的软件包列表：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">root@OpenWrt:~<span class="comment"># opkg update</span></span><br></pre></td></tr></table></figure>
+
+<p>接着安装 OpenClash 依赖，根据所使用的防火墙，选择不同的依赖，我用的是 nftables：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">root@OpenWrt:~<span class="comment"># opkg install coreutils-nohup bash dnsmasq-full curl ca-certificates ipset ip-full libcap libcap-bin ruby ruby-yaml kmod-tun kmod-inet-diag unzip kmod-nft-tproxy luci-compat luci luci-base</span></span><br></pre></td></tr></table></figure>
+
+<p>不出意外的话，两三分钟的时间就装好了，你可以先去撒泡尿，喝口水。</p>
+<p>依赖安装好后，就可以安装 OpenClash 了。去到 System -&gt; Software，点击 <kbd>Upload Package...</kbd>：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327000024-x2yn023.png" alt="image"></p>
+<p>点击<kbd>Browse...</kbd> 选择之前下载的 ipk 包，点击 <kbd>Upload</kbd>，然后点击 <kbd>Install</kbd>：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327174856-8qyj9ua.png" alt="image"></p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327000414-devs5oj.png" alt="image"></p>
+<p>这个时候可能会失败：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327001159-g637mgk.png" alt="image"></p>
+<p>看错误信息貌似是 dnsmasq-full 和已经安装的 dnsmasq 有冲突，看名字 dnsmasq-full 应该是比 dnsmasq 功能更全面的包，所以我们可以把 dnsmasq 卸载了。我们在 <kbd>Installed</kbd> 标签页筛出这个包来，点击 <kbd>Remove</kbd>。（直接在 ssh 里执行 <code>opkg remove dnsmasq</code> 也行）</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175721-f2e296c.png" alt="image"></p>
+<p>再次安装 OpenClash ipk 包，不出意外的话就装好了。可能会弹出 XHR 错误，忽略它。重启路由器，会发现顶部菜单栏多出了一个 <kbd>Service</kbd>，OpenClash 入口就在这个菜单下。点击进到 OpenClash 页，这时候 OpenClash 会提示你安装内核，点击 <kbd>Install</kbd> 进行安装。然后会自动跳转到日志页展示内核的安装日志，我这里的日志显示是安装成功了，如果你安装失败了，就得手动下载内核放到指定目录，可以去网上搜一下，很简单。</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327002040-uww3k9k.png" alt="image"></p>
+<h2 id="编辑-OpenClash-配置"><a href="#编辑-OpenClash-配置" class="headerlink" title="编辑 OpenClash 配置"></a>编辑 OpenClash 配置</h2><p>回到 OpenClash，切换到 <kbd>Config Manage</kbd> 选项卡，滑到下面的 <strong>Config File Edit</strong> 编辑你的配置。左边是编辑区，右边的是运行时配置预览区。如果你手里已经有配置文件，只需要把它粘贴到左边就行了：</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/iShot_2024-03-27_17.44.52-20240327174525-vnc67e7.png" alt="iShot_2024-03-27_17.44.52"></p>
+<p>这里附上一个我自用的模板，有两个留空的 SS 节点，替换一下就行：</p>
+<p><a href="https://cloud.189.cn/t/RnyYvymuQzYz">https://cloud.189.cn/t/RnyYvymuQzYz</a>（访问码：7iv6）</p>
+<p>编辑完成后，点击下面的 <kbd>Apply Settings</kbd> ，这时候 OpenClash 会重启，重启完之后，不出意外的话，这时候再让你的 switch 连上 OpenWrt，下载速度应该快到飞起。当然，前提是你的线路本身足够快 : ) 。</p>
+<p>现在 OpenWrt 和 OpenClash 都安装好了，双喜临门。OpenWrt 还有很多可以折腾的地方，可以换语言，换主题，装插件。这个我就不再细说了，大家可以去网上搜索教程。我反正是折腾了一圈，最后还用回了官方的主题。还是官方主题用起来顺手，特别是顶部菜单的设计，鼠标悬浮就能展开二级菜单，有些主题菜单在侧边栏，需要点击一级菜单才能展开二级菜单，要是来回切换一级菜单的话，就有点麻烦。</p>
+<p>如果你还是想继续折腾，折腾之前不妨先接着往下看。</p>
+<h1 id="扩容和备份"><a href="#扩容和备份" class="headerlink" title="扩容和备份"></a>扩容和备份</h1><h2 id="扩容"><a href="#扩容" class="headerlink" title="扩容"></a>扩容</h2><p>不管你的 SD 卡有多大，烧完 OpenWrt 后，rootfs 分区也只剩下几十 M 的空间，折腾的时候极有可能会遇到磁盘空间不足的情况。因此我们先对 OpenWrt 做一下扩容，先把它扩到 1G。</p>
+<p class="notice-info">当然，你也可以扩容到更大，但因为后面要对分区进行备份，分区太大备份要花较长时间，建议折腾完后再扩容到最大。</p>
+
+<p>我用的分区工具是 Linux 平台的 Gparted，Windows 的傲梅分区助手应该也行。打开 Gparted，右上角选择 SD 卡，然后右键 rootfs 分区调出上下文菜单，点击 <kbd>调整大小/移动</kbd>。</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327162940-5i85bfe.png" alt="image"></p>
+<p>输入分区的新大小（也可以用上面的滑块来调整），然后点击 <kbd>调整大小/移动</kbd>，最后点击  <strong><kbd>✔</kbd></strong> 提交。</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327163736-1p10m54.png" alt="image"></p>
+<p>OK，分区现在有 1G 了，你可以尽情去折腾了。</p>
+<h2 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h2><p>折腾的过程中软路由可能会变砖，因此我们要养成一个好习惯，经常做下备份，留个检查点，不至于前功尽弃。其实 OpenWrt 自己就有备份的功能，但它备份的是 &#x2F;etc 目录，假如某个软件的配置文件存在其他地方，恢复的时候就可能出现一些奇奇怪怪的问题。更稳妥的备份方法当然是把分区给备份下来，扩容后分区的总大小也只有 1G 左右，完整备份也不费事。我这里用来备份的工具是 Windows 平台的 Win32DiskImager，Mac 平台和 Linux 平台应该也有类似的工具，大家可以去找一下。</p>
+<p>我们先创建一个名为 openwrt_backup.img 的空文件，然后打开 Win32DiskImager，映像文件选择我们刚创建的 openwrt_backup.img，设备选择 SD 卡对应的盘符，勾选 <kbd>仅读取已分配分区</kbd>，然后点击<kbd>读取</kbd>，接着 SD 卡中的内容就会读入到 openwrt_back.img 中了。备份过程中可能会出现 “剩余空间错误” 的弹窗，直接忽略。</p>
+<p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327174028-zp05qsw.png" alt="image"></p>
+<p>恢复的方法和前面烧录镜像的方法一样。</p>
+<p class="notice-info"> 其实 Win32DiskImager 也能实现烧录，步骤和上面一样，只是把 <kbd>读取</kbd> 改成 <kbd>写入</kbd>。<p>
+
+<h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p>OK，分享到此结束。祝大家玩得开心！</p>
+<p>‍</p>
+]]></content>
+      <tags>
+        <tag>折腾</tag>
       </tags>
   </entry>
 </search>

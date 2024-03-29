@@ -1251,7 +1251,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #a7ffff;
+  background: #ffbf32;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -1395,7 +1395,7 @@ pre .javascript .function {
   white-space: nowrap;
 }
 .post-toc .nav .nav-child {
-  display: none;
+  display: block;
 }
 .post-toc .nav .active > .nav-child {
   display: block;
@@ -2684,4 +2684,73 @@ ul.breadcrumb li + li:last-child {
 }
 .back-to-top.back-to-top-on {
   margin-top: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  .post-body a:not(.btn) {
+    --link-color: #3a86dd;
+    --link-hover-color: #76a9dc;
+    border-bottom: none;
+  }
+  .post-body img {
+    margin-bottom: 0px;
+  }
+  .utterances {
+    margin-top: 16px;
+  }
+  .sidebar a {
+    border-bottom: none;
+  }
+  .post-copyright {
+    border-radius: 0.5em;
+    background-color: #302e2e;
+    border-left-color: #9f3232;
+  }
+  .post-nav {
+    border-color: #808080;
+  }
+  .btn-primary {
+    background: rgba(254,43,42,0.412);
+    border-color: #e65a5a;
+    color: #e2e2e2;
+  }
+  kbd {
+    font-size: 0.5em;
+    opacity: 0.8;
+    background-color: #333;
+    background-image: none;
+    border-radius: 0.6em;
+    box-shadow: 0.1em 0.1em 0.2em rgba(0,0,0,0.1);
+    font-family: inherit;
+    padding: 0em 0.5em;
+    border: 1px solid #666;
+    white-space: nowrap;
+    color: inherit;
+  }
+  kbd:active {
+    position: relative;
+    top: 1px;
+    box-shadow: none;
+  }
+  .notice-info {
+    background-image: url("../images/star.svg");
+    background-position: 1.5em 0.8em;
+    background-size: 1.2rem;
+    background-repeat: no-repeat;
+    border-radius: 0.5em;
+    padding: 0.5em 1em;
+    color: #709cae;
+    padding-left: 4em;
+    background-color: rgba(19,36,53,0.749);
+  }
+  .notice-warn {
+    background-image: url("../images/error.svg");
+    background-position: 1.5em 0.8em;
+    background-size: 1.2rem;
+    background-repeat: no-repeat;
+    border-radius: 0.5em;
+    padding: 0.5em 1em;
+    color: #ae3e3d;
+    padding-left: 4em;
+    background-color: #3f2510;
+  }
 }

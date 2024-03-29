@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 6.3.0">
+<meta name="generator" content="Hexo 7.1.1">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -200,6 +200,93 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2024/03/29/2024-03-29-install-openwrt-with-openclash-on-raspi-3bplus/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="Chance Li">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/03/29/2024-03-29-install-openwrt-with-openclash-on-raspi-3bplus/" class="post-title-link" itemprop="url">树莓派 3B+ 刷 OpenWrt 并安装 OpenClash</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2024-03-29 00:00:00 / 修改时间：17:38:05" itemprop="dateCreated datePublished" datetime="2024-03-29T00:00:00+00:00">2024-03-29</time>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>心血来潮打开了尘封已久的 switch，发现软件更新实在太慢，上网找了几种常用的加速方法，各有优劣，但最终都被 pass：</p>
+<ul>
+<li>更改 DNS 服务器，缺点是网速提升有限，大概在 34 Mbps 左右，大概提升 1 ~ 2 Mbps 左右 ，相对 switch 几百 M 几个 G 的游戏来说，依然是龟速。唯一的好处是不用借助其他设备。</li>
+<li>买加速器。对于喜欢折腾的人来说，花钱永远是最后的选择，况且我自己有梯子，干嘛花这个冤枉钱。</li>
+<li>把电脑上的代理通过局域网分享给 switch，然而发现网速的提升依然不高，虽然后来发现是 USB 无线网卡的问题，但不管怎样，电脑一直保持开机状态，就是为了给 swtich 做代理，总感觉不太优雅。</li>
+</ul>
+<p>我心想要是能在路由器上跑代理就好了，不过现在的路由器不支持装插件，而且是公用的，不太适合去折腾。这时候突然想起了我还有个同样在吃灰的树莓派，如果能把这台树莓派变成一台软路由，再在这个软路由上跑代理，岂不美哉？于是上网搜索 “如何在树莓派上装软路由”，不出所料，搜出了一堆教程。一番学习后，最后选择了 OpenWrt 这款软路由固件，一是因为它插件比较多，有更多可玩性，二是用户量大，教程多，遇到问题容易找到解决方案。</p>
+<p>话不多说，开干。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/03/29/2024-03-29-install-openwrt-with-openclash-on-raspi-3bplus/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2023/09/29/2023-09-29-reading-notes-%209787121085116-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -231,7 +318,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -318,7 +405,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -405,7 +492,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -434,7 +521,9 @@
 
       
           <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>这两天为了破解到期魔百盒看了好多帖子，最终成功破解了。为了让大家少走弯路，只看一篇帖子就能完成破解，我汇总了一下这两天学习到的东西，并分享下我的破解经历，希望对大家有所帮助。</p>
-<h1 id="盒子型号"><a href="#盒子型号" class="headerlink" title="盒子型号"></a>盒子型号</h1><p>首先说下盒子型号是 CM201-2 长虹代工 (CH)，具体信息见图片：<br><img src="/img/in-post/cm201_crack/box-info.jpg" alt="盒子信息"><br>板子上的硬件信息是：CPU 型号是 HI3890MV300，闪存是 emmc。机型编码和牌照方不同应该没太大关系，因为网上那些教程和我的都不一样，但我也刷机成功了。大家可以先尝试一下，如果不行再说。</p>
+<h1 id="盒子型号"><a href="#盒子型号" class="headerlink" title="盒子型号"></a>盒子型号</h1><p>首先说下盒子型号是 CM201-2 长虹代工 (CH)，具体信息见图片：</p>
+<p><img src="/img/in-post/cm201_crack/box-info.jpg" alt="盒子信息"></p>
+<p>板子上的硬件信息是：CPU 型号是 HI3890MV300，闪存是 emmc。机型编码和牌照方不同应该没太大关系，因为网上那些教程和我的都不一样，但我也刷机成功了。大家可以先尝试一下，如果不行再说。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2022/11/04/2022-11-04-CM201-crack/#more" rel="contents">
@@ -492,7 +581,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -579,7 +668,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -588,7 +677,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.4k</span>
+              <span>2.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -670,7 +759,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -679,7 +768,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3.4k</span>
+              <span>3.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -757,7 +846,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -843,7 +932,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -929,7 +1018,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           <br>
@@ -961,92 +1050,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2017/08/29/2017-08-29-java-annotation/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2017/07/20/2017-7-20-android-open-source-library-glide/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
-      <meta itemprop="name" content="Chance Li">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="李文坤的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2017/07/20/2017-7-20-android-open-source-library-glide/" class="post-title-link" itemprop="url">Glide 源码探究</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2017-07-20 00:00:00" itemprop="dateCreated datePublished" datetime="2017-07-20T00:00:00+00:00">2017-07-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
-              </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>50k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>46 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Glide-源码探究"><a href="#Glide-源码探究" class="headerlink" title="Glide 源码探究"></a>Glide 源码探究</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Glide 是安卓平台上媒体管理和图片加载框架，它内部封装了媒体解码工具、内存和磁盘缓存以及资源池等，并向用户暴露简单易用的接口。我们可以用它来获取、解码、并展示视频、图片和 GIF 动画。如果大家有用过 Picasso 应该知道，Glide 的使用方式和 Picasso 非常相似，甚至很多 API 的名称都一样。但是相比 Picasso，Glide 的功能更加强大，内部实现也更加复杂。接下来我们就从源码的角度来探究一下 Glide 的内部原理。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2017/07/20/2017-7-20-android-open-source-library-glide/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1099,13 +1102,6 @@
   }
 </script>
 
-          <script src="https://utteranc.es/client.js"
-              repo="Lwenkun/lwenkun.github.io"
-              issue-term="pathname"
-              theme="github-dark"
-              crossorigin="anonymous"
-              async>
-          </script>
         </div>
           
   
@@ -1144,7 +1140,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1220,13 +1216,13 @@
       <i class="fa fa-area-chart"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">221k</span>
+    <span title="站点总字数">227k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">3:20</span>
+    <span title="站点阅读时长">3:26</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
   </div>

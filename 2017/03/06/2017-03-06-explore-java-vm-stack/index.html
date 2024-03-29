@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 6.3.0">
+<meta name="generator" content="Hexo 7.1.1">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -30,7 +30,7 @@
 <meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_java_vm_stack/vm_stack.png">
 <meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_java_vm_stack/java_instruction_astore.png">
 <meta property="article:published_time" content="2017-03-06T00:00:00.000Z">
-<meta property="article:modified_time" content="2024-03-12T02:43:30.590Z">
+<meta property="article:modified_time" content="2024-03-29T17:38:05.440Z">
 <meta property="article:author" content="Chance Li">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="JVM">
@@ -239,7 +239,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-12 02:43:30" itemprop="dateModified" datetime="2024-03-12T02:43:30+00:00">2024-03-12</time>
+                <time title="修改时间：2024-03-29 17:38:05" itemprop="dateModified" datetime="2024-03-29T17:38:05+00:00">2024-03-29</time>
               </span>
 
           
@@ -311,7 +311,7 @@
 <li>Notes 是注意事项：实现 Java 中的 <code>finally</code> 子句时，<code>astore</code> 指令使用的操作数类型是一个 returnAddress，与 <code>astore</code> 对应的 <code>aload</code> 指令（将局部变量表的的引用值压栈）不能将类型为 returnAddress 类型的值加载到操作数栈，而只能是 reference 类型。<code>aload</code> 和 <code>astore</code> 这种不对称的设计是有意而为之的。<code>astore</code> 指令可以和 <code>wide</code> 指令配合使用以用无符号双字节类型的索引来获取局部变量表中的变量。</li>
 </ul>
 <h3 id="局部变量表的第一个变量"><a href="#局部变量表的第一个变量" class="headerlink" title="局部变量表的第一个变量"></a>局部变量表的第一个变量</h3><p>从 Java 语言的层面讲，静态方法和实例方法的本质区别在于是否是对象所共享的。而从 JVM 的角度来看，方法（无论静态方法还是实例方法）其实都是对象共享的，实例变量才是对象私有的。对 JVM 而言，静态方法和实例方法的本质区别在于是否需要和具体对象关联：静态方法可以通过类名来调用，它不需要和具体对象关联；而实例方法必须通过对象来进行调用，它需要和具体对象关联。那么，实例方法和具体对象是如何产生关联的呢？其实很简单，编译器在编译时会将方法接收者作为一个隐含参数传入该实例方法，这个参数在方法中有一个很熟悉的名字，叫做 “this”。之所以实例方法可以访问该类的实例变量和其它实例方法，正是因为它有 “this” 这个隐含参数。举个例子，类 <code>A</code> 中的某个方法 <code>b</code> 需要访问实例变量 <code>x</code>，由于实例变量是对象私有的，如果 <code>b</code> 是静态方法，由于它没有具体对象的引用，它并不知道该访问哪个对象的实例变量 <code>x</code>；如果 <code>b</code> 是实例方法，通过隐含参数 <code>this</code> 就能确定要访问的实例变量是 <code>this.x</code>。那么，为什么静态方法也不能调用该类的实例方法呢？本质原因也是没有 <code>this</code> 引用。因为调用实例方法的前提是要传入一个隐含参数，实例方法本来就有这个引用，所以能够把它作为隐含参数传入另一个实例方法；静态方法没有 <code>this</code> 引用，无法给实例方法提供指向方法接收者的隐含参数，因此不能调用实例方法。</p>
-<p>如果看懂了上面说的那些，第三个问题也就迎刃而解了。因为我们定义的方法是 <code>void foo()</code>，它是实例方法，因此会有一个指向具体对象的隐含参数 <code>this</code>，<code>this</code> 就存放在局部变量表的第一个位置，即存放在索引为 0 的 slot 中，又由于它的作用域从方法开始一直到方法结束，因此它在局部变量表中的位置不会被其他变量覆盖，从而使得我们在方法中定义的变量只能放在局部变量表后面的位置中。需要注意的是，如果方法有参数（非隐含参数），那么参数会按顺序紧接着 <code>this</code> 存放在局部变量表中，由于参数作用域也是整个方法体，所以方法中定义的局部变量就只能放在参数后面了。总的来说局部变量表中变量的存放顺序为： <code>this</code>（如果是实例方法）=&gt; 参数（如果有的话）=&gt; 定义的局部变量（如果有的话）。</p>
+<p>如果看懂了上面说的那些，第三个问题也就迎刃而解了。因为我们定义的方法是 <code>void foo()</code>，它是实例方法，因此会有一个指向具体对象的隐含参数 <code>this</code>，<code>this</code> 就存放在局部变量表的第一个位置，即存放在索引为 0 的 slot 中，又由于它的作用域从方法开始一直到方法结束，因此它在局部变量表中的位置不会被其他变量覆盖，从而使得我们在方法中定义的变量只能放在局部变量表后面的位置中。需要注意的是，如果方法有参数（非隐含参数），那么参数会按顺序紧接着 <code>this</code> 存放在局部变量表中，由于参数作用域也是整个方法体，所以方法中定义的局部变量就只能放在参数后面了。总的来说局部变量表中变量的存放顺序为： <code>this</code>（如果是实例方法）&#x3D;&gt; 参数（如果有的话）&#x3D;&gt; 定义的局部变量（如果有的话）。</p>
 <h2 id="感谢阅读"><a href="#感谢阅读" class="headerlink" title="感谢阅读"></a>感谢阅读</h2><p>关于虚拟机栈就讲这么多了，Java 虚拟机是一个完整的知识体系，仅仅了解虚拟机栈是不够的，这里没有细讲的关于虚拟机的其它知识，如内存模型、运行时常量池、类加载模型等，还需读者自己学习掌握。这篇文章权起激发大家的学习 JVM 兴趣的作用，同时也作为个人的学习记录和知识总结。之后可能还会写些 JVM 其它方面的总结性文章和大家分享。由于个人水平和理解有限，如果有不对的地方还请大家不吝赐教，感谢阅读！</p>
 <p><strong>参考书籍</strong> :《深入理解 Java 虚拟机》周志明 著<br><strong>Java 虚拟机规范</strong> : <a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jvms/se8/html/index.html">The Java® Virtual Machine Specification</a></p>
 
@@ -369,6 +369,7 @@
 
           </div>
           
+    <script src="https://utteranc.es/client.js"                                     repo="Lwenkun/lwenkun.github.io"                                     issue-term="pathname"                                     theme="github-dark"                                     crossorigin="anonymous"                                     async>                                 </script>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -392,13 +393,6 @@
   }
 </script>
 
-          <script src="https://utteranc.es/client.js"
-              repo="Lwenkun/lwenkun.github.io"
-              issue-term="pathname"
-              theme="github-dark"
-              crossorigin="anonymous"
-              async>
-          </script>
         </div>
           
   
@@ -438,7 +432,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -514,13 +508,13 @@
       <i class="fa fa-area-chart"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">221k</span>
+    <span title="站点总字数">227k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">3:20</span>
+    <span title="站点阅读时长">3:26</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
