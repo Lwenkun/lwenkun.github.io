@@ -27,13 +27,6 @@
             {% block content %}{% endblock %}
           </div>
           {% include '_partials/comments.swig' %}
-          <script src="https://utteranc.es/client.js"
-              repo="Lwenkun/lwenkun.github.io"
-              issue-term="pathname"
-              theme="github-dark"
-              crossorigin="anonymous"
-              async>
-          </script>
         </div>
         {%- if theme.sidebar.display !== 'remove' %}
           {% block sidebar %}{% endblock %}

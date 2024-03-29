@@ -1,0 +1,90 @@
+$link-color-dark              = #3a86dd;
+$link-hover-color-dark        = #76a9dc;
+
+if (hexo-config('darkmode')) {
+  @media (prefers-color-scheme: dark) {
+
+   .post-body {
+     a:not(.btn) {
+      --link-color: $link-color-dark;
+      --link-hover-color: $link-hover-color-dark;
+      border-bottom: none;
+     }
+
+     img {
+      margin-bottom: 0px;
+     }
+    }
+
+    .utterances {
+      margin-top: 16px;
+    }
+
+    .sidebar a {
+      border-bottom: none;
+    }
+
+    .post-copyright {
+      border-radius: 0.5em;
+      background-color: #302e2e;
+      border-left-color: #9f3232;
+    }
+
+    .post-nav {
+      border-color: gray;
+    }
+
+    .btn-primary {
+    background: #fe2b2a69;
+    border-color: #e65a5a;
+    color: #e2e2e2;
+}
+
+   kbd {
+     font-size: 0.5em;
+     opacity : 0.8;
+     background-color: #333;
+     background-image: none;
+     border-radius: .6em;
+     box-shadow: .1em .1em .2em rgba(0, 0, 0, .1);
+     font-family: inherit;
+     padding: 0em .5em;
+     border: 1px solid #666;
+     white-space: nowrap;
+     color: inherit;
+   }
+   
+   /* 当按键被按下时应用的样式 */
+   kbd:active {
+     position: relative;
+     top: 1px;
+     box-shadow: none;
+   }
+   
+   .notice-info {
+       background-image: url("../images/star.svg");
+       background-position: 1.5em 0.8em;
+       background-size: 1.2rem;
+       background-repeat: no-repeat;
+       border-radius: 0.5em;
+       padding: 0.5em 1em;
+       color: #709cae;
+       padding-left: 4em;
+       background-color: #132435bf;
+   }
+   
+   
+   .notice-warn {
+       background-image: url("../images/error.svg");
+       background-position: 1.5em 0.8em;
+       background-size: 1.2rem;
+       background-repeat: no-repeat;
+       border-radius: 0.5em;
+       padding: 0.5em 1em;
+       color: #ae3e3d;
+       padding-left: 4em;
+       background-color: #3f2510;
+   }
+  }
+}
+
