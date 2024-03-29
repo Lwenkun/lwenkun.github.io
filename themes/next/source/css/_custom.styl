@@ -1,90 +1,109 @@
+// 定义深色模式下链接颜色变量
 $link-color-dark              = #3a86dd;
 $link-hover-color-dark        = #76a9dc;
 
+// 如果启用 hexo-config 中的 darkmode 配置项
 if (hexo-config('darkmode')) {
+  // 在支持深色模式的设备上应用以下样式
   @media (prefers-color-scheme: dark) {
 
-   .post-body {
-     a:not(.btn) {
+    // 文章主体内链接样式
+    .post-body a:not(.btn) {
       --link-color: $link-color-dark;
       --link-hover-color: $link-hover-color-dark;
       border-bottom: none;
-     }
-
-     img {
-      margin-bottom: 0px;
-     }
     }
 
+    // 图片样式
+    .post-body img {
+      margin-bottom: 0px;
+      border-radius: .5rem;
+      box-shadow: 5px 0px 10px 0px rgba(0, 0, 0, 0.1),
+                  -5px 0px 10px 0px rgba(0, 0, 0, 0.1),
+                  0px 5px 10px 0px rgba(0, 0, 0, 0.1),
+                  0px -5px 10px 0px rgba(0, 0, 0, 0.1);
+    }
+
+    .post-body div.img-no-shadow img {
+      box-shadow: none;
+      border-radius: .5rem;
+    }
+
+    // Utterances 评论区间距
     .utterances {
       margin-top: 16px;
     }
 
+    // 侧边栏链接去除下划线
     .sidebar a {
       border-bottom: none;
     }
 
+    // 文章版权信息样式
     .post-copyright {
       border-radius: 0.5em;
       background-color: #302e2e;
       border-left-color: #9f3232;
     }
 
+    // 文章导航样式
     .post-nav {
       border-color: gray;
     }
 
+    // 主要按钮样式（btn-primary）
     .btn-primary {
-    background: #fe2b2a69;
-    border-color: #e65a5a;
-    color: #e2e2e2;
-}
+      background: #fe2b2a69;
+      border-color: #e65a5a;
+      color: #e2e2e2;
+    }
 
-   kbd {
-     font-size: 0.5em;
-     opacity : 0.8;
-     background-color: #333;
-     background-image: none;
-     border-radius: .6em;
-     box-shadow: .1em .1em .2em rgba(0, 0, 0, .1);
-     font-family: inherit;
-     padding: 0em .5em;
-     border: 1px solid #666;
-     white-space: nowrap;
-     color: inherit;
-   }
-   
-   /* 当按键被按下时应用的样式 */
-   kbd:active {
-     position: relative;
-     top: 1px;
-     box-shadow: none;
-   }
-   
-   .notice-info {
-       background-image: url("../images/star.svg");
-       background-position: 1.5em 0.8em;
-       background-size: 1.2rem;
-       background-repeat: no-repeat;
-       border-radius: 0.5em;
-       padding: 0.5em 1em;
-       color: #709cae;
-       padding-left: 4em;
-       background-color: #132435bf;
-   }
-   
-   
-   .notice-warn {
-       background-image: url("../images/error.svg");
-       background-position: 1.5em 0.8em;
-       background-size: 1.2rem;
-       background-repeat: no-repeat;
-       border-radius: 0.5em;
-       padding: 0.5em 1em;
-       color: #ae3e3d;
-       padding-left: 4em;
-       background-color: #3f2510;
-   }
+    // 键盘按键样式
+    kbd {
+      font-size: 0.5em;
+      opacity: 0.8;
+      background-color: #333;
+      background-image: none;
+      border-radius: .6em;
+      box-shadow: .1em .1em .2em rgba(0, 0, 0, .1);
+      font-family: inherit;
+      padding: 0em .5em;
+      border: 1px solid #666;
+      white-space: nowrap;
+      color: inherit;
+    }
+
+    // 按键被按下时的样式
+    kbd:active {
+      position: relative;
+      top: 1px;
+      box-shadow: none;
+    }
+
+    // 信息提示样式
+    .notice-info {
+      background-image: url("../images/star.svg");
+      background-position: 1.5em 0.8em;
+      background-size: 1.2rem;
+      background-repeat: no-repeat;
+      border-radius: 0.5em;
+      padding: 0.5em 1em;
+      color: #709cae;
+      padding-left: 4em;
+      background-color: #132435bf;
+    }
+
+    // 警告提示样式
+    .notice-warn {
+      background-image: url("../images/error.svg");
+      background-position: 1.5em 0.8em;
+      background-size: 1.2rem;
+      background-repeat: no-repeat;
+      border-radius: 0.5em;
+      padding: 0.5em 1em;
+      color: #ae3e3d;
+      padding-left: 4em; // 原始代码有误，已修正为 "padding-left: 4em;"
+      background-color: #3f2510;
+    }
   }
 }
-

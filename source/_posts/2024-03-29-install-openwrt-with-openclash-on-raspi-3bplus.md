@@ -9,6 +9,8 @@ tags:
     - 折腾
 ---
 
+<div class='img-no-shadow'>
+
 # 前言
 
 心血来潮打开了尘封已久的 switch，发现软件更新实在太慢，上网找了几种常用的加速方法，各有优劣，但最终都被 pass：
@@ -54,21 +56,29 @@ tags:
 1. 登录路由器管理后台
    
     OpenWrt 无线网卡默认是未启用状态，因此没法通过 WiFi 连接并登录路由器管理界面。我们把树莓派通过网线连接到电脑，然后去电脑的设置里查看有线网络的网关 IP，一般都是 192.168.1.1，在浏览器中输入这个 IP 就可以看到 OpenWrt 的管理界面了：
+
     ![image](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326194314-eajrdzi.png)
 
 2. 修改密码，添加 SSH 公钥
 
     我们还没有设置过密码，直接点击 Login 就行。登录之后会提示你设置路由器后台密码，点击 <kbd>Go to password configuration...</kbd>。你还可以添加电脑的 SSH 公钥，方便后续 SSH 登录。
+
     ![image](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326194753-8tm3r0q.png)
 
 3. 研究一下初始配置
 
     去到 Network -> Interface 界面，可以看到只有一个 lan 接口：
+
     ![image](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326200811-2btw7q2.png)
+
     点击编辑先研究下配置：
+
     ![image](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326201907-648ify0.png)
+
     可以看到这个接口 IP 地址是手动设置的，接口对应的设备是 br-lan 网桥，在这个接口上跑了一个 DHCP 服务器。点击 <kbd>Dismiss</kbd> ，切换到 <kbd>Devices</kbd> 选项卡，研究下 br-lan 网桥的配置。可以看到 br-lan上附加了一个 eth0，eth0 正是我们的有线网卡。这就是为什么电脑连接树莓派后，不需要任何配置就能获取 IP 和网关，访问路由器后台。
+
     ![image](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326202341-cq4z8dc.png)
+
     然而现在也只能访问路由器后台，没法联网。为了能联网，我们需要完成以下配置：
     * 创建 wan 接口，并让其作为 DCHP 客户端去连接上层路由器；
     * 修改现在的 lan 接口，让其底层的设备关联的是无线网卡而非现在的有线网卡；
@@ -79,12 +89,17 @@ tags:
 4. 创建 wan 接口。
 
     在 Network -> Interface 页面，点击 <kbd>Add new interface...</kbd> ：
+
     ![image](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214821-aaka330.png)
+
     填入下图所示配置，然后点击 <kbd>Create interface</kbd>：
 
      Device 选择 br-lan 网桥也行，但网桥上只附加了一个 eth0，就没有使用的必要了，直接用 eth0 就行，br-lan 后面可以直接删了。
+
     ![image](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214928-6h67ux3.png)
+
     在新弹出的窗口中，点击 <kbd>Save</kbd>：
+    
     ![image](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326214543-mu1mmpq.png)
 
 5. 开启无线网络，创建无线局域网。
@@ -240,4 +255,4 @@ OK，分区现在有 1G 了，你可以尽情去折腾了。
 
 OK，分享到此结束。祝大家玩得开心！
 
-‍
+‍</div>
