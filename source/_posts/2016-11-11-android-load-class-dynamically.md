@@ -4,7 +4,7 @@ title:      "安卓动态加载入门"
 subtitle:   "安卓动态加载"
 date:       2016-11-11
 catalog:  true
-author:     "lwenkun"
+author:     "chance"
 header-img: "img/post-bg-android-load-class-dynamically.jpg"
 tags:
     - Android

@@ -4,7 +4,7 @@ title:      "Android 事件分发规律总结"
 subtitle:   "Android 事件分发规律总结"
 date:       2017-09-05
 catalog:  true
-author:     "lwenkun"
+author:     "chance"
 header-img: "img/post-bg-android-hot-fix.jpg"
 tags:
     - Android

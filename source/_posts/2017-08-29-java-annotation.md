@@ -4,7 +4,7 @@ title:      "Java 注解学习总结"
 subtitle:   "Java 注解学习总结"
 date:       2017-08-29
 catalog:  true
-author:     "lwenkun"
+author:     "chance"
 header-img: "img/post-bg-operating-system-conclusion.jpg"
 tags:
     - Java
