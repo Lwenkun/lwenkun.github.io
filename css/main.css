@@ -1251,7 +1251,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #4eff25;
+  background: #8bf420;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -2739,24 +2739,26 @@ ul.breadcrumb li + li:last-child {
   }
   .notice-info {
     background-image: url("../images/star.svg");
+    color: #709cae;
+    background-color: rgba(19,36,53,0.749);
     background-position: 1.5em 0.8em;
     background-size: 1.2rem;
     background-repeat: no-repeat;
     border-radius: 0.5em;
     padding: 0.5em 1em;
-    color: #709cae;
     padding-left: 4em;
-    background-color: rgba(19,36,53,0.749);
+    font-size: 0.9em;
   }
   .notice-warn {
     background-image: url("../images/error.svg");
+    color: #ae3e3d;
+    background-color: #3f2510;
     background-position: 1.5em 0.8em;
     background-size: 1.2rem;
     background-repeat: no-repeat;
     border-radius: 0.5em;
     padding: 0.5em 1em;
-    color: #ae3e3d;
     padding-left: 4em;
-    background-color: #3f2510;
+    font-size: 0.9em;
   }
 }
