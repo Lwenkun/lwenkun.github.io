@@ -1251,7 +1251,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #8bf420;
+  background: #ff8a91;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -2751,7 +2751,7 @@ ul.breadcrumb li + li:last-child {
   }
   .notice-warn {
     background-image: url("../images/error.svg");
-    color: #ae3e3d;
+    color: #cb5c5b;
     background-color: #3f2510;
     background-position: 1.5em 0.8em;
     background-size: 1.2rem;
