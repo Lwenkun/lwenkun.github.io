@@ -80,30 +80,30 @@ if (hexo-config('darkmode')) {
       box-shadow: none;
     }
 
-    // 信息提示样式
-    .notice-info {
-      background-image: url("../images/star.svg");
+    notice() {
       background-position: 1.5em 0.8em;
       background-size: 1.2rem;
       background-repeat: no-repeat;
       border-radius: 0.5em;
       padding: 0.5em 1em;
-      color: #709cae;
       padding-left: 4em;
+      font-size: .9em
+    }
+
+    // 信息提示样式
+    .notice-info {
+      background-image: url("../images/star.svg");
+      color: #709cae;
       background-color: #132435bf;
+      notice()
     }
 
     // 警告提示样式
     .notice-warn {
       background-image: url("../images/error.svg");
-      background-position: 1.5em 0.8em;
-      background-size: 1.2rem;
-      background-repeat: no-repeat;
-      border-radius: 0.5em;
-      padding: 0.5em 1em;
       color: #ae3e3d;
-      padding-left: 4em; // 原始代码有误，已修正为 "padding-left: 4em;"
       background-color: #3f2510;
+      notice()
     }
   }
 }
