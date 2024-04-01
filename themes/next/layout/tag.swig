@@ -15,8 +15,8 @@
     <div class="posts-collapse">
       <div class="collection-title">
         <h2 class="collection-header">
+         <i class="fa fa-tag">&nbsp;&nbsp;</i>
           {{- page.tag }}
-          <small>{{ __('title.tag') }}</small>
         </h2>
       </div>
 

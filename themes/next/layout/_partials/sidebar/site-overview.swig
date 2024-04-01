@@ -87,7 +87,7 @@
       {%- if theme.social_icons.enable and theme.social_icons.icons_only %}
         {%- set sidebarText = '' %}
       {%- else %}
-        {%- set sidebarText = name %}
+        {%- set sidebarText = ' '+ name %}
       {%- endif %}
         {{ next_url(sidebarURL, sidebarIcon + sidebarText, {title: name + ' → ' + sidebarURL}) }}
       </span>

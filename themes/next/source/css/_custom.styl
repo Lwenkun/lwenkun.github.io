@@ -1,27 +1,90 @@
-// 定义深色模式下链接颜色变量
-$link-color-dark              = #3a86dd;
-$link-hover-color-dark        = #76a9dc;
-
 // 如果启用 hexo-config 中的 darkmode 配置项
 if (hexo-config('darkmode')) {
   // 在支持深色模式的设备上应用以下样式
   @media (prefers-color-scheme: dark) {
 
     // 文章主体内链接样式
-    .post-body a:not(.btn) {
-      --link-color: $link-color-dark;
-      --link-hover-color: $link-hover-color-dark;
+    .post-body {
+      a:not(.btn) {
+        --link-color: #3a86dd;
+        --link-hover-color: #76a9dc;
+        border-bottom: none;
+      }
+
+      .highlight-container {
+        box-shadow: 0 0px 10px 0 rgba(0,0,0,0.5);
+      }
+    }
+
+    .menu .menu-item .badge {
+      background-color: #575a5b;
+      color: #a3a3a3;
+      padding: 3px 5px;
+    }
+
+    .pagination {
+      border-top: 1px solid #363636;
+      padding-top: 10px;
+
+      .page-number {
+        border-top: none;
+
+        &.current {
+          background: radial-gradient(circle at 50% 50%, #111, transparent 80%);
+        }
+      }
+
+      .extend {
+          border-top: none;
+        }
+    } 
+
+    .search-popup {
+      background: #232323;
+
+      .search-icon, .popup-btn-close {
+        color: #282828;
+      }
+
+      .search-header {
+        background: #9d9d9d;
+      }
+
+      .search-input-container {
+        display: flex;
+      }
+
+      p.search-result {
+        border-bottom: none;
+      }
+
+      #no-result {
+        color: #525252;
+      }
+    }
+
+    .tag-cloud a:hover {
+      color: $orange !important;
+    }
+
+    .posts-collapse .post-header {
       border-bottom: none;
+    }
+
+    .posts-collapse::before {
+      background-color: #808183;
+      margin-left: -1px;
+      width: 2px;
+    }
+
+    .content.tag .post-title-link:hover {
+      color: var(--link-hover-color);
     }
 
     // 图片样式
     .post-body img {
-      margin-bottom: 0px;
       border-radius: .5rem;
-      box-shadow: 5px 0px 10px 0px rgba(0, 0, 0, 0.1),
-                  -5px 0px 10px 0px rgba(0, 0, 0, 0.1),
-                  0px 5px 10px 0px rgba(0, 0, 0, 0.1),
-                  0px -5px 10px 0px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0px 10px 0 rgba(0,0,0,0.5);
     }
 
     .post-body div.img-no-shadow img {
@@ -29,6 +92,18 @@ if (hexo-config('darkmode')) {
       border-radius: .5rem;
     }
 
+    .copy-btn {
+      color: var(--text-color);
+    }
+
+    .post-eof {
+      background: linear-gradient(to right, #474747 30%, transparent 30%, transparent) left / 10px 100% repeat-x;
+      width: 100%;
+    }
+
+    .site-brand-container {
+      // background: #333333
+    }
     // Utterances 评论区间距
     .utterances {
       margin-top: 16px;
@@ -88,6 +163,10 @@ if (hexo-config('darkmode')) {
       padding: 0.5em 1em;
       padding-left: 4em;
       font-size: .9em
+    }
+
+    .post-body .image-caption, .post-body .figure .caption {
+      margin: -5px auto 25px;
     }
 
     // 信息提示样式
