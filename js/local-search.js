@@ -189,7 +189,7 @@ window.addEventListener('DOMContentLoaded', () => {
       });
     }
     if (keywords.length === 1 && keywords[0] === '') {
-      resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>';
+      resultContent.innerHTML = '<div id="no-result"><i class="fa fa-coffee fa-5x"></i></div>';
     } else if (resultItems.length === 0) {
       resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>';
     } else {
@@ -227,7 +227,7 @@ window.addEventListener('DOMContentLoaded', () => {
           return data;
         });
         // Remove loading animation
-        document.getElementById('no-result').innerHTML = '<i class="fa fa-search fa-5x"></i>';
+        document.getElementById('no-result').innerHTML = '<i class="fa fa-coffee fa-5x"></i>';
         inputEventFunction();
       });
   };

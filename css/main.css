@@ -1013,7 +1013,7 @@ pre .javascript .function {
 }
 @media (min-width: 1600px) {
   .main-inner {
-    width: 73%;
+    width: 1160px;
   }
 }
 @media (max-width: 767px) {
@@ -1035,7 +1035,7 @@ pre .javascript .function {
 }
 @media (min-width: 1600px) {
   .header-inner {
-    width: 73%;
+    width: 1160px;
   }
 }
 .site-brand-container {
@@ -1222,6 +1222,12 @@ pre .javascript .function {
   padding: 2px;
   border-radius: 50%;
 }
+.site-author-image {
+  transition: transform 1s ease-out;
+}
+.site-author-image:hover {
+  transform: rotateZ(360deg);
+}
 .site-author-name {
   color: var(--text-color);
   font-weight: 600;
@@ -1251,7 +1257,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #ba94bd;
+  background: #63c6ff;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -1468,7 +1474,7 @@ pre .javascript .function {
 }
 @media (min-width: 1600px) {
   .footer-inner {
-    width: 73%;
+    width: 1160px;
   }
 }
 .languages {
@@ -1632,16 +1638,6 @@ pre .javascript .function {
 }
 .back-to-top.back-to-top-on:hover {
   opacity: 0.8;
-}
-.reading-progress-bar {
-  background: #37c6c0;
-  display: block;
-  height: 3px;
-  left: 0;
-  position: fixed;
-  width: 0;
-  z-index: 1500;
-  bottom: 0;
 }
 .post-body {
   font-family: 'Monda', "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -2394,7 +2390,7 @@ ul.breadcrumb li + li:last-child {
 }
 @media (min-width: 1600px) {
   .header {
-    width: 73%;
+    width: 1160px;
   }
 }
 @media (max-width: 991px) {
@@ -2515,17 +2511,6 @@ ul.breadcrumb li + li:last-child {
     display: none;
   }
 }
-.menu-item-active a::after {
-  background: #bbb;
-  border-radius: 50%;
-  content: ' ';
-  height: 6px;
-  margin-top: -3px;
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  width: 6px;
-}
 .menu .menu-item {
   display: block;
   margin: 0;
@@ -2570,10 +2555,6 @@ ul.breadcrumb li + li:last-child {
 .sub-menu .menu-item span.exturl:hover {
   background: transparent;
   color: #fc6423;
-}
-.sub-menu .menu-item a::after,
-.sub-menu .menu-item span.exturl::after {
-  content: initial !important;
 }
 .sub-menu .menu-item-active a {
   border-bottom-color: #fc6423;
@@ -2691,14 +2672,74 @@ ul.breadcrumb li + li:last-child {
     --link-hover-color: #76a9dc;
     border-bottom: none;
   }
+  .post-body .highlight-container {
+    box-shadow: 0 0px 10px 0 rgba(0,0,0,0.5);
+  }
+  .menu .menu-item .badge {
+    background-color: #575a5b;
+    color: #a3a3a3;
+    padding: 3px 5px;
+  }
+  .pagination {
+    border-top: 1px solid #363636;
+    padding-top: 10px;
+  }
+  .pagination .page-number {
+    border-top: none;
+  }
+  .pagination .page-number.current {
+    background: radial-gradient(circle at 50% 50%, #111, transparent 80%);
+  }
+  .pagination .extend {
+    border-top: none;
+  }
+  .search-popup {
+    background: #232323;
+  }
+  .search-popup .search-icon,
+  .search-popup .popup-btn-close {
+    color: #282828;
+  }
+  .search-popup .search-header {
+    background: #9d9d9d;
+  }
+  .search-popup .search-input-container {
+    display: flex;
+  }
+  .search-popup p.search-result {
+    border-bottom: none;
+  }
+  .search-popup #no-result {
+    color: #525252;
+  }
+  .tag-cloud a:hover {
+    color: #fc6423 !important;
+  }
+  .posts-collapse .post-header {
+    border-bottom: none;
+  }
+  .posts-collapse::before {
+    background-color: #808183;
+    margin-left: -1px;
+    width: 2px;
+  }
+  .content.tag .post-title-link:hover {
+    color: var(--link-hover-color);
+  }
   .post-body img {
-    margin-bottom: 0px;
     border-radius: 0.5rem;
-    box-shadow: 5px 0px 10px 0px rgba(0,0,0,0.1), -5px 0px 10px 0px rgba(0,0,0,0.1), 0px 5px 10px 0px rgba(0,0,0,0.1), 0px -5px 10px 0px rgba(0,0,0,0.1);
+    box-shadow: 0 0px 10px 0 rgba(0,0,0,0.5);
   }
   .post-body div.img-no-shadow img {
     box-shadow: none;
     border-radius: 0.5rem;
+  }
+  .copy-btn {
+    color: var(--text-color);
+  }
+  .post-eof {
+    background: linear-gradient(to right, #474747 30%, transparent 30%, transparent) left/10px 100% repeat-x;
+    width: 100%;
   }
   .utterances {
     margin-top: 16px;
@@ -2736,6 +2777,10 @@ ul.breadcrumb li + li:last-child {
     position: relative;
     top: 1px;
     box-shadow: none;
+  }
+  .post-body .image-caption,
+  .post-body .figure .caption {
+    margin: -5px auto 25px;
   }
   .notice-info {
     background-image: url("../images/star.svg");

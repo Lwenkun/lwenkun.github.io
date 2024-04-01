@@ -8,15 +8,18 @@
   <link rel="apple-touch-icon" sizes="150x150" href="/images/favicon-150x150-next.png">
   <link rel="icon" type="image/png" sizes="150x150" href="/images/favicon-150x150-next.png">
   <link rel="icon" type="image/png" sizes="150x150" href="/images/favicon-150x150-next.png">
+  <meta http-equiv="Cache-Control" content="no-transform">
+  <meta http-equiv="Cache-Control" content="no-siteapp">
 
 <link rel="stylesheet" href="/css/main.css">
 
 <link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
 <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="动态加载应用之简单热更新在之前的一片文章中，我和大家分享了安卓动态加载的原理，这篇文章就和大家分享一下动态加载在热更新方面的应用，我会通过一个假想的案例来演示如何在项目利用动态加载实现热更新。">
@@ -31,7 +34,7 @@
 <meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_android_dynamically_loading_practice/build-tools.png">
 <meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_android_dynamically_loading_practice/shell.jpg">
 <meta property="article:published_time" content="2017-03-09T00:00:00.000Z">
-<meta property="article:modified_time" content="2024-03-31T18:30:09.552Z">
+<meta property="article:modified_time" content="2024-04-01T04:32:27.257Z">
 <meta property="article:author" content="Chance Li">
 <meta property="article:tag" content="Android">
 <meta property="article:tag" content="动态加载">
@@ -151,12 +154,12 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">23</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">25</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -196,7 +199,6 @@
     </header>
 
     
-  <div class="reading-progress-bar"></div>
 
 
     <main class="main">
@@ -241,7 +243,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-31 18:30:09" itemprop="dateModified" datetime="2024-03-31T18:30:09+00:00">2024-03-31</time>
+                <time title="修改时间：2024-04-01 04:32:27" itemprop="dateModified" datetime="2024-04-01T04:32:27+00:00">2024-04-01</time>
               </span>
 
           
@@ -296,17 +298,17 @@
 <li>如果关于 <code>DexClassLoader</code> 这个类加载器的原理和用法不熟悉的话，最好先看看我的<a href="/2016/11/11/android-load-class-dynamically/">这篇文章</a>。</li>
 </ul>
 <p>至此，项目中关于热更新的逻辑就写完了。现在我们模拟上线，把应用装进手机并运行，结果如下图：</p>
-<p><img src="/img/in-post/post_android_dynamically_loading_practice/insert.jpg"></p>
+<p><img data-src="/img/in-post/post_android_dynamically_loading_practice/insert.jpg"></p>
 <h3 id="实施热更新"><a href="#实施热更新" class="headerlink" title="实施热更新"></a>实施热更新</h3><p>如果现在觉得这种排序算法还不够好，只需将新的 <code>Sort</code> 实现类编译成 .dex 文件发送给客户端就可以了，不必推送新的版本。比如我想用希尔排序取代插入排序，于是在项目中编写了 <code>NewSort</code> 类：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">NewSort</span> <span class="keyword">implements</span> <span class="title class_">Sort</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getName</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;希尔排序&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">sort</span><span class="params">(<span class="type">int</span>[] a)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">h</span> <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">        <span class="type">int</span> N;</span><br><span class="line">        <span class="keyword">for</span>(N = a.length; h &lt; N / <span class="number">25</span>; h = h * <span class="number">3</span> + <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span>(h &gt;= <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">for</span>(<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> h; i &lt; N; ++i) &#123;</span><br><span class="line">                <span class="keyword">for</span>(<span class="type">int</span> <span class="variable">j</span> <span class="operator">=</span> i; j &gt;= h &amp;&amp; a[j] &lt; a[j - h]; j -= h) &#123;</span><br><span class="line">                    exch(a, j, j - h);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            h /= <span class="number">3</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">exch</span><span class="params">(<span class="type">int</span>[] a, <span class="type">int</span> src, <span class="type">int</span> dest)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">temp</span> <span class="operator">=</span> a[src];</span><br><span class="line">        a[src] = a[dest];</span><br><span class="line">        a[dest] = temp;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>编译之后，我们需要将此类以 jar 包的形式输出，为之后生成 .dex 文件做好准备。因此我们找到 Android Studio 的编译输出文件夹（我这里的位置是 <code>Demo/app/build/intermediates/classes/debug/</code>），找到 NewSort.class，连同 package 将其移出，结果如下图所示：</p>
-<p><img src="/img/in-post/post_android_dynamically_loading_practice/structure.png"></p>
+<p><img data-src="/img/in-post/post_android_dynamically_loading_practice/structure.png"></p>
 <p>在 me 的上一级目录处打开终端，输入命令 <code>jar cf newsort.jar me</code>，执行完后我们在与 me  同级的位置可以看到打包好的 newsort.jar 文件。（关于 .jar 文件的打包可以参考 <a href="/2016/11/05/compile-java-through-command-line/">命令行编译、打包并运行一个 java 程序</a> 这篇文章。）</p>
 <p>接下来我们进入 sdk 目录，找到 build-tools 文件夹，该文件夹下有各个版本的 build-tools，如下图所示，我们选择最新的 25.0.2，进入之后会发现有一个名为 dx 的工具，它可以将 jar 包转换成 .dex 文件。所以把我们的 newsort.jar 放入 25.0.2 目录下，然后在 25.0.2 这个目录位置打开终端，输入命令 <code>./dx --dex --output=/Users/lwenkun/desktop/newsort.dex newsort.jar </code> ，命令执行完后在 desktop 文件夹下（也就是桌面）可以看到生成了 newsort.dex 文件，这个文件就是我们最终需要的。</p>
-<p><img src="/img/in-post/post_android_dynamically_loading_practice/build-tools.png"></p>
+<p><img data-src="/img/in-post/post_android_dynamically_loading_practice/build-tools.png"></p>
 <p>准备好了 .dex 文件后，我们就可以模拟热更新了。我们假设 .dex 文件已经从服务器下载到了本地，因此直接把 newsort.dex 文件拷贝到手机外部存储的根目录下。然后修改根目录下的 has_update.txt 文件，将其中的值修改为 1。然后我们退出应用，等再次打开应用时，插入排序已经成功替换成了希尔排序：</p>
-<p><img src="/img/in-post/post_android_dynamically_loading_practice/shell.jpg"></p>
+<p><img data-src="/img/in-post/post_android_dynamically_loading_practice/shell.jpg"></p>
 <h2 id="感谢阅读"><a href="#感谢阅读" class="headerlink" title="感谢阅读"></a>感谢阅读</h2><p>动态加载在热更新方面的应用就分享到这里了，网上关于这方面的文章也有很多，大家可以找写这方面的文章看看。由于水平和理解能力有限，有什么不对的地方还望大家不吝赐教，感谢大家的阅读。</p>
 <p>参考资料：<a target="_blank" rel="noopener" href="https://www.google.com/search?q=%E5%AE%89%E5%8D%93%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD&oq=%E5%AE%89%E5%8D%93%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD&aqs=chrome..69i57j69i61.302j0j9&sourceid=chrome&ie=UTF-8">安卓动态加载</a></p>
 
@@ -334,10 +336,11 @@
 
 
       <footer class="post-footer">
+          
           <div class="post-tags">
-              <a href="/tags/Android/" rel="tag"># Android</a>
-              <a href="/tags/%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD/" rel="tag"># 动态加载</a>
-              <a href="/tags/%E7%83%AD%E6%9B%B4%E6%96%B0/" rel="tag"># 热更新</a>
+              <a href="/tags/Android/" rel="tag"><i class="fa fa-tag"></i> Android</a>
+              <a href="/tags/%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD/" rel="tag"><i class="fa fa-tag"></i> 动态加载</a>
+              <a href="/tags/%E7%83%AD%E6%9B%B4%E6%96%B0/" rel="tag"><i class="fa fa-tag"></i> 热更新</a>
           </div>
 
         
@@ -442,16 +445,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i> GitHub</a>
       </span>
       <span class="links-of-author-item">
-        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i> E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://weibo.com/u/5261683001" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5261683001" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微博</a>
+        <a href="https://weibo.com/u/5261683001" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5261683001" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i> 微博</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-zhihu"></i>知乎</a>
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-globe"></i> 知乎</a>
       </span>
   </div>
   <div class="cc-license motion-element" itemprop="license">
@@ -550,6 +553,9 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 
