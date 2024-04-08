@@ -143,12 +143,12 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">24</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">26</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">26</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">27</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -201,6 +201,87 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="Chance Li">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/" class="post-title-link" itemprop="url">探究 Kotlin 协程的状态机</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2024-04-08 00:00:00 / 修改时间：02:47:19" itemprop="dateCreated datePublished" datetime="2024-04-08T00:00:00+00:00">2024-04-08</time>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>15k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>13 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>Kotlin 中的协程是无栈协程（话说 Kotlin 能实现有栈线程吗🤔），网上很多文章都说无栈协程一般都是通过状态机实现的，刚开始听到这个状态机的时候觉得有点玄乎，今天反编译一下 Kotlin 代码，看看这个状态机到底是个什么鬼。</p>
+<h1 id="反编译-Kotlin"><a href="#反编译-Kotlin" class="headerlink" title="反编译 Kotlin"></a>反编译 Kotlin</h1><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    runBlocking &#123;</span><br><span class="line">        <span class="keyword">val</span> result = fun1()</span><br><span class="line">        println(result)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">fun1</span><span class="params">()</span></span>: <span class="built_in">Int</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> localInt = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">    localInt += fun2()</span><br><span class="line"></span><br><span class="line">    localInt += fun3()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> localInt</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">fun2</span><span class="params">()</span></span>: <span class="built_in">Int</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">fun3</span><span class="params">()</span></span>: <span class="built_in">Int</span> &#123;</span><br><span class="line">    delay(<span class="number">1000</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2024/04/04/2024-04-04-understand-cross-origin/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -224,10 +305,16 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2024-04-04 00:00:00 / 修改时间：14:39:33" itemprop="dateCreated datePublished" datetime="2024-04-04T00:00:00+00:00">2024-04-04</time>
+              <time title="创建时间：2024-04-04 00:00:00" itemprop="dateCreated datePublished" datetime="2024-04-04T00:00:00+00:00">2024-04-04</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2024-04-08 02:47:19" itemprop="dateModified" datetime="2024-04-08T02:47:19+00:00">2024-04-08</time>
+              </span>
 
           <br>
             <span class="post-meta-item" title="本文字数">
@@ -317,7 +404,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-04-04 14:39:33" itemprop="dateModified" datetime="2024-04-04T14:39:33+00:00">2024-04-04</time>
+                <time title="修改时间：2024-04-08 02:47:19" itemprop="dateModified" datetime="2024-04-08T02:47:19+00:00">2024-04-08</time>
               </span>
 
           <br>
@@ -412,7 +499,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-04-04 14:39:33" itemprop="dateModified" datetime="2024-04-04T14:39:33+00:00">2024-04-04</time>
+                <time title="修改时间：2024-04-08 02:47:19" itemprop="dateModified" datetime="2024-04-08T02:47:19+00:00">2024-04-08</time>
               </span>
 
           <br>
@@ -499,7 +586,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-04-04 14:39:33" itemprop="dateModified" datetime="2024-04-04T14:39:33+00:00">2024-04-04</time>
+                <time title="修改时间：2024-04-08 02:47:19" itemprop="dateModified" datetime="2024-04-08T02:47:19+00:00">2024-04-08</time>
               </span>
 
           <br>
@@ -586,7 +673,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-04-04 14:39:33" itemprop="dateModified" datetime="2024-04-04T14:39:33+00:00">2024-04-04</time>
+                <time title="修改时间：2024-04-08 02:47:19" itemprop="dateModified" datetime="2024-04-08T02:47:19+00:00">2024-04-08</time>
               </span>
 
           <br>
@@ -675,7 +762,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-04-04 14:39:33" itemprop="dateModified" datetime="2024-04-04T14:39:33+00:00">2024-04-04</time>
+                <time title="修改时间：2024-04-08 02:47:19" itemprop="dateModified" datetime="2024-04-08T02:47:19+00:00">2024-04-08</time>
               </span>
 
           <br>
@@ -762,7 +849,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-04-04 14:39:33" itemprop="dateModified" datetime="2024-04-04T14:39:33+00:00">2024-04-04</time>
+                <time title="修改时间：2024-04-08 02:47:19" itemprop="dateModified" datetime="2024-04-08T02:47:19+00:00">2024-04-08</time>
               </span>
 
           <br>
@@ -853,7 +940,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-04-04 14:39:33" itemprop="dateModified" datetime="2024-04-04T14:39:33+00:00">2024-04-04</time>
+                <time title="修改时间：2024-04-08 02:47:19" itemprop="dateModified" datetime="2024-04-08T02:47:19+00:00">2024-04-08</time>
               </span>
 
           <br>
@@ -940,7 +1027,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-04-04 14:39:33" itemprop="dateModified" datetime="2024-04-04T14:39:33+00:00">2024-04-04</time>
+                <time title="修改时间：2024-04-08 02:47:19" itemprop="dateModified" datetime="2024-04-08T02:47:19+00:00">2024-04-08</time>
               </span>
 
           <br>
@@ -972,92 +1059,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2017/08/29/2017-08-29-glide-disk-cache-strategy/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2017/08/29/2017-08-29-how-an-android-process-starts/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
-      <meta itemprop="name" content="Chance Li">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="李文坤的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2017/08/29/2017-08-29-how-an-android-process-starts/" class="post-title-link" itemprop="url">Android 进程启动原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2017-08-29 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-29T00:00:00+00:00">2017-08-29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-04-04 14:39:33" itemprop="dateModified" datetime="2024-04-04T14:39:33+00:00">2024-04-04</time>
-              </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>17k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>16 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Android-进程启动原理"><a href="#Android-进程启动原理" class="headerlink" title="Android 进程启动原理"></a>Android 进程启动原理</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Android 中的应用是支持多进程的，我们只要在 AndroidManifest 中给四大组件指定 android:process 属性即可让其运行在独立的进程当中。那么应用的主进程又是如何被创建的呢？一般来说，当我们的应用没有任何组件处于运行状态，此时其他应用启动我们应用的组件时，应用的主进程就会被创建，进程相当于是提供了组件运行的空间。最常见的触发应用主进程被创建的方式是应用 A 通过 startActivity 或者 startActivityForResult 启动应用 B，并且应用 B 此时没有任何组件处于运行状态，那么系统先会通过 AMS 为 B 创建一个进程，等进程创建好了再通知应用 B 创建并运行该 Activity。AMS 是运行在 system_server 进程当中的，这个进程并不会 fork 出应用进程，那么应用进程到底是哪个进程创建的呢？这就得从 Zygote 进程说起。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2017/08/29/2017-08-29-how-an-android-process-starts/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1148,14 +1149,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-count">27</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-count">26</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1224,13 +1225,13 @@
       <i class="fa fa-area-chart"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">230k</span>
+    <span title="站点总字数">245k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">3:29</span>
+    <span title="站点阅读时长">3:43</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
   </div>

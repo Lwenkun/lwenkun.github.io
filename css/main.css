@@ -1257,7 +1257,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #7cda8b;
+  background: #114732;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -2677,6 +2677,10 @@ ul.breadcrumb li + li:last-child {
   }
   .post-body blockquote {
     border-left-color: rgba(252,100,35,0.6);
+  }
+  .post-body ol ul {
+    margin-block-end: 20px;
+    margin-block-start: 20px;
   }
   .menu .menu-item .badge {
     background-color: #575a5b;

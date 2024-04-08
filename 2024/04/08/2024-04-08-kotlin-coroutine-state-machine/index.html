@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.1">
+  <link rel="apple-touch-icon" sizes="150x150" href="/images/favicon-150x150-next.png">
+  <link rel="icon" type="image/png" sizes="150x150" href="/images/favicon-150x150-next.png">
+  <link rel="icon" type="image/png" sizes="150x150" href="/images/favicon-150x150-next.png">
+  <meta http-equiv="Cache-Control" content="no-transform">
+  <meta http-equiv="Cache-Control" content="no-siteapp">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Monda:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic|EB Garamond:300,300italic,400,400italic,700,700italic|Source Code Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"lwenkun.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言Kotlin 中的协程是无栈协程（话说 Kotlin 能实现有栈线程吗🤔），网上很多文章都说无栈协程一般都是通过状态机实现的，刚开始听到这个状态机的时候觉得有点玄乎，今天反编译一下 Kotlin 代码，看看这个状态机到底是个什么鬼。 反编译 Kotlin1234567891011121314151617181920212223242526fun main() &#123;    runBlo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="探究 Kotlin 协程的状态机">
+<meta property="og:url" content="https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/index.html">
+<meta property="og:site_name" content="李文坤的博客">
+<meta property="og:description" content="前言Kotlin 中的协程是无栈协程（话说 Kotlin 能实现有栈线程吗🤔），网上很多文章都说无栈协程一般都是通过状态机实现的，刚开始听到这个状态机的时候觉得有点玄乎，今天反编译一下 Kotlin 代码，看看这个状态机到底是个什么鬼。 反编译 Kotlin1234567891011121314151617181920212223242526fun main() &#123;    runBlo">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_kotlin_coroutine_state_machine/kotlin_coroutine.svg">
+<meta property="article:published_time" content="2024-04-08T00:00:00.000Z">
+<meta property="article:modified_time" content="2024-04-08T02:47:19.526Z">
+<meta property="article:author" content="Chance Li">
+<meta property="article:tag" content="Kotlin">
+<meta property="article:tag" content="协程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lwenkun.github.io/img/in-post/post_kotlin_coroutine_state_machine/kotlin_coroutine.svg">
+
+<link rel="canonical" href="https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>探究 Kotlin 协程的状态机 | 李文坤的博客</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-76493784-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?4cc1f2d8f3067386cc5cdb626a202900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">李文坤的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">吾生也有涯</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">26</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">27</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+      <meta itemprop="name" content="Chance Li">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="李文坤的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          探究 Kotlin 协程的状态机
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2024-04-08 00:00:00 / 修改时间：02:47:19" itemprop="dateCreated datePublished" datetime="2024-04-08T00:00:00+00:00">2024-04-08</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>15k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>13 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>Kotlin 中的协程是无栈协程（话说 Kotlin 能实现有栈线程吗🤔），网上很多文章都说无栈协程一般都是通过状态机实现的，刚开始听到这个状态机的时候觉得有点玄乎，今天反编译一下 Kotlin 代码，看看这个状态机到底是个什么鬼。</p>
+<h1 id="反编译-Kotlin"><a href="#反编译-Kotlin" class="headerlink" title="反编译 Kotlin"></a>反编译 Kotlin</h1><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    runBlocking &#123;</span><br><span class="line">        <span class="keyword">val</span> result = fun1()</span><br><span class="line">        println(result)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">fun1</span><span class="params">()</span></span>: <span class="built_in">Int</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> localInt = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">    localInt += fun2()</span><br><span class="line"></span><br><span class="line">    localInt += fun3()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> localInt</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">fun2</span><span class="params">()</span></span>: <span class="built_in">Int</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">fun3</span><span class="params">()</span></span>: <span class="built_in">Int</span> &#123;</span><br><span class="line">    delay(<span class="number">1000</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>这是一段使用了协程的 Kotlin 代码。在 <code>main</code> 方法中，通过 <code>runBlocking</code> 方法开启协程，协程的逻辑很简单，调用 <code>fun1()</code> ，然后将其结果打印出来。重点是 <code>fun1()</code> 函数，<code>fun1()</code> 是一个 <code>suspend</code> 方法，它定义了一个局部变量 <code>localInt</code>，然后依次执行了 <code>fun2()</code> 和 <code>fun3()</code> 并将结果累加到 <code>localInt</code> 中，最后将 <code>localInt</code> 返回。</p>
+<p>其中 <code>fun2()</code> 是一个披着 <code>suspend</code> 外衣的普通方法，IDE 中会出现 warning 提示说 <code>suspend</code> 关键字是多余的，暂时保留它，看看最后会编译成什么样。<code>fun3()</code> 内调用了 <code>delay() </code>，<code>delay()</code> 方法是 <code>suspend</code> 的元凶之一，调用链上游的方法都因为它是 <code>suspend</code>，才都变成 <code>suspend</code>。</p>
+<p>例子很简单，但涵盖了协程运行时的几个重要的场景：协程的启动，协程中调用 <code>suspend</code> 方法，<code>suspend</code> 方法中调用普通方法，<code>suspend</code> 方法中调用 <code>suspend</code> 方法。接下来将以上代码编译后再反编译为 Java 代码。</p>
+<p>（反编译 Kotlin 代码是没法使用传统的反编译工具来完成的，需要在 IDEA 中打开 Kotlin 字节码文件，然后点击 工具 -&gt; Kotlin -&gt; 反编译为  Java 来完成。）</p>
+<h2 id="main"><a href="#main" class="headerlink" title="main"></a>main</h2><p>先看 <code>main</code> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">      BuildersKt.runBlocking$<span class="keyword">default</span>((CoroutineContext)<span class="literal">null</span>, (Function2)(<span class="keyword">new</span> <span class="title class_">Function2</span>((Continuation)<span class="literal">null</span>) &#123;</span><br><span class="line">         <span class="type">int</span> label;</span><br><span class="line"></span><br><span class="line">         <span class="meta">@Nullable</span></span><br><span class="line">         <span class="keyword">public</span> <span class="keyword">final</span> Object <span class="title function_">invokeSuspend</span><span class="params">(<span class="meta">@NotNull</span> Object $result)</span> &#123;</span><br><span class="line">            <span class="type">Object</span> <span class="variable">var3</span> <span class="operator">=</span> IntrinsicsKt.getCOROUTINE_SUSPENDED();</span><br><span class="line">            Object var10000;</span><br><span class="line">            <span class="keyword">switch</span> (<span class="built_in">this</span>.label) &#123;</span><br><span class="line">               <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">                  ResultKt.throwOnFailure($result);</span><br><span class="line">                  <span class="type">Continuation</span> <span class="variable">var4</span> <span class="operator">=</span> (Continuation)<span class="built_in">this</span>;</span><br><span class="line">                  <span class="built_in">this</span>.label = <span class="number">1</span>;</span><br><span class="line">                  var10000 = TestKt.fun1(var4);          <span class="comment">// fun1()</span></span><br><span class="line">                  <span class="keyword">if</span> (var10000 == var3) &#123;</span><br><span class="line">                     <span class="keyword">return</span> var3;</span><br><span class="line">                  &#125;</span><br><span class="line">                  <span class="keyword">break</span>;</span><br><span class="line">               <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">                  ResultKt.throwOnFailure($result);</span><br><span class="line">                  var10000 = $result;</span><br><span class="line">                  <span class="keyword">break</span>;</span><br><span class="line">               <span class="keyword">default</span>:</span><br><span class="line">                  <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;call to &#x27;resume&#x27; before &#x27;invoke&#x27; with coroutine&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="type">int</span> <span class="variable">result</span> <span class="operator">=</span> ((Number)var10000).intValue();</span><br><span class="line">            System.out.println(result);</span><br><span class="line">            <span class="keyword">return</span> Unit.INSTANCE;</span><br><span class="line">         &#125;</span><br><span class="line"></span><br><span class="line">         <span class="meta">@NotNull</span></span><br><span class="line">         <span class="keyword">public</span> <span class="keyword">final</span> Continuation <span class="title function_">create</span><span class="params">(<span class="meta">@Nullable</span> Object value, <span class="meta">@NotNull</span> Continuation $completion)</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> (Continuation)(<span class="keyword">new</span> &lt;anonymous constructor&gt;($completion));</span><br><span class="line">         &#125;</span><br><span class="line"></span><br><span class="line">         <span class="meta">@Nullable</span></span><br><span class="line">         <span class="keyword">public</span> <span class="keyword">final</span> Object <span class="title function_">invoke</span><span class="params">(<span class="meta">@NotNull</span> CoroutineScope p1, <span class="meta">@Nullable</span> Continuation p2)</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> ((&lt;undefinedtype&gt;)<span class="built_in">this</span>.create(p1, p2)).invokeSuspend(Unit.INSTANCE);</span><br><span class="line">         &#125;</span><br><span class="line"></span><br><span class="line">         <span class="comment">// $FF: synthetic method</span></span><br><span class="line">         <span class="comment">// $FF: bridge method</span></span><br><span class="line">         <span class="keyword">public</span> Object <span class="title function_">invoke</span><span class="params">(Object p1, Object p2)</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>.invoke((CoroutineScope)p1, (Continuation)p2);</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;), <span class="number">1</span>, (Object)<span class="literal">null</span>);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p>没想到 Kotlin 中的几行代码，反编译为 Java 后代码有这么长。反编译器一般都比较”死板“，有些地方乍看晦涩难懂，但仔细研究一下就知道，它用蹩脚的代码展示了极为简单的逻辑。</p>
+<p><code>runBlocking$default()</code> 接收四个参数，其他几个参数看不懂，但第二个参数貌似有点东西。第二个参数是一个 <code>Function2</code> 对象，<code>Function2</code> 是 Kotlin 库中的一个接口，有一个 <code>invoke()</code> 方法，定义如下：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Function2</span>&lt;<span class="type">in P1, in P2, out R</span>&gt; : <span class="type">Function</span>&lt;<span class="type">R</span>&gt; &#123;</span><br><span class="line">    <span class="comment">/** Invokes the function with the specified arguments. */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">operator</span> <span class="function"><span class="keyword">fun</span> <span class="title">invoke</span><span class="params">(p1: <span class="type">P1</span>, p2: <span class="type">P2</span>)</span></span>: R</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第二个参数其实是一个继承自 <code>kotlin.coroutines.jvm.internal.SuspendLambda</code> 的对象，只不过它同时实现了 <code>Function2</code> 接口。之所以反编译器把它编译成 <code>Function2</code>  对象，是因为 <code>runBlocking$default()</code> 方法签名中，第二个参数就是 <code>Function2</code> 类型的。 <code>SuspendLambda</code> 的继承链是：<code>SuspendLambda</code> -&gt; <code>ContinuationImpl</code> -&gt; <code>BaseContinuationImpl</code> -&gt; <code>Continuation</code>。</p>
+<p>既然 <code>runBlocking$default()</code> 方法接受的是 <code>Function2</code> 类型的参数，那它应该只和 <code>Function2</code> 的方法打交道，因此从 <code>invoke()</code> 方法入手：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@NotNull</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> Continuation create(<span class="meta">@Nullable</span> Object value, <span class="meta">@NotNull</span> Continuation $completion) &#123;</span><br><span class="line">   <span class="keyword">return</span> (Continuation)(new &lt;anonymous <span class="keyword">constructor</span>&gt;($completion));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Nullable</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> Object invoke(<span class="meta">@NotNull</span> CoroutineScope p1, <span class="meta">@Nullable</span> Continuation p2) &#123;</span><br><span class="line">     <span class="keyword">return</span> ((&lt;undefinedtype&gt;)<span class="keyword">this</span>.create(p1, p2)).invokeSuspend(<span class="built_in">Unit</span>.INSTANCE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>它调用了 <code>create()</code> 方法创建了一个对象，紧接着调用这个对象 <code>invokeSuspend()</code> 方法。这里的 <code>undefinedtype</code> 其实就是 <code>Function2</code> 参数自身的实际类型，<code>anonymous constructor</code> 其实就是它自身的构造方法。可能是匿名类的缘故，反编译器没法表示出来。</p>
+<p><code>Function2</code> 对象在自己的 <code>inovke()</code> 方法中创建了另一个同类型的对象，然后调用了这个对象的 <code>invokeSuspend()</code> ，那它为什么不直接调用自己的 <code>invokeSuspend()</code> 方法？这点我没搞明白，也许是 Kotlin 编译器的遵循了一些死板的编译规则导致的，先不管，把注意力转移到 <code>invokeSuspend()</code> 方法上来。</p>
+<p>在 <code>invokeSuspend()</code> 里面，最终调用了 <code>fun1()</code> 方法。但不是直接调用，而是套了一个 <code>switch case</code> 判断。等等，<code>switch case</code> ，这不就是实现一个状态机的典型语法吗？如果它是状态机，那 <code>label</code> 应该就是这个状态机的状态了。再定睛一看，在 <code>case 0</code>  块中，<code>label</code> 被置为 1 了，状态转移，好吧，状态机实锤了。也就是说，Kotlin 中 <code>runBlocking</code> 方法的 block 里面的代码，被套在了状态机里执行：label 为 0 的时候，执行的是 <code>fun1()</code>；<code>lable</code> 为 1 的时候，执行的是 <code>System.out.println()</code>。</p>
+<p>有点意思。我现在有点迫不及待地想看看 <code>fun1()</code> 的反编译结果。</p>
+<h2 id="fun1"><a href="#fun1" class="headerlink" title="fun1"></a>fun1</h2><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Nullable</span></span><br><span class="line"><span class="keyword">public</span> static <span class="keyword">final</span> Object fun1(<span class="meta">@NotNull</span> Continuation var0) &#123;</span><br><span class="line">   Object $continuation;</span><br><span class="line">   label27: &#123;</span><br><span class="line">      <span class="keyword">if</span> (var0 instanceof &lt;undefinedtype&gt;) &#123;</span><br><span class="line">         $continuation = (&lt;undefinedtype&gt;)var0;</span><br><span class="line">         <span class="keyword">if</span> ((((&lt;undefinedtype&gt;)$continuation).label &amp; Integer.MIN_VALUE) != <span class="number">0</span>) &#123;</span><br><span class="line">            ((&lt;undefinedtype&gt;)$continuation).label -= Integer.MIN_VALUE;</span><br><span class="line">            <span class="keyword">break</span> label27;</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      $continuation = new ContinuationImpl(var0) &#123;</span><br><span class="line">         int I$<span class="number">0</span>;</span><br><span class="line">         <span class="comment">// $FF: synthetic field</span></span><br><span class="line">         Object result;</span><br><span class="line">         int label;</span><br><span class="line"></span><br><span class="line">         <span class="meta">@Nullable</span></span><br><span class="line">         <span class="keyword">public</span> <span class="keyword">final</span> Object invokeSuspend(<span class="meta">@NotNull</span> Object $result) &#123;</span><br><span class="line">            <span class="keyword">this</span>.result = $result;</span><br><span class="line">            <span class="keyword">this</span>.label |= Integer.MIN_VALUE;</span><br><span class="line">            <span class="keyword">return</span> TestKt.fun1((Continuation)<span class="keyword">this</span>);</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   Object var10000;</span><br><span class="line">   int localInt;</span><br><span class="line">   int var2;</span><br><span class="line">   Object var3;</span><br><span class="line">   label22: &#123;</span><br><span class="line">      Object $result = ((&lt;undefinedtype&gt;)$continuation).result;</span><br><span class="line">      Object var6 = IntrinsicsKt.getCOROUTINE_SUSPENDED();</span><br><span class="line">      switch (((&lt;undefinedtype&gt;)$continuation).label) &#123;</span><br><span class="line">         case <span class="number">0</span>:</span><br><span class="line">            ResultKt.throwOnFailure($result);</span><br><span class="line">            localInt = <span class="number">0</span>;</span><br><span class="line">            var2 = localInt;</span><br><span class="line">            ((&lt;undefinedtype&gt;)$continuation).I$<span class="number">0</span> = localInt;</span><br><span class="line">            ((&lt;undefinedtype&gt;)$continuation).label = <span class="number">1</span>;</span><br><span class="line">            var10000 = fun2((Continuation)$continuation);</span><br><span class="line">            <span class="keyword">if</span> (var10000 == var6) &#123;</span><br><span class="line">               <span class="keyword">return</span> var6;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         case <span class="number">1</span>:</span><br><span class="line">            var2 = ((&lt;undefinedtype&gt;)$continuation).I$<span class="number">0</span>;</span><br><span class="line">            ResultKt.throwOnFailure($result);</span><br><span class="line">            var10000 = $result;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         case <span class="number">2</span>:</span><br><span class="line">            var2 = ((&lt;undefinedtype&gt;)$continuation).I$<span class="number">0</span>;</span><br><span class="line">            ResultKt.throwOnFailure($result);</span><br><span class="line">            var10000 = $result;</span><br><span class="line">            <span class="keyword">break</span> label22;</span><br><span class="line">         default:</span><br><span class="line">            <span class="keyword">throw</span> new IllegalStateException(<span class="string">&quot;call to &#x27;resume&#x27; before &#x27;invoke&#x27; with coroutine&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      var3 = var10000;</span><br><span class="line">      localInt = var2 + ((Number)var3).intValue();</span><br><span class="line">      var2 = localInt;</span><br><span class="line">      ((&lt;undefinedtype&gt;)$continuation).I$<span class="number">0</span> = localInt;</span><br><span class="line">      ((&lt;undefinedtype&gt;)$continuation).label = <span class="number">2</span>;</span><br><span class="line">      var10000 = fun3((Continuation)$continuation);</span><br><span class="line">      <span class="keyword">if</span> (var10000 == var6) &#123;</span><br><span class="line">         <span class="keyword">return</span> var6;</span><br><span class="line">      &#125;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   var3 = var10000;</span><br><span class="line">   localInt = var2 + ((Number)var3).intValue();</span><br><span class="line">   <span class="keyword">return</span> Boxing.boxInt(localInt);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>fun1()</code> 编译之后多了一个 <code>Continuation</code> 类型的参数 <code>var0</code>，回头看下 <code>main</code> 方法，<code>main()</code> 调用 <code>fun1()</code> 的时候，把自身传了进去。<code>fun1()</code> 方法有点长，先看看 <code>label27</code> 这个代码块：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Object $continuation;</span><br><span class="line">label27: &#123;</span><br><span class="line">   <span class="keyword">if</span> (var0 instanceof &lt;undefinedtype&gt;) &#123;</span><br><span class="line">      $continuation = (&lt;undefinedtype&gt;)var0;</span><br><span class="line">      <span class="keyword">if</span> ((((&lt;undefinedtype&gt;)$continuation).label &amp; Integer.MIN_VALUE) != <span class="number">0</span>) &#123;</span><br><span class="line">         ((&lt;undefinedtype&gt;)$continuation).label -= Integer.MIN_VALUE;</span><br><span class="line">         <span class="keyword">break</span> label27;</span><br><span class="line">      &#125;</span><br><span class="line">   &#125;</span><br><span class="line">   $continuation = new ContinuationImpl(var0) &#123;</span><br><span class="line">      int I$<span class="number">0</span>;</span><br><span class="line">      <span class="comment">// $FF: synthetic field</span></span><br><span class="line">      Object result;</span><br><span class="line">      int label;</span><br><span class="line">      <span class="meta">@Nullable</span></span><br><span class="line">      <span class="keyword">public</span> <span class="keyword">final</span> Object invokeSuspend(<span class="meta">@NotNull</span> Object $result) &#123;</span><br><span class="line">         <span class="keyword">this</span>.result = $result;</span><br><span class="line">         <span class="keyword">this</span>.label |= Integer.MIN_VALUE;</span><br><span class="line">         <span class="keyword">return</span> TestKt.fun1((Continuation)<span class="keyword">this</span>);</span><br><span class="line">      &#125;</span><br><span class="line">   &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>&lt;undefinedtype&gt;</code> 其实就是下面那个 <code>ContinationImpl</code> 的匿名子类，因此 <code>instanceof</code> 表达式肯定是为假，因为 <code>var0</code> 是 <code>SuspendLambda</code> 对象。因此 <code>if</code> 块会被跳过，直接执行下面的赋值语句：创建一个 <code>ContinuationImpl</code> 对象并赋给了 <code>$continuation</code>。该对象接收 <code>var0</code>  作为其构造函数的参数，它同样实现了 <code>invokeSuspend()</code> 方法，在 <code>invokeSuspend()</code> 方法里，又调用外层的 <code>fun1()</code>。好家伙，给绕晕了。</p>
+<p>可以看出，首次执行 <code>fun1()</code> 的时候，<code>fun1()</code> 的参数 <code>var0</code> 是上游方法传来的 <code>Continuation</code> 对象（后面称其为 <code>SuspendLambda</code>），<code>$continuation </code>会被赋值为一个<code>ContinationImpl</code> 对象（后面称其为 <code>Continuation1</code>），该对象持有 <code>SuspendLambda</code>。后续 <code>fun1()</code> 被调用时，参数 <code>var0</code> 则是第一次执行时创建的 <code>Continuation1</code>，由于在调用前执行了 <code>this.label |= Integer.MIN_VALUE</code>  因此两层 <code>if</code> 判断都为真，<code>break label27</code> 会执行，从而直接跳出了 <code>label27</code> 块。</p>
+<p>现在来看 <code>fun1()</code> 剩下部分的逻辑。毕竟是反编译，结果并不是那么容易读懂，于是将其改写成如下等价代码：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">Object var10000;</span><br><span class="line">int localInt;</span><br><span class="line">int var2;</span><br><span class="line">Object var3;</span><br><span class="line"></span><br><span class="line">Object $result = ((&lt;undefinedtype&gt;)$continuation).result;</span><br><span class="line">Object var6 = IntrinsicsKt.getCOROUTINE_SUSPENDED();</span><br><span class="line">switch (((&lt;undefinedtype&gt;)$continuation).label) &#123;</span><br><span class="line">    case <span class="number">0</span>:</span><br><span class="line">        <span class="comment">/* 对应 localInt = 0; fun2Result = fun2() */</span></span><br><span class="line">    	ResultKt.throwOnFailure($result);</span><br><span class="line">    	localInt = <span class="number">0</span>;</span><br><span class="line">    	var2 = localInt;</span><br><span class="line">    	((&lt;undefinedtype&gt;)$continuation).I$<span class="number">0</span> = localInt;</span><br><span class="line">    	((&lt;undefinedtype&gt;)$continuation).label = <span class="number">1</span>;</span><br><span class="line">    	var10000 = fun2((Continuation)$continuation);</span><br><span class="line">    	<span class="keyword">if</span> (var10000 == var6) &#123;</span><br><span class="line">        	<span class="keyword">return</span> var6;</span><br><span class="line">    	&#125;</span><br><span class="line">        <span class="comment">// 注意这里没有 break;</span></span><br><span class="line">    case <span class="number">1</span>:</span><br><span class="line">        <span class="comment">/* 对应 localInt += fun2Result; fun3Result = fun3() */</span></span><br><span class="line">    	var2 = ((&lt;undefinedtype&gt;)$continuation).I$<span class="number">0</span>;</span><br><span class="line">    	ResultKt.throwOnFailure($result);</span><br><span class="line">    	var10000 = $result;</span><br><span class="line">    	var3 = var10000;</span><br><span class="line">    	localInt = var2 + ((Number)var3).intValue();</span><br><span class="line">    	var2 = localInt;</span><br><span class="line">    	((&lt;undefinedtype&gt;)$continuation).I$<span class="number">0</span> = localInt;</span><br><span class="line">    	((&lt;undefinedtype&gt;)$continuation).label = <span class="number">2</span>;</span><br><span class="line">    	var10000 = fun3((Continuation)$continuation);</span><br><span class="line">    	<span class="keyword">if</span> (var10000 == var6) &#123;</span><br><span class="line">        	<span class="keyword">return</span> var6;</span><br><span class="line">    	&#125;</span><br><span class="line">		<span class="comment">// 这里也没有 break;</span></span><br><span class="line">    case <span class="number">2</span>:</span><br><span class="line">		<span class="comment">/* 对应 localInt += fun3Result; return localInt */</span></span><br><span class="line">    	var2 = ((&lt;undefinedtype&gt;)$continuation).I$<span class="number">0</span>;</span><br><span class="line">    	ResultKt.throwOnFailure($result);</span><br><span class="line">    	var10000 = $result;</span><br><span class="line">    	var3 = var10000;</span><br><span class="line">    	localInt = var2 + ((Number)var3).intValue();</span><br><span class="line">    	<span class="keyword">return</span> Boxing.boxInt(localInt);</span><br><span class="line">    default:</span><br><span class="line">    	<span class="keyword">throw</span> new IllegalStateException(<span class="string">&quot;call to &#x27;resume&#x27; before &#x27;invoke&#x27; with coroutine&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>又看到老朋友 <code>switch case</code> 了，没错，<code>fun1()</code> 也是个状态机。编译后的 <code>fun1()</code> 将逻辑分成了三块，很显然，是因为两个 <code>fun2()</code>  <code>fun3()</code> 这两个 <code>suspend</code> 函数导致的。<code>IntrinsicsKt.getCOROUTINE_SUSPENDED()</code> 这行代码特别值得关注，此方法返回的是名为 <code>COROUTINE_SUSPENDED</code> 的单例对象。在前两个 <code>case</code> 块中，分别将 <code>fun2()</code> 和 <code>fun3()</code> 的返回值和它进行了比较，如果相等，则将这个值返回，否则就继续执行下一个 <code>case</code> 块。接下来看下 <code>fun2()</code> 和 <code>fun3()</code>。</p>
+<h2 id="fun2-fun3"><a href="#fun2-fun3" class="headerlink" title="fun2 &amp; fun3"></a>fun2 &amp; fun3</h2><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Nullable</span></span><br><span class="line"><span class="keyword">public</span> static <span class="keyword">final</span> Object fun2(<span class="meta">@NotNull</span> Continuation $completion) &#123;</span><br><span class="line">   <span class="keyword">return</span> Boxing.boxInt(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Nullable</span></span><br><span class="line"><span class="keyword">public</span> static <span class="keyword">final</span> Object fun3(<span class="meta">@NotNull</span> Continuation var0) &#123;</span><br><span class="line">   Object $continuation;</span><br><span class="line">   label20: &#123;</span><br><span class="line">      <span class="keyword">if</span> (var0 instanceof &lt;undefinedtype&gt;) &#123;</span><br><span class="line">         $continuation = (&lt;undefinedtype&gt;)var0;</span><br><span class="line">         <span class="keyword">if</span> ((((&lt;undefinedtype&gt;)$continuation).label &amp; Integer.MIN_VALUE) != <span class="number">0</span>) &#123;</span><br><span class="line">            ((&lt;undefinedtype&gt;)$continuation).label -= Integer.MIN_VALUE;</span><br><span class="line">            <span class="keyword">break</span> label20;</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      $continuation = new ContinuationImpl(var0) &#123;</span><br><span class="line">         <span class="comment">// $FF: synthetic field</span></span><br><span class="line">         Object result;</span><br><span class="line">         int label;</span><br><span class="line">         <span class="meta">@Nullable</span></span><br><span class="line">         <span class="keyword">public</span> <span class="keyword">final</span> Object invokeSuspend(<span class="meta">@NotNull</span> Object $result) &#123;</span><br><span class="line">            <span class="keyword">this</span>.result = $result;</span><br><span class="line">            <span class="keyword">this</span>.label |= Integer.MIN_VALUE;</span><br><span class="line">            <span class="keyword">return</span> TestKt.fun3((Continuation)<span class="keyword">this</span>);</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;;</span><br><span class="line">   &#125;</span><br><span class="line">   Object $result = ((&lt;undefinedtype&gt;)$continuation).result;</span><br><span class="line">   Object var3 = IntrinsicsKt.getCOROUTINE_SUSPENDED();</span><br><span class="line">   switch (((&lt;undefinedtype&gt;)$continuation).label) &#123;</span><br><span class="line">      case <span class="number">0</span>:</span><br><span class="line">         ResultKt.throwOnFailure($result);</span><br><span class="line">         ((&lt;undefinedtype&gt;)$continuation).label = <span class="number">1</span>;</span><br><span class="line">         <span class="keyword">if</span> (DelayKt.delay(<span class="number">1000L</span>, (Continuation)$continuation) == var3) &#123;</span><br><span class="line">            <span class="keyword">return</span> var3;</span><br><span class="line">         &#125;</span><br><span class="line">         <span class="keyword">break</span>;</span><br><span class="line">      case <span class="number">1</span>:</span><br><span class="line">         ResultKt.throwOnFailure($result);</span><br><span class="line">         <span class="keyword">break</span>;</span><br><span class="line">      default:</span><br><span class="line">         <span class="keyword">throw</span> new IllegalStateException(<span class="string">&quot;call to &#x27;resume&#x27; before &#x27;invoke&#x27; with coroutine&quot;</span>);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> Boxing.boxInt(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>fun2()</code> 就普普通通的一个函数，返回的是 <code>Boxing.boxInt(1)</code>，和 <code>COROUTINE_SUSPENDED</code> 不相等，因此 <code>fun1()</code> 执行完 <code>case 0</code> 块后会继续执行 <code>case 1</code> 块。</p>
+<p>再看看 <code>fun3()</code>，这家伙就是<code> fun1()</code> 的翻版，它逻辑就没必要赘述了，重点看它 <code>case 0</code> 块中的这几行代码：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (DelayKt.delay(<span class="number">1000L</span>, (Continuation)$continuation) == var3) &#123;</span><br><span class="line">     <span class="keyword">return</span> var3;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>DelayKt.delay()</code> 有两个参数，第一个参数不用说了，第二个参数前面已经分析过了，是 <code>fun3()</code> 内创建的 <code>ContinuationImpl</code> 对象（后面称其为 <code>Continuation3</code>）。继续追踪下去会发现，<code>DelayKt.delay()</code> 会将一个延时任务插入到事件循环中，1000ms 延时之后，<code>Continuation3</code> 的 <code>resumeWith()</code> 方法会被调用。</p>
+<p><code>resumeWith()</code> 是 <code>Continiuation</code> 接口的唯一方法，该方法在 <code>BaseContinuationImpl</code> 中有个 final 实现：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">BaseContinuationImpl</span>(</span><br><span class="line">    <span class="comment">// This is `public val` so that it is private on JVM and cannot be modified by untrusted code, yet</span></span><br><span class="line">    <span class="comment">// it has a public getter (since even untrusted code is allowed to inspect its call stack).</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">val</span> completion: Continuation&lt;Any?&gt;?</span><br><span class="line">) : Continuation&lt;Any?&gt;, CoroutineStackFrame, Serializable &#123;</span><br><span class="line">    <span class="comment">// This implementation is final. This fact is used to unroll resumeWith recursion.</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">resumeWith</span><span class="params">(result: <span class="type">Result</span>&lt;<span class="type">Any</span>?&gt;)</span></span> &#123;</span><br><span class="line">        <span class="comment">// This loop unrolls recursion in current.resumeWith(param) to make saner and shorter stack traces on resume</span></span><br><span class="line">        <span class="keyword">var</span> current = <span class="keyword">this</span></span><br><span class="line">        <span class="keyword">var</span> param = result</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="comment">// Invoke &quot;resume&quot; debug probe on every resumed continuation, so that a debugging library infrastructure</span></span><br><span class="line">            <span class="comment">// can precisely track what part of suspended callstack was already resumed</span></span><br><span class="line">            probeCoroutineResumed(current)</span><br><span class="line">            with(current) &#123;</span><br><span class="line">                <span class="keyword">val</span> completion = completion!! <span class="comment">// fail fast when trying to resume continuation without completion</span></span><br><span class="line">                <span class="keyword">val</span> outcome: Result&lt;Any?&gt; =</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        <span class="keyword">val</span> outcome = invokeSuspend(param)</span><br><span class="line">                        <span class="keyword">if</span> (outcome === COROUTINE_SUSPENDED) <span class="keyword">return</span></span><br><span class="line">                        Result.success(outcome)</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (exception: Throwable) &#123;</span><br><span class="line">                        Result.failure(exception)</span><br><span class="line">                    &#125;</span><br><span class="line">                releaseIntercepted() <span class="comment">// this state machine instance is terminating</span></span><br><span class="line">                <span class="keyword">if</span> (completion <span class="keyword">is</span> BaseContinuationImpl) &#123;</span><br><span class="line">                    <span class="comment">// unrolling recursion via loop</span></span><br><span class="line">                    current = completion</span><br><span class="line">                    param = outcome</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="comment">// top-level completion reached -- invoke and return</span></span><br><span class="line">                    completion.resumeWith(outcome)</span><br><span class="line">                    <span class="keyword">return</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="function"><span class="keyword">fun</span> <span class="title">invokeSuspend</span><span class="params">(result: <span class="type">Result</span>&lt;<span class="type">Any</span>?&gt;)</span></span>: Any?</span><br><span class="line"></span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>BaseContinuationImpl</code> 有一个 <code>Continuation</code> 类型的字段 <code>completion</code>，并在构造方法中初始化，<code>fun1()</code> 和 <code>fun3()</code> 创建 <code>ContinuationImpl</code> 时传入的 <code>var0</code> 就是赋给了这个 <code>completion</code>。<code>BaseContinuationImpl</code> 的方法体是一个 <code>while</code> 循环。其主要逻辑如下：</p>
+<ol>
+<li><p>调用 <code>invokeSuspend()</code>，判断返回结果，如果是 <code>COROUTINE_SUSPENDED</code>，就直接返回。否则无论成功还是失败，都会将结果封装在 <code>Result</code> 中给 <code>outcome</code>。</p>
+</li>
+<li><p>接下来判断 <code>completion</code> 是不是  <code>BaseContinuationImpl</code> 类型，是的话就将 <code>current</code> 的值赋为 <code>completion</code>，也就是上游的 <code>Continuation</code>，将 <code>param</code> 赋为 <code>outcome</code>。这是什么意思呢？注释里其实已经解释了：用循环来展开递归。其实就是将尾递归转化成了循环，这应该是基于性能方面的考量。</p>
+<p> （Android 里面 <code>View</code> 的某些方法也有类似的骚操作，但后面好像又改成了递归，我觉得是因为循环可读性差不好维护，而且还有点违反面向对象的设计，除非真的对性能有很大的影响否则没必要）</p>
+</li>
+<li><p><code>else</code> 块中是循环的出口，如注释所说，这时候已经到达了顶层，没有上游 <code>Continuation</code> 了。</p>
+</li>
+</ol>
+<p>为容易理解，可以把循环还原成递归：下游的 <code>Continuation</code> 的 <code>invokeSuspend()</code> 获取到结果后，调用上游 <code>Continuation</code> ，即 <code>completion</code> 的 <code>resumeWith</code> 方法，直到最顶层的 <code>Continuaion</code>。</p>
+<p>重新梳理一下协程执行的整个过程：</p>
+<ol>
+<li><p>从 <code>SuspendLambda</code>（block）开始，因为 <code>label</code> 为 0，执行 <code>case 0</code> 代码块：将 <code>label</code> 置为 1 后，调用函数 <code>fun1()</code> ，并将自身传给了 <code>fun1()</code>。</p>
+</li>
+<li><p><code>fun1()</code> 中构造了 <code>Continuation1</code>，并将 <code>SuspendLambda</code> 作为它的 <code>completion</code>。读取 <code>Continuation1</code> 的 <code>label</code> 字段，因为 <code>label == 0</code>，因此执行 <code>case 0</code> 代码块：</p>
+<ul>
+<li>初始化 <code>localInt</code>；</li>
+<li>将 <code>localInt</code> 保存到 <code>Continuation1</code> 的 <code>I$0</code> 字段中；</li>
+<li>将 <code>Continuation1</code> 的 <code>label</code> 置为 1；</li>
+<li>调用函数 <code>fun2()</code>。</li>
+</ul>
+</li>
+<li><p><code>fun2()</code> 直接返回 <code>Boxing.boxInt(1)</code> 给 <code>fun1()</code>，<code>fun1()</code> 将这个值保存在，这个值和 <code>COROUTINE_SUSPENDED</code> 不相等，因此会继续执行 <code>fun1()</code> 的 <code>case 1</code> 块： </p>
+<ul>
+<li>用 <code>Continuation1</code> 的 <code>I$0</code> 字段恢复 <code>localInt</code> 的值；</li>
+<li><code>localInt += Boxing.boxInt(1)</code>；</li>
+<li>将 <code>localInt</code> 保存到 <code>Continuation1</code> 的 <code>I$0</code> 字段中；</li>
+<li>将 <code>Continuation1</code> 的 <code>label</code> 置为 2；</li>
+<li>调用函数 <code>fun3()</code>。</li>
+</ul>
+</li>
+<li><p><code>fun3()</code> 中构造了 <code>Continuation3</code>，并将 <code>Continuation1</code> 作为它的 <code>completion</code>。接下来读取 <code>Continuation3</code> 的 <code>label</code> 字段，因为 <code>label  == 0</code>，因此执行 <code>case 0</code> 块：</p>
+<ul>
+<li>将 <code>Continuation3</code> 的 <code>label</code> 置为 1 ；</li>
+<li>调用 <code>delay()</code> 方法。</li>
+</ul>
+</li>
+<li><p><code>delay()</code> 向事件循环中插入一个延时任务，并立即返回 <code>COROUTINE_SUSPENDED</code> 给 <code>fun3()</code>，<code>fun3()</code> 将这个值返回给 <code> fun1()</code>，<code>fun1()</code> 继续将这个值返回给 <code>SuspendLambda</code>，此时 <code>SuspendLambda</code> 的 <code>case 0</code> 块执行完毕。</p>
+</li>
+<li><p>延时任务到期后，会调用 <code>Continuation3</code> 的 <code>resumeWith()</code> 方法，<code>fun3</code> 再次被调用并返回 <code>Boxing.boxInt(1)</code>。因为这个值不等于 <code>COROUTINE_SUSPENDED</code>，因此 <code>Continuation3</code> 会拿着这个值去调用其 <code>completion</code> 也就是  <code>Continuation1</code> 的 <code>resumeWith()</code> 方法。</p>
+</li>
+<li><p><code>Continuation1</code> 的 <code>resumeWith()</code> 调用自身 <code>invokeSuspend()</code> 方法，<code>invokeSuspend()</code> 将值保存在 <code>result</code> 字段中之后，将 <code>Continuation1</code> 自身作为参数再次调用 <code>fun1()</code>。</p>
+</li>
+<li><p><code>fun1()</code> 再次执行，从 <code>Continuation1</code> 读取 <code>label</code> 值，此时 <code>label</code> 为 2，执行 <code>case 2</code> 块：</p>
+<ul>
+<li>用 <code>Continuation1</code> 的 <code>I$0</code> 字段恢复 <code>localInt</code> 的值；</li>
+<li>读取 <code>Continuation1</code> 的 <code>result</code> 字段获取 <code>fun3()</code> 的返回结果 <code>Boxing.boxInt(1)</code>；</li>
+<li><code>localInt += Boxing.boxInt(1)</code>；</li>
+<li>将返回 <code>localInt</code> 返回给 <code>invokeSuspend()</code>。</li>
+</ul>
+</li>
+<li><p><code>invokeSuspend()</code> 将结果返回给 <code>resumeWith()</code>，此结果不为 <code>COROUTINE_SUSPENDED</code>，因此执行 <code>completion</code> 也就是 <code>SuspendLambda</code> 的 <code>resumeWith()</code>，并将结果传给它。</p>
+</li>
+<li><p><code>SuspendLambda</code> 的 <code>resumeWith()</code> 方法调用自身的 <code>invokeSuspend()</code> 方法，此时 <code>label</code> 为 1，执行 <code>case 1</code> 块：将结果打印出来。协程结束。</p>
+</li>
+</ol>
+<p>可以得出以下几个基本事实：</p>
+<ul>
+<li>每一个 <code>suspend</code> 方法都和一个 <code>Continuation</code> 对象关联着；（<code>fun2()</code> 这种并没有真正 <code>suspend</code> 的方法除外）</li>
+<li>当一个方法返回 <code>COROUTINE_SUSPENDED</code> 时，其实就是就是告诉调用者自己将会挂起（暂停），这个返回值会导致整个调用链结束，调用链上的所有方法也都被挂起；</li>
+<li>下游方法恢复时，会通过调用上游方法的关联的 <code>Continuation</code> 对象的 <code>resumeWith()</code> 方法，触发上游方法的恢复。</li>
+</ul>
+<p>最后画了一张图帮助理解：</p>
+<p><img src="/img/in-post/post_kotlin_coroutine_state_machine/kotlin_coroutine.svg" alt="Kotlin 协程"></p>
+<h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p> Kotlin 协程中的所谓状态机，其实就是 Kotlin 为 <code>suspend</code> 方法生成的 <code>Continuation</code> 对象，严格来说是 <code>Continuation</code> 对象和方法共同构成了状态机：方法执行状态机的状态转移逻辑，<code>Continuation</code> 负责存储状态，方法如何执行由 <code>Continuation</code> 中的状态决定。</p>
+<p><code>Contiuation</code> 其实在无栈协程中充当了栈帧的作用：</p>
+<ul>
+<li>保存了局部变量，比如 <code>Continuation</code> 中的 <code>I$0</code> 字段；</li>
+<li>保存了方法中断后的返回地址，比如 <code>label</code>；</li>
+<li>通过 <code>completion</code> 字段引用上游方法的 <code>Continuation</code>，构成了 <code>Continuation</code> 链，也就是 <code>suspend</code> 方法专属的 ”调用栈“。</li>
+</ul>
+<p>‍</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Chance
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/" title="探究 Kotlin 协程的状态机">https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/Kotlin/" rel="tag"><i class="fa fa-tag"></i> Kotlin</a>
+              <a href="/tags/%E5%8D%8F%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 协程</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/04/04/2024-04-04-understand-cross-origin/" rel="prev" title="理解前端跨源问题">
+      <i class="fa fa-chevron-left"></i> 理解前端跨源问题
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <script src="https://utteranc.es/client.js"                                     repo="Lwenkun/lwenkun.github.io"                                     issue-term="pathname"                                     theme="github-dark"                                     crossorigin="anonymous"                                     async>                                 </script>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%8D%E7%BC%96%E8%AF%91-Kotlin"><span class="nav-number">2.</span> <span class="nav-text">反编译 Kotlin</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#main"><span class="nav-number">2.1.</span> <span class="nav-text">main</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fun1"><span class="nav-number">2.2.</span> <span class="nav-text">fun1</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fun2-fun3"><span class="nav-number">2.3.</span> <span class="nav-text">fun2 &amp; fun3</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD"><span class="nav-number">3.</span> <span class="nav-text">结语</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Chance Li"
+      src="https://www.gravatar.com/avatar/95a0f14d3e6b40995a92c41673fd09d4?s=640">
+  <p class="site-author-name" itemprop="name">Chance Li</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">27</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">26</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Lwenkun" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Lwenkun" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i> GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lwenkun666@gmail.com" title="E-Mail → mailto:lwenkun666@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i> E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/5261683001" title="微博 → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;5261683001" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i> 微博</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/li-wen-kun-40" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;li-wen-kun-40" rel="noopener" target="_blank"><i class="fa fa-fw fa-globe"></i> 知乎</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://ylqhust.github.io/" title="http:&#x2F;&#x2F;ylqhust.github.io" rel="noopener" target="_blank">ylqhust的博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chance Li</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">245k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:43</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
