@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      探究 Kotlin 协程的状态机
+title:      探究 Kotlin 协程中的状态机
 subtitle:  
 date:       2024-04-08
 author:     "Chance"
@@ -52,7 +52,7 @@ suspend fun fun3(): Int {
 
 例子很简单，但涵盖了协程运行时的几个重要的场景：协程的启动，协程中调用 `suspend` 方法，`suspend` 方法中调用普通方法，`suspend` 方法中调用 `suspend` 方法。接下来将以上代码编译后再反编译为 Java 代码。
 
-（反编译 Kotlin 代码是没法使用传统的反编译工具来完成的，需要在 IDEA 中打开 Kotlin 字节码文件，然后点击 工具 -> Kotlin -> 反编译为  Java 来完成。）
+<p class="notice-info">Java 反编译工具没法反编译 Kotlin class 文件，需要在 IDEA 中打开 Kotlin 字节码文件，然后点击 <i>工具 -> Kotlin -> 反编译为  Java</i> 进行反编译。</p>
 
 ## main
 
@@ -422,7 +422,7 @@ internal abstract class BaseContinuationImpl(
 1. 调用 `invokeSuspend()`，判断返回结果，如果是 `COROUTINE_SUSPENDED`，就直接返回。否则无论成功还是失败，都会将结果封装在 `Result` 中给 `outcome`。
 2. 接下来判断 `completion` 是不是  `BaseContinuationImpl` 类型，是的话就将 `current` 的值赋为 `completion`，也就是上游的 `Continuation`，将 `param` 赋为 `outcome`。这是什么意思呢？注释里其实已经解释了：用循环来展开递归。其实就是将尾递归转化成了循环，这应该是基于性能方面的考量。
 
-    （Android 里面 `View` 的某些方法也有类似的骚操作，但后面好像又改成了递归，我觉得是因为循环可读性差不好维护，而且还有点违反面向对象的设计，除非真的对性能有很大的影响否则没必要）
+    <p class="notice-info">Android 里面 View 的某些方法也有类似的骚操作，但后面好像又改成了递归，我觉得是因为循环可读性差不好维护，而且还有点违反面向对象的设计，除非真的对性能有很大的影响否则没必要）</p>
 3. `else` 块中是循环的出口，如注释所说，这时候已经到达了顶层，没有上游 `Continuation` 了。
 
 为容易理解，可以把循环还原成递归：下游的 `Continuation` 的 `invokeSuspend()` 获取到结果后，调用上游 `Continuation` ，即 `completion` 的 `resumeWith` 方法，直到最顶层的 `Continuaion`。
