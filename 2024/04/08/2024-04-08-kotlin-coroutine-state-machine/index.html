@@ -24,14 +24,14 @@
 
   <meta name="description" content="前言Kotlin 中的协程是无栈协程（话说 Kotlin 能实现有栈线程吗🤔），网上很多文章都说无栈协程一般都是通过状态机实现的，刚开始听到这个状态机的时候觉得有点玄乎，今天反编译一下 Kotlin 代码，看看这个状态机到底是个什么鬼。 反编译 Kotlin1234567891011121314151617181920212223242526fun main() &#123;    runBlo">
 <meta property="og:type" content="article">
-<meta property="og:title" content="探究 Kotlin 协程的状态机">
+<meta property="og:title" content="探究 Kotlin 协程中的状态机">
 <meta property="og:url" content="https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/index.html">
 <meta property="og:site_name" content="李文坤的博客">
 <meta property="og:description" content="前言Kotlin 中的协程是无栈协程（话说 Kotlin 能实现有栈线程吗🤔），网上很多文章都说无栈协程一般都是通过状态机实现的，刚开始听到这个状态机的时候觉得有点玄乎，今天反编译一下 Kotlin 代码，看看这个状态机到底是个什么鬼。 反编译 Kotlin1234567891011121314151617181920212223242526fun main() &#123;    runBlo">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_kotlin_coroutine_state_machine/kotlin_coroutine.svg">
 <meta property="article:published_time" content="2024-04-08T00:00:00.000Z">
-<meta property="article:modified_time" content="2024-04-08T02:47:19.526Z">
+<meta property="article:modified_time" content="2024-04-08T03:03:58.392Z">
 <meta property="article:author" content="Chance Li">
 <meta property="article:tag" content="Kotlin">
 <meta property="article:tag" content="协程">
@@ -51,7 +51,7 @@
   };
 </script>
 
-  <title>探究 Kotlin 协程的状态机 | 李文坤的博客</title>
+  <title>探究 Kotlin 协程中的状态机 | 李文坤的博客</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76493784-1"></script>
     <script>
@@ -222,7 +222,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          探究 Kotlin 协程的状态机
+          探究 Kotlin 协程中的状态机
         </h1>
 
         <div class="post-meta">
@@ -233,7 +233,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2024-04-08 00:00:00 / 修改时间：02:47:19" itemprop="dateCreated datePublished" datetime="2024-04-08T00:00:00+00:00">2024-04-08</time>
+              <time title="创建时间：2024-04-08 00:00:00 / 修改时间：03:03:58" itemprop="dateCreated datePublished" datetime="2024-04-08T00:00:00+00:00">2024-04-08</time>
             </span>
 
           
@@ -275,7 +275,8 @@
 <p>这是一段使用了协程的 Kotlin 代码。在 <code>main</code> 方法中，通过 <code>runBlocking</code> 方法开启协程，协程的逻辑很简单，调用 <code>fun1()</code> ，然后将其结果打印出来。重点是 <code>fun1()</code> 函数，<code>fun1()</code> 是一个 <code>suspend</code> 方法，它定义了一个局部变量 <code>localInt</code>，然后依次执行了 <code>fun2()</code> 和 <code>fun3()</code> 并将结果累加到 <code>localInt</code> 中，最后将 <code>localInt</code> 返回。</p>
 <p>其中 <code>fun2()</code> 是一个披着 <code>suspend</code> 外衣的普通方法，IDE 中会出现 warning 提示说 <code>suspend</code> 关键字是多余的，暂时保留它，看看最后会编译成什么样。<code>fun3()</code> 内调用了 <code>delay() </code>，<code>delay()</code> 方法是 <code>suspend</code> 的元凶之一，调用链上游的方法都因为它是 <code>suspend</code>，才都变成 <code>suspend</code>。</p>
 <p>例子很简单，但涵盖了协程运行时的几个重要的场景：协程的启动，协程中调用 <code>suspend</code> 方法，<code>suspend</code> 方法中调用普通方法，<code>suspend</code> 方法中调用 <code>suspend</code> 方法。接下来将以上代码编译后再反编译为 Java 代码。</p>
-<p>（反编译 Kotlin 代码是没法使用传统的反编译工具来完成的，需要在 IDEA 中打开 Kotlin 字节码文件，然后点击 工具 -&gt; Kotlin -&gt; 反编译为  Java 来完成。）</p>
+<p class="notice-info">Java 反编译工具没法反编译 Kotlin class 文件，需要在 IDEA 中打开 Kotlin 字节码文件，然后点击 <i>工具 -> Kotlin -> 反编译为  Java</i> 进行反编译。</p>
+
 <h2 id="main"><a href="#main" class="headerlink" title="main"></a>main</h2><p>先看 <code>main</code> 方法：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">      BuildersKt.runBlocking$<span class="keyword">default</span>((CoroutineContext)<span class="literal">null</span>, (Function2)(<span class="keyword">new</span> <span class="title class_">Function2</span>((Continuation)<span class="literal">null</span>) &#123;</span><br><span class="line">         <span class="type">int</span> label;</span><br><span class="line"></span><br><span class="line">         <span class="meta">@Nullable</span></span><br><span class="line">         <span class="keyword">public</span> <span class="keyword">final</span> Object <span class="title function_">invokeSuspend</span><span class="params">(<span class="meta">@NotNull</span> Object $result)</span> &#123;</span><br><span class="line">            <span class="type">Object</span> <span class="variable">var3</span> <span class="operator">=</span> IntrinsicsKt.getCOROUTINE_SUSPENDED();</span><br><span class="line">            Object var10000;</span><br><span class="line">            <span class="keyword">switch</span> (<span class="built_in">this</span>.label) &#123;</span><br><span class="line">               <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">                  ResultKt.throwOnFailure($result);</span><br><span class="line">                  <span class="type">Continuation</span> <span class="variable">var4</span> <span class="operator">=</span> (Continuation)<span class="built_in">this</span>;</span><br><span class="line">                  <span class="built_in">this</span>.label = <span class="number">1</span>;</span><br><span class="line">                  var10000 = TestKt.fun1(var4);          <span class="comment">// fun1()</span></span><br><span class="line">                  <span class="keyword">if</span> (var10000 == var3) &#123;</span><br><span class="line">                     <span class="keyword">return</span> var3;</span><br><span class="line">                  &#125;</span><br><span class="line">                  <span class="keyword">break</span>;</span><br><span class="line">               <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">                  ResultKt.throwOnFailure($result);</span><br><span class="line">                  var10000 = $result;</span><br><span class="line">                  <span class="keyword">break</span>;</span><br><span class="line">               <span class="keyword">default</span>:</span><br><span class="line">                  <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;call to &#x27;resume&#x27; before &#x27;invoke&#x27; with coroutine&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="type">int</span> <span class="variable">result</span> <span class="operator">=</span> ((Number)var10000).intValue();</span><br><span class="line">            System.out.println(result);</span><br><span class="line">            <span class="keyword">return</span> Unit.INSTANCE;</span><br><span class="line">         &#125;</span><br><span class="line"></span><br><span class="line">         <span class="meta">@NotNull</span></span><br><span class="line">         <span class="keyword">public</span> <span class="keyword">final</span> Continuation <span class="title function_">create</span><span class="params">(<span class="meta">@Nullable</span> Object value, <span class="meta">@NotNull</span> Continuation $completion)</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> (Continuation)(<span class="keyword">new</span> &lt;anonymous constructor&gt;($completion));</span><br><span class="line">         &#125;</span><br><span class="line"></span><br><span class="line">         <span class="meta">@Nullable</span></span><br><span class="line">         <span class="keyword">public</span> <span class="keyword">final</span> Object <span class="title function_">invoke</span><span class="params">(<span class="meta">@NotNull</span> CoroutineScope p1, <span class="meta">@Nullable</span> Continuation p2)</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> ((&lt;undefinedtype&gt;)<span class="built_in">this</span>.create(p1, p2)).invokeSuspend(Unit.INSTANCE);</span><br><span class="line">         &#125;</span><br><span class="line"></span><br><span class="line">         <span class="comment">// $FF: synthetic method</span></span><br><span class="line">         <span class="comment">// $FF: bridge method</span></span><br><span class="line">         <span class="keyword">public</span> Object <span class="title function_">invoke</span><span class="params">(Object p1, Object p2)</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>.invoke((CoroutineScope)p1, (Continuation)p2);</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;), <span class="number">1</span>, (Object)<span class="literal">null</span>);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
 
@@ -317,8 +318,7 @@
 <li><p>调用 <code>invokeSuspend()</code>，判断返回结果，如果是 <code>COROUTINE_SUSPENDED</code>，就直接返回。否则无论成功还是失败，都会将结果封装在 <code>Result</code> 中给 <code>outcome</code>。</p>
 </li>
 <li><p>接下来判断 <code>completion</code> 是不是  <code>BaseContinuationImpl</code> 类型，是的话就将 <code>current</code> 的值赋为 <code>completion</code>，也就是上游的 <code>Continuation</code>，将 <code>param</code> 赋为 <code>outcome</code>。这是什么意思呢？注释里其实已经解释了：用循环来展开递归。其实就是将尾递归转化成了循环，这应该是基于性能方面的考量。</p>
-<p> （Android 里面 <code>View</code> 的某些方法也有类似的骚操作，但后面好像又改成了递归，我觉得是因为循环可读性差不好维护，而且还有点违反面向对象的设计，除非真的对性能有很大的影响否则没必要）</p>
-</li>
+ <p class="notice-info">Android 里面 View 的某些方法也有类似的骚操作，但后面好像又改成了递归，我觉得是因为循环可读性差不好维护，而且还有点违反面向对象的设计，除非真的对性能有很大的影响否则没必要）</p></li>
 <li><p><code>else</code> 块中是循环的出口，如注释所说，这时候已经到达了顶层，没有上游 <code>Continuation</code> 了。</p>
 </li>
 </ol>
@@ -400,7 +400,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/" title="探究 Kotlin 协程的状态机">https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/</a>
+    <a href="https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/" title="探究 Kotlin 协程中的状态机">https://lwenkun.github.io/2024/04/08/2024-04-08-kotlin-coroutine-state-machine/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
