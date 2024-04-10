@@ -255,7 +255,7 @@ label27: {
 
 可以看出，首次执行 `fun1()` 的时候，`fun1()` 的参数 `var0` 是上游方法传来的 `Continuation` 对象（后面称其为 `SuspendLambda`），`$continuation `会被赋值为一个`ContinationImpl` 对象（后面称其为 `Continuation1`），该对象持有 `SuspendLambda`。后续 `fun1()` 被调用时，参数 `var0` 则是第一次执行时创建的 `Continuation1`，由于在调用前执行了 `this.label |= Integer.MIN_VALUE`  因此两层 `if` 判断都为真，`break label27` 会执行，从而直接跳出了 `label27` 块。
 
-现在来看 `fun1()` 剩下部分的逻辑。毕竟是反编译，结果并不是那么容易读懂，于是将其改写成如下等价代码：
+现在来看 `fun1()` 剩下部分的逻辑。我整理了下，将其改写成如下等价代码：
 
 ```kotlin
 Object var10000;
@@ -277,6 +277,7 @@ switch (((<undefinedtype>)$continuation).label) {
     	if (var10000 == var6) {
         	return var6;
     	}
+      $result = var10000;
         // 注意这里没有 break;
     case 1:
         /* 对应 localInt += fun2Result; fun3Result = fun3() */
