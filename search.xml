@@ -2212,8 +2212,8 @@
 <p>话不多说，开干。</p>
 <span id="more"></span>
 
-<p class="notice-info">如果你的设备也是树莓派 3B+ ，且不想折腾的话，我这里准备了一个开箱即用的 OpenWrt 镜像，自带 OpenClash，分区扩容到了 1G，路由器管理密码和 WiFi 密码都是 12345678，WiFi 名为 OpenWrt，路由器地址为 192.168.110.1。烧录运行后，只需要改下密码和 OpenClash 节点信息就行了。  
-<a href='https://cloud.189.cn/t/3iqiYfYRnA3e'>https://cloud.189.cn/t/3iqiYfYRnA3e（访问码：ba8p）</a></p>
+<p class="notice-info">如果你的设备也是树莓派 3B+ 且不想折腾的话，我这里准备了一个开箱即用的 OpenWrt 镜像，自带 OpenClash，分区扩容到了 1G，路由器管理密码和 WiFi 密码都是 12345678，WiFi 名为 OpenWrt，路由器地址为 192.168.110.1。烧录运行后，只需要改下密码和 OpenClash 节点信息就行了。  
+<a href='https://cloud.189.cn/t/3iqiYfYRnA3e'>天翼云盘（访问码：ba8p）</a> 或者 <a href='https://1drv.ms/u/s!Avz7vfylhEW5kyy60lACnqFGODSC?e=lPcP9v'>OneDrive</a></p>
 
 <h1 id="安装-OpenWrt"><a href="#安装-OpenWrt" class="headerlink" title="安装 OpenWrt"></a>安装 OpenWrt</h1><h2 id="准备工具"><a href="#准备工具" class="headerlink" title="准备工具"></a>准备工具</h2><ul>
 <li>1G  以上 micro SD 卡，树莓派 3B+，网线</li>
