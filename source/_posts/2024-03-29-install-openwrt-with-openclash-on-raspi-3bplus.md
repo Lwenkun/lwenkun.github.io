@@ -110,7 +110,7 @@ tags:
 
     如下图所示，将 Device 改成 <kbd>Wireless Network: Master &quot;OpenWrt&quot; (lan)</kbd>，Device 展示的名称和选项列表中的名称不一样，这个不用管。IPv4 address 改成 192.168.110.1。然后点击  <kbd>Save</kbd> 保存。
 
-    <p class="notice-warn">如果你上级路由器的网段不是 192.168.1.0/24，这里 IPv4 address 其实可以不改，我这里之所以改成 192.168.110.1 是避免上级路由器网段冲突。如果你的上级路由器网段刚好也是这个，你可以去买彩票了 😃。</p>
+    <p class="notice-error">如果你上级路由器的网段不是 192.168.1.0/24，这里 IPv4 address 其实可以不改，我这里之所以改成 192.168.110.1 是避免上级路由器网段冲突。如果你的上级路由器网段刚好也是这个，你可以去买彩票了 😃。</p>
 
     ![](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327212906-2rovyqk.png)
 
@@ -120,7 +120,7 @@ tags:
 
     如下图所示，把 Channel 改成 44（最开始我用的是 auto，发现 switch 死活连不上，最后按照网上的方法改成 44 就好了），加密方式我选择的是 <kbd>WPA-PSK/WPA2-PSK Mixed Mode</kbd>，兼容性好一点。 Key 自己看着填就行。最后点击 <kbd>Save</kbd>。
 
-    <p class="notice-warn">不要在这个配置页面点击 <kbd>Enable</kbd> ，<kbd>Enable</kbd> 不仅会开启无线网络，还是把之前所有的更改自动应用了，这可能会导致无法再连接上路由器。</p>
+    <p class="notice-error">不要在这个配置页面点击 <kbd>Enable</kbd> ，<kbd>Enable</kbd> 不仅会开启无线网络，还是把之前所有的更改自动应用了，这可能会导致无法再连接上路由器。</p>
 
     ![](/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175237-uznxcji.png)
 
@@ -146,7 +146,7 @@ tags:
 
 然后把下面的文本复制到红框中，取代官方的源，点击 <kbd>Save</kbd>。我这里用的是清华的源，速度还可以。
 
- <p class="notice-warn">确认一下版本和 CPU 架构是否能和你的设备对上，否则需要修改</p>
+ <p class="notice-error">确认一下版本和 CPU 架构是否能和你的设备对上，否则需要修改</p>
 
 ```bash
 src/gz openwrt_core https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/targets/bcm27xx/bcm2710/packages
