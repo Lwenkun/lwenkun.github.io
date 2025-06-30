@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      探究 Kotlin 协程中的状态机
+title:      探究 Kotlin 协程
 subtitle:  
 date:       2024-04-08
 author:     "Chance"
@@ -12,9 +12,9 @@ tags:
 
 # 前言
 
-Kotlin 中的协程是无栈协程（话说 Kotlin 能实现有栈线程吗🤔），网上很多文章都说无栈协程一般都是通过状态机实现的，刚开始听到这个状态机的时候觉得有点玄乎，今天反编译一下 Kotlin 代码，看看这个状态机到底是个什么鬼。
+Kotlin 中的协程是无栈协程（话说 Kotlin 能实现有栈线程吗🤔），网上很多文章都说无栈协程一般都是通过状态机实现的，刚开始听到这个状态机的时候觉得有点玄乎，今天打算利用反编译工具并结合协程库源码，来探究一下 kotlin 协程实现原理。
 
-# 反编译 Kotlin
+# 从一个简单的示例开始
 
 ```kotlin
 fun main() {
@@ -26,37 +26,124 @@ fun main() {
 
 suspend fun fun1(): Int {
     var localInt = 0
-
     localInt += fun2()
-
     localInt += fun3()
-
     return localInt
 }
 
-suspend fun fun2(): Int {
-    return 1
-}
-
+suspend fun fun2(): Int = 1
 
 suspend fun fun3(): Int {
     delay(1000)
     return 1
 }
 ```
-<!-- more -->
 
-这是一段使用了协程的 Kotlin 代码。在 `main` 方法中，通过 `runBlocking` 方法开启协程，协程的逻辑很简单，调用 `fun1()` ，然后将其结果打印出来。重点是 `fun1()` 函数，`fun1()` 是一个 `suspend` 方法，它定义了一个局部变量 `localInt`，然后依次执行了 `fun2()` 和 `fun3()` 并将结果累加到 `localInt` 中，最后将 `localInt` 返回。
+<!-- more  -->
 
-其中 `fun2()` 是一个披着 `suspend` 外衣的普通方法，IDE 中会出现 warning 提示说 `suspend` 关键字是多余的，暂时保留它，看看最后会编译成什么样。`fun3()` 内调用了 `delay() `，`delay()` 方法是 `suspend` 的元凶之一，调用链上游的方法都因为它是 `suspend`，才都变成 `suspend`。
+以上代码通过 `runBlocking()`​ 开启协程，协程调用 `fun1()`​ ，然后打印结果。`fun1()`​ 是一个 `suspend`​ 方法，它定义了一个局部变量 `localInt`​，然后依次执行了 `fun2()`​ 和 `fun3()`​ 并将二者结果累加到 `localInt`​ 中，最后将 `localInt`​ 返回。`fun2()`​ 是一个普通方法,`fun3()`​ 内调用了 `delay()`​，`delay()`​ 是协程库提供的 `suspend`​方法。
 
-例子很简单，但涵盖了协程运行时的几个重要的场景：协程的启动，协程中调用 `suspend` 方法，`suspend` 方法中调用普通方法，`suspend` 方法中调用 `suspend` 方法。接下来将以上代码编译后再反编译为 Java 代码。
+下面我们将会从 `runBlocking()`​ 开始，揭开 Kotlin 协程的神秘面纱。
 
-<p class="notice-info">Java 反编译工具没法反编译 Kotlin class 文件，需要在 IDEA 中打开 Kotlin 字节码文件，然后点击 <i>工具 -> Kotlin -> 反编译为  Java</i> 进行反编译。</p>
+## Builders#runBlocking
+
+```kotlin
+public actual fun <T> runBlocking(context: CoroutineContext, block: suspend CoroutineScope.() -> T): T {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+    val currentThread = Thread.currentThread()
+    val contextInterceptor = context[ContinuationInterceptor]
+    val eventLoop: EventLoop?
+    val newContext: CoroutineContext
+    if (contextInterceptor == null) {
+        // create or use private event loop if no dispatcher is specified
+        eventLoop = ThreadLocalEventLoop.eventLoop
+        newContext = GlobalScope.newCoroutineContext(context + eventLoop)
+    } else {
+        // See if context's interceptor is an event loop that we shall use (to support TestContext)
+        // or take an existing thread-local event loop if present to avoid blocking it (but don't create one)
+        eventLoop = (contextInterceptor as? EventLoop)?.takeIf { it.shouldBeProcessedFromContext() }
+            ?: ThreadLocalEventLoop.currentOrNull()
+        newContext = GlobalScope.newCoroutineContext(context)
+    }
+    val coroutine = BlockingCoroutine<T>(newContext, currentThread, eventLoop)
+    coroutine.start(CoroutineStart.DEFAULT, coroutine, block)
+    return coroutine.joinBlocking()
+}
+```
+
+这个方法的逻辑非常清晰：
+
+- 5 ~ 19 行用来构建协程的上下文，协程上下文是一些元素的集合，包括拦截器，代表协程的任务，异常处理器，协程名称等。
+- 20 行 `BlockingCoroutine<T>(newContext, currentThread, eventLoop)`​构建协程对象
+- 21 行 `coroutine#start()`​ 启动协程
+- 22 行阻塞当前线程，直到协程结束。
+
+只要搞懂了 `BlockingCotoutine`​ 和 `coroutine#start()`​，就能对 kotlin 协程的实现原理有一个大致的了解。为了便于理解，我们先从  `Coroutine#Start()`​ 着手。
+
+## Coroutine#Start
+
+省略一些中间过程，`Coroutine#Start`​ 最后会调用到下面这个方法：
+
+### CoroutineStarter#invoke
+
+```kotlin
+public operator fun <R, T> invoke(block: suspend R.() -> T, receiver: R, completion: Continuation<T>): Unit =
+        when (this) {
+            DEFAULT -> block.startCoroutineCancellable(receiver, completion)
+            ATOMIC -> block.startCoroutine(receiver, completion)
+            UNDISPATCHED -> block.startCoroutineUndispatched(receiver, completion)
+            LAZY -> Unit // will start lazily
+        }
+```
+
+协程有多种启动模式，简单起见，我们只研究 `DEFAULT`​ 模式，其他分支原理大同小异。`block.startCoroutineCancellable()`​ 源码如下：
+
+### Cancellable#startCoroutineCancellable
+
+```kotlin
+/**
+ * Use this function to start coroutine in a cancellable way, so that it can be cancelled
+ * while waiting to be dispatched.
+ */
+internal fun <R, T> (suspend (R) -> T).startCoroutineCancellable(
+    receiver: R, completion: Continuation<T>,
+    onCancellation: ((cause: Throwable) -> Unit)? = null
+) =
+    runSafely(completion) {
+        createCoroutineUnintercepted(receiver, completion).intercepted().resumeCancellableWith(Result.success(Unit), onCancellation)
+    }
+```
+
+重点是 `createCoroutineUnintercepted()`​：
+
+### IntrinsicsJvm#createCoroutineUnintercepted
+
+```kotlin
+@SinceKotlin("1.3")
+public actual fun <R, T> (suspend R.() -> T).createCoroutineUnintercepted(
+    receiver: R,
+    completion: Continuation<T>
+): Continuation<Unit> {
+    val probeCompletion = probeCoroutineCreated(completion)
+    return if (this is BaseContinuationImpl)
+        create(receiver, probeCompletion)
+    else {
+        createCoroutineFromSuspendFunction(probeCompletion) {
+            (this as Function2<R, Continuation<T>, Any?>).invoke(receiver, it)
+        }
+    }
+}
+```
+
+一般来说代码会走到 if 分支。if 分支调用了 suspend block 的 `create()`​ 方法。这个方法是编译器为 suspend lambda 生成的。接下来我们需要反编译示例代码来进一步探究。
+
+<p class="notice-info">反编译 Kotlin 代码是没法使用传统的反编译工具来完成的，需要在 IDEA 中打开 Kotlin 字节码文件，然后点击 工具 -> Kotlin -> 反编译为  Java 来完成。</p>
 
 ## main
 
-先看 `main` 方法：
+先看 `main`​ 方法的反编译结果：
 
 ```java
 public static final void main() {
@@ -109,9 +196,7 @@ public static final void main() {
    }
 ```
 
-没想到 Kotlin 中的几行代码，反编译为 Java 后代码有这么长。反编译器一般都比较”死板“，有些地方乍看晦涩难懂，但仔细研究一下就知道，它用蹩脚的代码展示了极为简单的逻辑。
-
-`runBlocking$default()` 接收四个参数，其他几个参数看不懂，但第二个参数貌似有点东西。第二个参数是一个 `Function2` 对象，`Function2` 是 Kotlin 库中的一个接口，有一个 `invoke()` 方法，定义如下：
+​`runBlocking$default()`​ 是 `runBlocking()`​ 的反编译后的名字。反编译后的代码中，它接收四个参数，后面两个参数暂时不用理会。第一个参数类型为 `CoroutineContext`​，传入的是 `null`​。第二个参数是一个 `Function2`​ 对象，`Function2`​ 是 Kotlin 库中的一个接口，定义如下：
 
 ```kotlin
 public interface Function2<in P1, in P2, out R> : Function<R> {
@@ -120,31 +205,310 @@ public interface Function2<in P1, in P2, out R> : Function<R> {
 }
 ```
 
-第二个参数其实是一个继承自 `kotlin.coroutines.jvm.internal.SuspendLambda` 的对象，只不过它同时实现了 `Function2` 接口。之所以反编译器把它编译成 `Function2`  对象，是因为 `runBlocking$default()` 方法签名中，第二个参数就是 `Function2` 类型的。 `SuspendLambda` 的继承链是：`SuspendLambda` -> `ContinuationImpl` -> `BaseContinuationImpl` -> `Continuation`。
+Kotlin 编译器用 `Function1`​，`Function2`​ ... `FuncitonX`​  接口来实现 lambda 表达式，Function 后面的数字表示 lambda 参数的数量。如果 lambda 有 receiver，receiver 会被视为其第一个参数，对应的 `invoke()`​ 的第一个参数为 receiver，后续参数为  lambda 的实际参数。例如，lambda 表达式  `val a: Int.(Int, Int) -> Int = { x: Int, y: Int -> this + x + y }`​ 会用以下代码来实现：
 
-既然 `runBlocking$default()` 方法接受的是 `Function2` 类型的参数，那它应该只和 `Function2` 的方法打交道，因此从 `invoke()` 方法入手：
-
-```kotlin
-@NotNull
-public final Continuation create(@Nullable Object value, @NotNull Continuation $completion) {
-   return (Continuation)(new <anonymous constructor>($completion));
-}
-
-@Nullable
-public final Object invoke(@NotNull CoroutineScope p1, @Nullable Continuation p2) {
-     return ((<undefinedtype>)this.create(p1, p2)).invokeSuspend(Unit.INSTANCE);
+```java
+Function3 a =  new Function3<Integer, Integer, Integer, Object> {
+    /** Invokes the function with the specified arguments. */
+    public final Object invoke(Integer p1, Integer p2, Integer p3) {
+		return p1 + p2 + p3;
+	}
 }
 ```
 
-它调用了 `create()` 方法创建了一个对象，紧接着调用这个对象 `invokeSuspend()` 方法。这里的 `undefinedtype` 其实就是 `Function2` 参数自身的实际类型，`anonymous constructor` 其实就是它自身的构造方法。可能是匿名类的缘故，反编译器没法表示出来。
+对于 suspend lambda，实现则略有不同，例如对于一个空的 lambda： `val a: suspend () -> {} = {}`​，实际上生成的对象大概是这样的：
 
-`Function2` 对象在自己的 `inovke()` 方法中创建了另一个同类型的对象，然后调用了这个对象的 `invokeSuspend()` ，那它为什么不直接调用自己的 `invokeSuspend()` 方法？这点我没搞明白，也许是 Kotlin 编译器的遵循了一些死板的编译规则导致的，先不管，把注意力转移到 `invokeSuspend()` 方法上来。
+```java
+class _SuspendLambda extends SuspendLambda implements Function1<Object> {
 
-在 `invokeSuspend()` 里面，最终调用了 `fun1()` 方法。但不是直接调用，而是套了一个 `switch case` 判断。等等，`switch case` ，这不就是实现一个状态机的典型语法吗？如果它是状态机，那 `label` 应该就是这个状态机的状态了。再定睛一看，在 `case 0`  块中，`label` 被置为 1 了，状态转移，好吧，状态机实锤了。也就是说，Kotlin 中 `runBlocking` 方法的 block 里面的代码，被套在了状态机里执行：label 为 0 的时候，执行的是 `fun1()`；`lable` 为 1 的时候，执行的是 `System.out.println()`。
+    public final Object invokeSuspend(Object result) {
+		 /* lambda 函数体逻辑，省略 */
+    }
 
-有点意思。我现在有点迫不及待地想看看 `fun1()` 的反编译结果。
+    public _SuspendLambda(Continuation completion) {
+		super(0 /* 这个值具体是多少不知道，也不重要，我这里是乱写的 */, completion):
+	}
+    /** Invokes the function with the specified arguments. */
+    public final Object invoke(Continuation completion) {
+		return this.create(completion).invokeSuspend(completion)
+	}
 
-## fun1
+    public Object invoke(Object p1) {
+        return this.invoke((Continuation)p2);
+    }
+		
+    public final Continuation create(completion: Continuation) {
+         return AnnoymousClass(completion));
+    } 
+}
+```
+
+kotlin 会为每一个 suspend lambda 生成一个继承 `SuspendLambda`​ 并实现 `FunctionX`​ 接口的匿名类，这里我用 `_SuspendLambda`​表示，并且还给它添加了一个 `Cotinuation`​ 类型的参数，这个参数具体什么含义，我们后面会讲。此外，还会为它额外生成 `invokeSuspend()`​ ，`create()`​ 和 `invoke()`​ 这三个函数。`invokeSuspend()`​ 代表 lambda 函数体的逻辑，`create()`​ 用来创建自身的一个新的实例，`invoke()`​ 重载方法貌似有点多余，只是对参数类型具体化了一下而已。
+
+我们现在回过头来看 `runBlocking$default()`​ 的第二个参数：
+
+```java
+new Function2((Continuation)null) {
+         int label;
+
+         @Nullable
+         public final Object invokeSuspend(@NotNull Object $result) {
+            Object var3 = IntrinsicsKt.getCOROUTINE_SUSPENDED();
+            Object var10000;
+            switch (this.label) {
+               case 0:
+                  ResultKt.throwOnFailure($result);
+                  Continuation var4 = (Continuation)this;
+                  this.label = 1;
+                  var10000 = TestKt.fun1(var4);          // fun1()
+                  if (var10000 == var3) {
+                     return var3;
+                  }
+                  break;
+               case 1:
+                  ResultKt.throwOnFailure($result);
+                  var10000 = $result;
+                  break;
+               default:
+                  throw new IllegalStateException("call to 'resume' before 'invoke' with coroutine");
+            }
+
+            int result = ((Number)var10000).intValue();
+            System.out.println(result);
+            return Unit.INSTANCE;
+         }
+
+         @NotNull
+         public final Continuation create(@Nullable Object value, @NotNull Continuation $completion) {
+            return (Continuation)(new <anonymous constructor>($completion));
+         }
+
+         @Nullable
+         public final Object invoke(@NotNull CoroutineScope p1, @Nullable Continuation p2) {
+            return ((<undefinedtype>)this.create(p1, p2)).invokeSuspend(Unit.INSTANCE);
+         }
+
+         // $FF: synthetic method
+         // $FF: bridge method
+         public Object invoke(Object p1, Object p2) {
+            return this.invoke((CoroutineScope)p1, (Continuation)p2);
+         }
+   }
+```
+
+这就是 `runBlocking()`​ 的 suspend lambda 参数编译后的样子 。细心的你会发现不一样的地方，就是 `invoke()`​ 多了一个类型为 `CoroutineScope`​ 的参数。这是因为 `runBlocking()`​ 的 suspend lambda 参数有 receiver，前面讲过，如果 lambda 有 receiver， receiver 会被视为 lambda 的第一个参数。
+
+现在回过头看看 `createCoroutineUnintercepted`​：
+
+```java
+@SinceKotlin("1.3")
+public actual fun <R, T> (suspend R.() -> T).createCoroutineUnintercepted(
+    receiver: R,
+    completion: Continuation<T>
+): Continuation<Unit> {
+    val probeCompletion = probeCoroutineCreated(completion)
+    return if (this is BaseContinuationImpl)
+        create(receiver, probeCompletion)
+    else {
+        createCoroutineFromSuspendFunction(probeCompletion) {
+            (this as Function2<R, Continuation<T>, Any?>).invoke(receiver, it)
+        }
+    }
+}
+```
+
+​`this`​ 就是 suspend lambda，它是一个 `SuspendLambda`​ 的一个实例，`SuspendLambda`​ 的继承链是：`SuspendLambda`​ -> `ContinuationImpl`​ -> `BaseContinuationImpl`​ -> `Continuation`​，因此，代码会走到 `if`​ 分支。`if`​ 分支很简单，就是调用 suspend lambda 的 `create()`​ 方法，这个方法正是前面编译器为 suspend lambda 生成的方法。什么情况下会走到 `else`​ 分支我目前还不清楚，但大概能猜到它的逻辑是： 当编译器为 suspend lambda 生成的对象实现了 `Function2`​ 接口但没有继承 `BaseContinuationImpl`​的时候，就将其包装成 `Continuation`​再返回。
+
+往前看 `startCoroutineCancellable()`​：
+
+```kotlin
+internal fun <R, T> (suspend (R) -> T).startCoroutineCancellable(
+    receiver: R, completion: Continuation<T>,
+    onCancellation: ((cause: Throwable) -> Unit)? = null
+) =
+    runSafely(completion) {
+        createCoroutineUnintercepted(receiver, completion).intercepted().resumeCancellableWith(Result.success(Unit), onCancellation)
+    }
+```
+
+​`intercepted()`​ 是 kotlin 用来实现上下文切换的，这个我们先不管，因为我们的示例并未涉及协程的上下文切换，可以认为这个方法不包含任何逻辑，只是简单地返回对象本身。重点是 `resumeCancellableWith()`​ ：
+
+```kotlin
+public fun <T> Continuation<T>.resumeCancellableWith(
+    result: Result<T>,
+    onCancellation: ((cause: Throwable) -> Unit)? = null
+): Unit = when (this) {
+    is DispatchedContinuation -> resumeCancellableWith(result, onCancellation)
+    else -> resumeWith(result)
+}
+```
+
+涉及上下文切换时才会走到 `is DispatchedContinuation`​分支，因此我们的代码会走 `else`​ 分支，`else`​ 分支调用的是 `Continuation`​ 的 `resumeWith()`​ 方法，这个方法在 `Continuation`​ 接口定义：
+
+```kotlin
+public interface Continuation<in T> {
+    /**
+     * The context of the coroutine that corresponds to this continuation.
+     */
+    public val context: CoroutineContext
+
+    /**
+     * Resumes the execution of the corresponding coroutine passing a successful or failed [result] as the
+     * return value of the last suspension point.
+     */
+    public fun resumeWith(result: Result<T>)
+}
+```
+
+再继续探索之前，我们先得了解一下协程中的 `Continuation`​是什么东西。看下维基百科对协程的定义：
+
+> **协程**（英语：coroutine）是计算机程序的一类组件，推广了[协作式多任务](https://zh.wikipedia.org/wiki/%E5%8D%8F%E4%BD%9C%E5%BC%8F%E5%A4%9A%E4%BB%BB%E5%8A%A1 "协作式多任务")的[子例程](https://zh.wikipedia.org/wiki/%E5%AD%90%E4%BE%8B%E7%A8%8B "子例程")，允许执行被挂起与被恢复
+
+​`Continuation`​ 正是 kotlin 用来实现协程 **允许执行被挂起与被恢复** 这一语义的。`Continuation`​ 逻辑上是一个栈式结构，它用来模拟 suspend 方法（包括 suspend lambda）的调用栈，为什么需要模拟 suspend 方法的调用栈？我们知道，非 suspend 方法的调用栈是由虚拟机维护的，也就是我们所熟悉的栈帧，但是虚拟机并不会为 suspend 方法生成栈帧，这是因为 suspend 方法的调用和返回都是异步的，虚拟机的世界中，并没有异步方法调用的概念，它属于 kotlin 语言自己的语义范畴，Kotlin 编译器必须自己负责实现这个语义。Kotlin 实现这个语义的方案是，为每一个 suspend 方法生成一个对应的 `Continuation`​ 对象，由这个对象负责保存 suspend 方法的上下文。逻辑上它会把一个 suspend 方法分割成多段，每当调用另一个 suspend 方法时，当前 suspend 方法便会被挂起（暂停执行），相应的`Continuation`​会保存其上下文，后续可调用其 `resumeWith`​ 方法（通常由下游 suspend 方法的 `Continuation`​ 对象调用）恢复 suspend 方法的上下文，让它从挂起点接着执行，就这样直到当前 suspend 方法执行完毕。当前 suspend 方法完成之后，会调用调用栈上游的 suspend 方法所`Continuation`​对象的 `resumeWith`​方法，从而让上游的 suspend 方法接着执行，上游方法重复这个过程，直到最顶层的 suspend 方法执行完毕。
+
+现在听上去可能会有点抽象，后面看具体实现就明白了。
+
+​`resumeWith()`​ 是 `Continiuation`​ 接口的唯一方法，该方法在子类 `BaseContinuationImpl`​ 中有个 `final`​ 实现：
+
+### BaseContinuationImpl
+
+```kotlin
+internal abstract class BaseContinuationImpl(
+    // This is `public val` so that it is private on JVM and cannot be modified by untrusted code, yet
+    // it has a public getter (since even untrusted code is allowed to inspect its call stack).
+    public val completion: Continuation<Any?>?
+) : Continuation<Any?>, CoroutineStackFrame, Serializable {
+    // This implementation is final. This fact is used to unroll resumeWith recursion.
+    public final override fun resumeWith(result: Result<Any?>) {
+        // This loop unrolls recursion in current.resumeWith(param) to make saner and shorter stack traces on resume
+        var current = this
+        var param = result
+        while (true) {
+            // Invoke "resume" debug probe on every resumed continuation, so that a debugging library infrastructure
+            // can precisely track what part of suspended callstack was already resumed
+            probeCoroutineResumed(current)
+            with(current) {
+                val completion = completion!! // fail fast when trying to resume continuation without completion
+                val outcome: Result<Any?> =
+                    try {
+                        val outcome = invokeSuspend(param)
+                        if (outcome === COROUTINE_SUSPENDED) return
+                        Result.success(outcome)
+                    } catch (exception: Throwable) {
+                        Result.failure(exception)
+                    }
+                releaseIntercepted() // this state machine instance is terminating
+                if (completion is BaseContinuationImpl) {
+                    // unrolling recursion via loop
+                    current = completion
+                    param = outcome
+                } else {
+                    // top-level completion reached -- invoke and return
+                    completion.resumeWith(outcome)
+                    return
+                }
+            }
+        }
+    }
+
+    protected abstract fun invokeSuspend(result: Result<Any?>): Any?
+
+    ......
+}
+```
+
+这其实是一个用循环展开尾递归的的例子，避免因过深的调用栈造成栈溢出，同时生成更简洁的调用栈信息。为了便于理解，用递归简化一下：
+
+```kotlin
+public final override fun resumeWith(result: Result<Any?>) {
+    probeCoroutineResumed(this)
+    val completion = completion ?: error("Completion should not be null")
+
+    val outcome: Result<Any?> = try {
+        val outcome = invokeSuspend(result)
+        if (outcome === COROUTINE_SUSPENDED) return
+        Result.success(outcome)
+    } catch (e: Throwable) {
+        Result.failure(e)
+    }
+
+    releaseIntercepted()
+
+    if (completion is BaseContinuationImpl) {
+        // 递归调用上游 Continuation
+        completion.resumeWith(outcome)
+    } else {
+        // 调用到最顶层 Continuation
+        completion.resumeWith(outcome)
+    }
+}
+```
+
+​`invokeSuspend`​执行的是 suspend 方法体中的逻辑，前面提到过，这个方法是编译器为 `_SuspendLambda`​ 生成的。如果此次返回的是 `COROUTINE_SUSPENDED`​，则会导致`resumeWith`​ 方法返回，这代表着该`Continuation`​对应的 suspend 方法挂起。否则说明 suspend 方法执行完毕，接着会递归调用上游 suspend 方法的 `Continuation`​ 对象的 `resumeWith`​ 方法。Kotlin 将上游 suspend 方法的 `Continuation`​ 对象命名为 `completion`​ ，可以说是非常贴切了，可以把上游 `Continuation`​ 对象等价地理解为当前 suspend 方法结束后需要执行的动作。
+
+我们回顾一下这个方法，为便于理解我将其还原为 kotlin 并简化：
+
+### _SuspendLambda
+
+```kotlin
+class _SuspendLambda : SuspendLambda, Function1<Object> {
+
+	val label = 0
+
+    public final fun invokeSuspend(result: Object): Object {
+		var fun1Result: Object?
+        when (this.label) {
+            0 -> {
+                Result.throwOnFailure(result)
+                this.label = 1
+                fun1Result = fun1(this as Continuation)         // fun1()
+                if (fun1Result == COROUTINE_SUSPENDED) {
+                    return COROUTINE_SUSPENDED
+                }
+            }
+
+            1 -> {
+                Result.throwOnFailure(result)
+                fun1Result = result
+            }
+
+            else ->
+                throw IllegalStateException("call to 'resume' before 'invoke' with coroutine")
+        }
+
+        val finalResult = fun1Result as Int
+        println(finalResult)
+        return Unit.INSTANCE
+    }
+
+    fun _SuspendLambda(Continuation completion) {
+		super(0 /* 这个值具体是多少不知道，也不重要，我这里是乱写的 */, completion):
+	}
+    /** Invokes the function with the specified arguments. */
+    final fun invoke(completion: Continuation): Object {
+		return this.create(completion).invokeSuspend(completion)
+	}
+
+   fun invoke(Object p1): Object {
+        return this.invoke((Continuation)p2)
+    }
+		
+    final fun create(completion: Continuation): Continuation {
+         return AnnoymousClass(completion))
+    } 
+}
+```
+
+这就是 `Continuation`​ 将 suspend 方法分割成多段的具体实现。在我们的例子中，kotlin 编译器将 suspend lambda 分割成了两段，一段是调用 `fun1()`​ 获取结果，另一段是打印结果。每一段逻辑用 `label`​ 对进行标记，第一次调用`_SuspendLambda`​的 `resumeWith()`​ 方法时，`label`​ 为 `0`​，会走到 `0 -> `​这个分支。这个分支的逻辑如下：
+
+- 将 `label`​ 置位 1，这样下次就会从 `1 ->`​这个分支执行。
+- 调用 `fun1()`​ 获取结果，因为`fun1() `​返回的是 `COROUTINE_SUSPENDED`​ （因为 `fun1()`​ 是 suspend 方法，所以此处返回的就是 `COROUTINE_SUSPENDED`​，原因后面分析 `fun1()`​ 的时候就知道了）， 所以`invokeSuspend()`​ 会从第 10 行返回，`resumeWith()`​拿到这个结果后，suspend lambda 的执行则会终止。
+
+你可能会有疑问，示例代码中的`fun1()`​ 没有参数，为什么这里会传参数？前面说过，当一个 suspend 方法执行完毕后，它会调用上游 suspend 方法所对应的 `Continuation`​ 对象的 `resumeWith()`​ 方法来恢复上游方法的执行，因此下游方法必须拿到上游方法的 `Continuation`​ 对象才行。和 suspend lambda 一样，Kotlin 也会为每一个 suspend 方法自动添加一个 `Continuation`​ 类型的参数，目的就是为了让下游方法持有上游方法的 `Continuation`​ 对象。
+
+<p class="notice-success">实际上这个参数有多重含义，这个后面会说</p>
+
+现在来看看 `fun1()`​ 的逻辑，其反编译结果如下：
 
 ```kotlin
    @Nullable
@@ -224,260 +588,288 @@ public final Object invoke(@NotNull CoroutineScope p1, @Nullable Continuation p2
    }
 ```
 
-`fun1()` 编译之后多了一个 `Continuation` 类型的参数 `var0`，回头看下 `main` 方法，`main()` 调用 `fun1()` 的时候，把自身传了进去。`fun1()` 方法有点长，先看看 `label27` 这个代码块：
+为了便于理解同样改写成 kotlin 代码。代码太多，我使用了 ChatGPT 来辅助完成：
+
+### fun1
 
 ```kotlin
-Object $continuation;
-label27: {
-   if (var0 instanceof <undefinedtype>) {
-      $continuation = (<undefinedtype>)var0;
-      if ((((<undefinedtype>)$continuation).label & Integer.MIN_VALUE) != 0) {
-         ((<undefinedtype>)$continuation).label -= Integer.MIN_VALUE;
-         break label27;
-      }
-   }
-   $continuation = new ContinuationImpl(var0) {
-      int I$0;
-      // $FF: synthetic field
-      Object result;
-      int label;
-      @Nullable
-      public final Object invokeSuspend(@NotNull Object $result) {
-         this.result = $result;
-         this.label |= Integer.MIN_VALUE;
-         return TestKt.fun1((Continuation)this);
-      }
-   };
+private class Fun1Continuation(
+    val completion: Continuation<Any?>
+) : ContinuationImpl<Any?>(completion) {
+    var label = 0
+    var result: Any? = null
+    var I$0: Int = 0
+
+    override fun invokeSuspend(result: Result<Any?>) {
+        this.result = result.getOrNull()
+        this.label = this.label or 0x80000000
+        return fun1(this)
+    }
 }
-```
 
-`<undefinedtype>` 其实就是下面那个 `ContinationImpl` 的匿名子类，因此 `instanceof` 表达式肯定是为假，因为 `var0` 是 `SuspendLambda` 对象。因此 `if` 块会被跳过，直接执行下面的赋值语句：创建一个 `ContinuationImpl` 对象并赋给了 `$continuation`。该对象接收 `var0`  作为其构造函数的参数，它同样实现了 `invokeSuspend()` 方法，在 `invokeSuspend()` 方法里，又调用外层的 `fun1()`。好家伙，给绕晕了。
-
-可以看出，首次执行 `fun1()` 的时候，`fun1()` 的参数 `var0` 是上游方法传来的 `Continuation` 对象（后面称其为 `SuspendLambda`），`$continuation `会被赋值为一个`ContinationImpl` 对象（后面称其为 `Continuation1`），该对象持有 `SuspendLambda`。后续 `fun1()` 被调用时，参数 `var0` 则是第一次执行时创建的 `Continuation1`，由于在调用前执行了 `this.label |= Integer.MIN_VALUE`  因此两层 `if` 判断都为真，`break label27` 会执行，从而直接跳出了 `label27` 块。
-
-现在来看 `fun1()` 剩下部分的逻辑。我整理了下，将其改写成如下等价代码：
-
-```kotlin
-Object var10000;
-int localInt;
-int var2;
-Object var3;
-
-Object $result = ((<undefinedtype>)$continuation).result;
-Object var6 = IntrinsicsKt.getCOROUTINE_SUSPENDED();
-switch (((<undefinedtype>)$continuation).label) {
-    case 0:
-        /* 对应 localInt = 0; fun2Result = fun2() */
-    	ResultKt.throwOnFailure($result);
-    	localInt = 0;
-    	var2 = localInt;
-    	((<undefinedtype>)$continuation).I$0 = localInt;
-    	((<undefinedtype>)$continuation).label = 1;
-    	var10000 = fun2((Continuation)$continuation);
-    	if (var10000 == var6) {
-        	return var6;
-    	}
-      $result = var10000;
-        // 注意这里没有 break;
-    case 1:
-        /* 对应 localInt += fun2Result; fun3Result = fun3() */
-    	var2 = ((<undefinedtype>)$continuation).I$0;
-    	ResultKt.throwOnFailure($result);
-    	var10000 = $result;
-    	var3 = var10000;
-    	localInt = var2 + ((Number)var3).intValue();
-    	var2 = localInt;
-    	((<undefinedtype>)$continuation).I$0 = localInt;
-    	((<undefinedtype>)$continuation).label = 2;
-    	var10000 = fun3((Continuation)$continuation);
-    	if (var10000 == var6) {
-        	return var6;
-    	}
-		// 这里也没有 break;
-    case 2:
-		/* 对应 localInt += fun3Result; return localInt */
-    	var2 = ((<undefinedtype>)$continuation).I$0;
-    	ResultKt.throwOnFailure($result);
-    	var10000 = $result;
-    	var3 = var10000;
-    	localInt = var2 + ((Number)var3).intValue();
-    	return Boxing.boxInt(localInt);
-    default:
-    	throw new IllegalStateException("call to 'resume' before 'invoke' with coroutine");
-}
-```
-
-又看到老朋友 `switch case` 了，没错，`fun1()` 也是个状态机。编译后的 `fun1()` 将逻辑分成了三块，很显然，是因为两个 `fun2()`  `fun3()` 这两个 `suspend` 函数导致的。`IntrinsicsKt.getCOROUTINE_SUSPENDED()` 这行代码特别值得关注，此方法返回的是名为 `COROUTINE_SUSPENDED` 的单例对象。在前两个 `case` 块中，分别将 `fun2()` 和 `fun3()` 的返回值和它进行了比较，如果相等，则将这个值返回，否则就继续执行下一个 `case` 块。接下来看下 `fun2()` 和 `fun3()`。
-
-## fun2 & fun3
-
-```kotlin
-@Nullable
-public static final Object fun2(@NotNull Continuation $completion) {
-   return Boxing.boxInt(1);
-}
-@Nullable
-public static final Object fun3(@NotNull Continuation var0) {
-   Object $continuation;
-   label20: {
-      if (var0 instanceof <undefinedtype>) {
-         $continuation = (<undefinedtype>)var0;
-         if ((((<undefinedtype>)$continuation).label & Integer.MIN_VALUE) != 0) {
-            ((<undefinedtype>)$continuation).label -= Integer.MIN_VALUE;
-            break label20;
-         }
-      }
-      $continuation = new ContinuationImpl(var0) {
-         // $FF: synthetic field
-         Object result;
-         int label;
-         @Nullable
-         public final Object invokeSuspend(@NotNull Object $result) {
-            this.result = $result;
-            this.label |= Integer.MIN_VALUE;
-            return TestKt.fun3((Continuation)this);
-         }
-      };
-   }
-   Object $result = ((<undefinedtype>)$continuation).result;
-   Object var3 = IntrinsicsKt.getCOROUTINE_SUSPENDED();
-   switch (((<undefinedtype>)$continuation).label) {
-      case 0:
-         ResultKt.throwOnFailure($result);
-         ((<undefinedtype>)$continuation).label = 1;
-         if (DelayKt.delay(1000L, (Continuation)$continuation) == var3) {
-            return var3;
-         }
-         break;
-      case 1:
-         ResultKt.throwOnFailure($result);
-         break;
-      default:
-         throw new IllegalStateException("call to 'resume' before 'invoke' with coroutine");
-   }
-   return Boxing.boxInt(1);
-}
-```
-
-`fun2()` 就普普通通的一个函数，返回的是 `Boxing.boxInt(1)`，和 `COROUTINE_SUSPENDED` 不相等，因此 `fun1()` 执行完 `case 0` 块后会继续执行 `case 1` 块。
-
-再看看 `fun3()`，这家伙就是` fun1()` 的翻版，它逻辑就没必要赘述了，重点看它 `case 0` 块中的这几行代码：
-
-```kotlin
-if (DelayKt.delay(1000L, (Continuation)$continuation) == var3) {
-     return var3;
-}
-```
-
-`DelayKt.delay()` 有两个参数，第一个参数不用说了，第二个参数前面已经分析过了，是 `fun3()` 内创建的 `ContinuationImpl` 对象（后面称其为 `Continuation3`）。继续追踪下去会发现，`DelayKt.delay()` 会将一个延时任务插入到事件循环中，1000ms 延时之后，`Continuation3` 的 `resumeWith()` 方法会被调用。
-
-`resumeWith()` 是 `Continiuation` 接口的唯一方法，该方法在 `BaseContinuationImpl` 中有个 final 实现：
-
-```kotlin
-internal abstract class BaseContinuationImpl(
-    // This is `public val` so that it is private on JVM and cannot be modified by untrusted code, yet
-    // it has a public getter (since even untrusted code is allowed to inspect its call stack).
-    public val completion: Continuation<Any?>?
-) : Continuation<Any?>, CoroutineStackFrame, Serializable {
-    // This implementation is final. This fact is used to unroll resumeWith recursion.
-    public final override fun resumeWith(result: Result<Any?>) {
-        // This loop unrolls recursion in current.resumeWith(param) to make saner and shorter stack traces on resume
-        var current = this
-        var param = result
-        while (true) {
-            // Invoke "resume" debug probe on every resumed continuation, so that a debugging library infrastructure
-            // can precisely track what part of suspended callstack was already resumed
-            probeCoroutineResumed(current)
-            with(current) {
-                val completion = completion!! // fail fast when trying to resume continuation without completion
-                val outcome: Result<Any?> =
-                    try {
-                        val outcome = invokeSuspend(param)
-                        if (outcome === COROUTINE_SUSPENDED) return
-                        Result.success(outcome)
-                    } catch (exception: Throwable) {
-                        Result.failure(exception)
-                    }
-                releaseIntercepted() // this state machine instance is terminating
-                if (completion is BaseContinuationImpl) {
-                    // unrolling recursion via loop
-                    current = completion
-                    param = outcome
-                } else {
-                    // top-level completion reached -- invoke and return
-                    completion.resumeWith(outcome)
-                    return
-                }
-            }
+fun fun1(continuation: Continuation<Any?>): Any? {
+    // 如果 continuation 是之前包装过的，直接使用；否则将 continuation 包装成一个 Fun1Continuation，将其作为上游 Continuation 持有
+    val cont = if (continuation is Fun1Continuation) {
+        if ((continuation.label and 0x80000000) != 0) {
+            continuation.label = continuation.label and 0x7fffffff
+            continuation
+        } else {
+            Fun1Continuation(continuation)
         }
+    } else {
+        Fun1Continuation(continuation)
     }
 
-    protected abstract fun invokeSuspend(result: Result<Any?>): Any?
+    var result = cont.result
 
-    ......
+    run handleAfterFun3@{
+        run handleAfterFun2@{
+            when (cont.label) {
+                0 -> {
+                    // 初始状态
+                    Result.throwOnFailure(result)
+                    val localInt = 0
+                    cont.I$0 = localInt
+                    cont.label = 1
+                    val res = fun2(cont)
+                    if (res === COROUTINE_SUSPENDED) return COROUTINE_SUSPENDED
+                    result = res
+                }
+
+                1 -> {
+                    // 如果 fun2 是异步，那么从 fun2 恢复时会进入到这个分支
+                    Result.throwOnFailure(result)
+                    return@handleAfterFun2
+                }
+
+                2 -> {
+                    // 如果 fun3 是异步，那么从 fun3 恢复时会进入到这个分支
+                    Result.throwOnFailure(result)
+                    return@handleAfterFun3
+                }
+
+                else -> throw IllegalStateException("call to 'resume' before 'invoke' with coroutine")
+            }
+
+        }
+        // fun2 执行完毕后的逻辑，无论同步异步都会走到这
+        val localInt = cont.I$0
+        cont.I$0 = localInt + result
+        cont.label = 2
+        val res = fun3(cont)
+        if (res === COROUTINE_SUSPENDED) return COROUTINE_SUSPENDED
+        result = res
+    }
+    // fun3 执行完毕后的逻辑，无论同步异步都会走到这
+    val localInt = cont.I$0
+    val finalResult = localInt + result
+    return finalResult
 }
 ```
 
-`BaseContinuationImpl` 有一个 `Continuation` 类型的字段 `completion`，并在构造方法中初始化，`fun1()` 和 `fun3()` 创建 `ContinuationImpl` 时传入的 `var0` 就是赋给了这个 `completion`。`BaseContinuationImpl` 的方法体是一个 `while` 循环。其主要逻辑如下：
+改写后的代码逻辑清晰多了，我们来分析一下 fun1 中的逻辑：
 
-1. 调用 `invokeSuspend()`，判断返回结果，如果是 `COROUTINE_SUSPENDED`，就直接返回。否则无论成功还是失败，都会将结果封装在 `Result` 中给 `outcome`。
-2. 接下来判断 `completion` 是不是  `BaseContinuationImpl` 类型，是的话就将 `current` 的值赋为 `completion`，也就是上游的 `Continuation`，将 `param` 赋为 `outcome`。这是什么意思呢？注释里其实已经解释了：用循环来展开递归。其实就是将尾递归转化成了循环，这应该是基于性能方面的考量。
+- 首先需要为 `fun1()`​ 构造对应的 `Continuation`​，如果传入的 `Continuation`​ 对象是 `Fun1Continuation`​ 类型，说明已经包装过了，就不做处理，否则，使用 `Fun1Continuation`​ 对 `continuation`​ 进行包装，将其作为上游 `Continuation`​ 持有。最后得到的 `cont`​ 便是 `fun1()`​ 所对应的 `Continuation`​。前面说过了，`Continuation`​ 中包含了函数的上下文，从这里能看出，这个上下文包含以下几个部分：
 
-    <p class="notice-info">Android 里面 View 的某些方法也有类似的骚操作，但后面好像又改成了递归，我觉得是因为循环可读性差不好维护，而且还有点违反面向对象的设计，除非真的对性能有很大的影响否则没必要）</p>
-3. `else` 块中是循环的出口，如注释所说，这时候已经到达了顶层，没有上游 `Continuation` 了。
+  - 执行进度，即 `cont.label`​；
+  - 上游 `suspend`​ 方法的 `Continuation`​ 对象；
 
-为容易理解，可以把循环还原成递归：下游的 `Continuation` 的 `invokeSuspend()` 获取到结果后，调用上游 `Continuation` ，即 `completion` 的 `resumeWith` 方法，直到最顶层的 `Continuaion`。
+  - 局部变量，即 `cont.I$0`​，对应示例中的 `localInt`​；
 
-重新梳理一下协程执行的整个过程：
+  - 最近一次调用 suspend 方法的结果，即 `cont.result`​；
 
-1. 从 `SuspendLambda`（block）开始，因为 `label` 为 0，执行 `case 0` 代码块：将 `label` 置为 1 后，调用函数 `fun1()` ，并将自身传给了 `fun1()`。
-2. `fun1()` 中构造了 `Continuation1`，并将 `SuspendLambda` 作为它的 `completion`。读取 `Continuation1` 的 `label` 字段，因为 `label == 0`，因此执行 `case 0` 代码块：
-    * 初始化 `localInt`；
-    * 将 `localInt` 保存到 `Continuation1` 的 `I$0` 字段中；
-    * 将 `Continuation1` 的 `label` 置为 1；
-    * 调用函数 `fun2()`。
-  
-3. `fun2()` 直接返回 `Boxing.boxInt(1)` 给 `fun1()`，`fun1()` 将这个值保存在，这个值和 `COROUTINE_SUSPENDED` 不相等，因此会继续执行 `fun1()` 的 `case 1` 块： 
-    * 用 `Continuation1` 的 `I$0` 字段恢复 `localInt` 的值；
-    * `localInt += Boxing.boxInt(1)`；
-    * 将 `localInt` 保存到 `Continuation1` 的 `I$0` 字段中；
-    * 将 `Continuation1` 的 `label` 置为 2；
-    * 调用函数 `fun3()`。
-  
-4. `fun3()` 中构造了 `Continuation3`，并将 `Continuation1` 作为它的 `completion`。接下来读取 `Continuation3` 的 `label` 字段，因为 `label  == 0`，因此执行 `case 0` 块：
-    * 将 `Continuation3` 的 `label` 置为 1 ；
-    * 调用 `delay()` 方法。
-  
-5. `delay()` 向事件循环中插入一个延时任务，并立即返回 `COROUTINE_SUSPENDED` 给 `fun3()`，`fun3()` 将这个值返回给 ` fun1()`，`fun1()` 继续将这个值返回给 `SuspendLambda`，此时 `SuspendLambda` 的 `case 0` 块执行完毕。
-6. 延时任务到期后，会调用 `Continuation3` 的 `resumeWith()` 方法，`fun3` 再次被调用并返回 `Boxing.boxInt(1)`。因为这个值不等于 `COROUTINE_SUSPENDED`，因此 `Continuation3` 会拿着这个值去调用其 `completion` 也就是  `Continuation1` 的 `resumeWith()` 方法。
-7. `Continuation1` 的 `resumeWith()` 调用自身 `invokeSuspend()` 方法，`invokeSuspend()` 将值保存在 `result` 字段中之后，将 `Continuation1` 自身作为参数再次调用 `fun1()`。
-8. `fun1()` 再次执行，从 `Continuation1` 读取 `label` 值，此时 `label` 为 2，执行 `case 2` 块：
-    * 用 `Continuation1` 的 `I$0` 字段恢复 `localInt` 的值；
-    * 读取 `Continuation1` 的 `result` 字段获取 `fun3()` 的返回结果 `Boxing.boxInt(1)`；
-    * `localInt += Boxing.boxInt(1)`；
-    * 将返回 `localInt` 返回给 `invokeSuspend()`。
+接着往下看，有三个分支。
 
-9. `invokeSuspend()` 将结果返回给 `resumeWith()`，此结果不为 `COROUTINE_SUSPENDED`，因此执行 `completion` 也就是 `SuspendLambda` 的 `resumeWith()`，并将结果传给它。
-10. `SuspendLambda` 的 `resumeWith()` 方法调用自身的 `invokeSuspend()` 方法，此时 `label` 为 1，执行 `case 1` 块：将结果打印出来。协程结束。
+首先是  `0->`​ 分支，`fun1()`​ 首次调用时会进入这个分支。这个分支做了以下几件事：
 
-可以得出以下几个基本事实：
+- 将 `label`​ 置为 1，将 `fun1()`​ 执行进度往下推进，下次调用时就会从 `1->`​ 这个分支执行。
+- 调用 `fun2()`​ 获取其结果，如果结果为 `COROUTINE_SUSPENDED`​ ，说明 `fun2()`​ 挂起，`fun1()`​ 也返回`COROUTINE_SUSPENDED，`​表示自己因为 `fun2()`​ 的挂起而挂起。然而实际上`fun2()`​ 是一个披着 suspend 外衣的普通方法，kotlin 并不会将它当做 suspend 方法看待，这个方法编译后是一个普通的同步方法，所以此处 `fun2()`​ 返回的是 1，`fun1()`​ 会跳转到 61 行继续执行。
+- 将 `fun2()`​ 返回值累加到 `localInt`​ 上；
+- 将 `label`​ 置为 `2`​，将 `fun1()`​ 执行往下推进。下次执行时就会从 `2->`​ 这个分支执行。由此可见，`1->`​ 分支实际上并不会被执行，这是 `fun2()`​ 为同步函数造成的；
+- 调用 `fun3()`​ ，`fun3()`​ 是一个 suspend 方法，它会返回 `COROUTINE_SUSPENDED`​，故`fun1()`​ 会从第  65 行返回，`fun1()`​ 的执行告一段落。
 
-* 每一个 `suspend` 方法都和一个 `Continuation` 对象关联着；（`fun2()` 这种并没有真正 `suspend` 的方法除外）
-* 当一个方法返回 `COROUTINE_SUSPENDED` 时，其实就是就是告诉调用者自己将会挂起（暂停），这个返回值会导致整个调用链结束，调用链上的所有方法也都被挂起；
-* 下游方法恢复时，会通过调用上游方法的关联的 `Continuation` 对象的 `resumeWith()` 方法，触发上游方法的恢复。
+​`fun1()`​ 此次调用结束后返回 suspend lambda 的第 8 行处：`fun1Result = fun1(this as Continuation)`​，前面我们说 `fun1()`​ 返回的是 `COROUTINE_SUSPENDED`​，这个结论在此处得到了印证。
 
-最后画了一张图帮助理解：
+接下来我们分析 `fun3()`​，`fun3()`​ 的反编译代码我就不放了，我们直接看用 kotlin 改写后的简化版：
+
+### fun3
+
+```kotlin
+private class Fun3Continuation(
+    val completion: Continuation<Any?>
+) : ContinuationImpl<Any?>(completion) {
+    var label = 0
+    var result: Any? = null
+
+    override val context = completion.context
+
+    override fun invokeSuspend(result: Result<Any?>) {
+		this.result = result.getOrNull()
+		this.label = this.label or 0x80000000
+		return fun3(this)
+    }
+}
+
+fun fun3(continuation: Continuation<Any?>): Any? {
+    val cont = if (continuation is Fun3Continuation) {
+        if ((continuation.label and 0x80000000) != 0) {
+            continuation.label = continuation.label and 0x7fffffff
+            continuation
+        } else {
+            Fun3Continuation(continuation)
+        }
+    } else {
+        Fun3Continuation(continuation)
+    }
+
+    var result = cont.result
+
+	when (cont.label) {
+        0 -> {
+            Result.throwOnFailure(result)
+            cont.label = 1
+            val res = delay(1000L, cont)
+            if (res === COROUTINE_SUSPENDED) return COROUTINE_SUSPENDED
+        }
+
+        1 -> {
+            Result.throwOnFailure(result)
+        }
+
+        else -> throw IllegalStateException("call to 'resume' before 'invoke' with coroutine")
+     }
+
+     return 1
+}
+```
+
+逻辑和 `fun1()`​ 是大同小异的，前面的就不赘述了，进入到 `0-> `​分支后，调用了 `delay()`​ 方法，这是 kotlin 提供的延时函数，它也是一个 suspend 方法，因此它会返回 `COROUTINE_SUSPENDED`​给 `fun1()`​，这和前面的分析是一致的。
+
+继续深入下去会发现，`delay()`​ 会将一个延时任务插入到事件循环中，`1000ms`​ 延时后延时任务会调用 `Fun3Continuation`​ 的 `resumeWith()`​ 方法，这个方法会调到第 9 行的 `invokeSuspend()`​ 方法，`fun3()`​ 会再次执行。再次执行时，`cont.label `​的值为 `1`​，进入 `1->`​ 分支，检查无异常后代码走到 45 行返回 `1`​，`fun3()`​ 执行完毕。
+
+​`fun3`​ 执行完成后，`Fun3Continuation`​会用 `fun3`​ 的执行结果 `1`​ 作为参数调用其 `completion`​ 也就是 `Fun1Continuation`​ 的 `resumeWith()`​ 方法，这个方法会调到第 8 行的 `invokeSuspend()`​ 方法，这会导致 `fun1()`​ 再次执行，再次执行时 `cont.label`​ 的值为 `2`​，会走到 `2->`​ 分支，检查无异常后代码走到第 69 行，将 `fun3()`​ 的执行结果 `1`​ 累加到 `localInt`​ 后将其作为最终结果返回，`fun1()`​ 执行完毕。
+
+​`fun1()`​ 执行完成后，`Fun1Continuation`​会用 `fun1`​ 的执行结果 `localInt`​ 作为参数调用其 `completion`​也就是 `_SuspendLambda`​ 的 `resumeWith()`​ 方法，这个方法会调到第 5 行的 `invokeSuspend()`​ 方法，会导致 suspend lambda 再次执行，再次执行时  `label`​ 值为 `1`​， 会走到 `1 ->`​分支处，检查无异常后代码走到第 26 行，将 `fun1()`​ 的执行结果 `localInt`​ 打印出来，suspend lambda 执行完毕。
+
+## BlockingCoroutine
+
+suspend 方法结束后，它的上游 suspend 方法的 `Continuation`​ 的 `resumeWith()`​ 都会被调用，那么当顶层的 suspend lambda 结束后呢？答案是 `BlockingCoroutine`​ 的 `resumeWith()`​ 会被调用。虽然 suspend lambda 没有上游 suspend 方法，但是它有上游  `Continuation`​，从前面的源码可知，`BlockingCoroutine`​ 就是这个上游 `Continuation`​，它是 `_SuspendLambda#create()`​调用时传进去的。`BlockingCoroutine`​ 定义如下：
+
+```kotlin
+private class BlockingCoroutine<T>(
+    parentContext: CoroutineContext,
+    private val blockedThread: Thread,
+    private val eventLoop: EventLoop?
+) : AbstractCoroutine<T>(parentContext, true, true) { 
+    ...... 
+}
+```
+
+它继承自 `AbstractCoroutine`​：
+
+### AbstractCoroutine
+
+```kotlin
+public abstract class AbstractCoroutine<in T>(
+    parentContext: CoroutineContext,
+    initParentJob: Boolean,
+    active: Boolean
+) : JobSupport(active), Job, Continuation<T>, CoroutineScope {
+
+   ……
+
+    protected open fun onCompleted(value: T) {}
+
+    protected open fun onCancelled(cause: Throwable, handled: Boolean) {}
+
+   ……
+
+    /**
+     * Completes execution of this with coroutine with the specified result.
+     */
+    public final override fun resumeWith(result: Result<T>) {
+        val state = makeCompletingOnce(result.toState())
+        if (state === COMPLETING_WAITING_CHILDREN) return
+        afterResume(state)
+    }
+
+    protected open fun afterResume(state: Any?): Unit = afterCompletion(state)
+
+    ……
+}
+```
+
+​`AbstractCoroutine#resumeWith`​最终会调到`JobSupport#afterCompletion()`​，它在 `BlockingCoroutine`​有实现：
+
+```kotlin
+private class BlockingCoroutine<T>(
+    parentContext: CoroutineContext,
+    private val blockedThread: Thread,
+    private val eventLoop: EventLoop?
+) : AbstractCoroutine<T>(parentContext, true, true) {
+
+    override val isScopedCoroutine: Boolean get() = true
+
+    override fun afterCompletion(state: Any?) {
+        // wake up blocked thread
+        if (Thread.currentThread() != blockedThread)
+            unpark(blockedThread)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun joinBlocking(): T {
+        registerTimeLoopThread()
+        try {
+            eventLoop?.incrementUseCount()
+            try {
+                while (true) {
+                    @Suppress("DEPRECATION")
+                    if (Thread.interrupted()) throw InterruptedException().also { cancelCoroutine(it) }
+                    val parkNanos = eventLoop?.processNextEvent() ?: Long.MAX_VALUE
+                    // note: process next even may loose unpark flag, so check if completed before parking
+                    if (isCompleted) break
+                    parkNanos(this, parkNanos)
+                }
+            } finally { // paranoia
+                eventLoop?.decrementUseCount()
+            }
+        } finally { // paranoia
+            unregisterTimeLoopThread()
+        }
+        // now return result
+        val state = this.state.unboxState()
+        (state as? CompletedExceptionally)?.let { throw it.cause }
+        return state as T
+    }
+}
+```
+
+​`afterCompletion`​会将 `runBlocking()`​ 的调用者线程唤醒，这通常发生在 `runBlocking()`​调用线程和协程运行线程不相同的情况下，例如我们调用 `runBlocking()`​ 的时候，指定了 `Dispatcher`​:
+
+```kotlin
+runBlocking(Dispatchers.IO, {
+	……
+})
+```
+
+这会导致 24 行的 `eventLoop`​ 为 `null`​，从而让调用者线程走到 27 行进行无限时长的休眠，以达到阻塞调用者线程的目的。这种情况下就需要协程结束后，主动解除调用者线程的休眠，从而继续执行后面的代码。
+
+否则，如果没有指定 `Dispatcher`​，调用者线程会因为运行 `eventLoop`​ 自行阻塞，等协程结束后，`eventLoop`​ 会在 26 行退出，因此不需要其他线程来唤醒调用者线程。
+
+# 总结
+
+- 每一个 `suspend`​ 方法都和一个 `Continuation`​ 对象关联着；（`fun2()`​ 这种并没有真正 `suspend`​ 的方法除外）
+- 当一个方法返回 `COROUTINE_SUSPENDED`​ 时，其实就是就是告诉调用者自己将会挂起（暂停），这个返回值会导致 suspend 调用栈中止，调用栈上游的所有方法也都被挂起；
+- 下游 suspend 方法恢复时，会通过调用上游 suspend 方法所关联的 `Continuation`​ 对象的 `resumeWith()`​ 方法，触发上游方法的恢复。
+
+最后画一张图帮助理解：
 
 ![Kotlin 协程](/img/in-post/post_kotlin_coroutine_state_machine/kotlin_coroutine.svg)
 
-# 结语
+ Kotlin 协程中的所谓状态机，其实就是 Kotlin 为 `suspend`​ 方法生成的 `Continuation`​ 对象，`Continuation`​ 负责存储状态，方法如何执行由 `Continuation`​ 中的状态决定。
 
- Kotlin 协程中的所谓状态机，其实就是 Kotlin 为 `suspend` 方法生成的 `Continuation` 对象，严格来说是 `Continuation` 对象和方法共同构成了状态机：方法执行状态机的状态转移逻辑，`Continuation` 负责存储状态，方法如何执行由 `Continuation` 中的状态决定。
+​`Contiuation`​ 在无栈协程中充当了栈帧（上下文）的作用：
 
-`Contiuation` 其实在无栈协程中充当了栈帧的作用：
-
-* 保存了局部变量，比如 `Continuation` 中的 `I$0` 字段；
-* 保存了方法中断后的返回地址，比如 `label`；
-* 通过 `completion` 字段引用上游方法的 `Continuation`，构成了 `Continuation` 链，也就是 `suspend` 方法专属的 ”调用栈“。
-
-‍
+- 保存了局部变量，即 `Continuation`​ 中的 `I$0`​ 字段；
+- 保存了方法中断后的返回地址，即 `label`​；
+- 每一个 `Continuation`​ 通过 `completion`​ 字段引用上游方法的 `Continuation`​，构成了 `Continuation`​ 链，这构成了 `suspend`​ 方法专属的 ”调用栈“。
