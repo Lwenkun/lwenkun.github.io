@@ -874,10 +874,10 @@ runBlocking(Dispatchers.IO, {
 
 ![Kotlin 协程](/img/in-post/post_kotlin_coroutine_state_machine/kotlin_coroutine.svg)
 
- Kotlin 协程中的所谓状态机，其实就是 Kotlin 为 `suspend`​ 方法生成的 `Continuation`​ 对象，`Continuation`​ 负责存储状态，方法如何执行由 `Continuation`​ 中的状态决定。
+ Kotlin 协程中的所谓状态机，其实就是 Kotlin 为 `suspend`​ 方法生成的 `Continuation`​ 对象，`Continuation`​ 负责存储状态，suspned 方法恢复时从哪开始执行以及方法当前局部变量值由 `Continuation`​ 中的状态决定。
 
 ​`Contiuation`​ 在无栈协程中充当了栈帧（上下文）的作用：
 
 - 保存了局部变量，即 `Continuation`​ 中的 `I$0`​ 字段；
 - 保存了方法中断后的返回地址，即 `label`​；
-- 每一个 `Continuation`​ 通过 `completion`​ 字段引用上游方法的 `Continuation`​，构成了 `Continuation`​ 链，这构成了 `suspend`​ 方法专属的 ”调用栈“。
+- 每一个 `Continuation`​ 通过 `completion`​ 字段引用上游方法的 `Continuation`​，构成了一条`Continuation`​ 链，这就是 `suspend`​ 方法专属的 “调用栈”。
