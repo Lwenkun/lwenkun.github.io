@@ -1257,7 +1257,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #29ff52;
+  background: #04d6cc;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -2666,6 +2666,12 @@ ul.breadcrumb li + li:last-child {
 .back-to-top.back-to-top-on {
   margin-top: 16px;
 }
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://fonts.gstatic.com/s/materialicons/v143/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2") format('woff2');
+}
 @media (prefers-color-scheme: dark) {
   .post-body a:not(.btn) {
     --link-color: #3a86dd;
@@ -2790,27 +2796,99 @@ ul.breadcrumb li + li:last-child {
     margin: -5px auto 25px;
   }
   .notice-info {
-    background-image: url("../images/star.svg");
     color: #709cae;
     background-color: rgba(19,36,53,0.749);
-    background-position: 1.5em 0.8em;
-    background-size: 1.2rem;
-    background-repeat: no-repeat;
     border-radius: 0.5em;
-    padding: 0.5em 1em;
+    padding: 1em 1em;
     padding-left: 4em;
     font-size: 0.9em;
   }
-  .notice-warn {
-    background-image: url("../images/error.svg");
+  .notice-info::before {
+    content: "star";
+    float: left;
+    font: normal normal normal 24px/24px Material Icons;
+    -webkit-font-feature-settings: "liga";
+    -moz-font-feature-settings: "liga";
+    font-feature-settings: "liga";
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    text-transform: none;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    margin-block: 0;
+    margin-inline: -36px 0;
+  }
+  .notice-error {
     color: #cb5c5b;
     background-color: #3f2510;
-    background-position: 1.5em 0.8em;
-    background-size: 1.2rem;
-    background-repeat: no-repeat;
     border-radius: 0.5em;
-    padding: 0.5em 1em;
+    padding: 1em 1em;
     padding-left: 4em;
     font-size: 0.9em;
+  }
+  .notice-error::before {
+    content: "info";
+    float: left;
+    font: normal normal normal 24px/24px Material Icons;
+    -webkit-font-feature-settings: "liga";
+    -moz-font-feature-settings: "liga";
+    font-feature-settings: "liga";
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    text-transform: none;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    margin-block: 0;
+    margin-inline: -36px 0;
+  }
+  .notice-success {
+    background-color: #1a2c2b;
+    color: #3c7e3f;
+    border-radius: 0.5em;
+    padding: 1em 1em;
+    padding-left: 4em;
+    font-size: 0.9em;
+  }
+  .notice-success::before {
+    content: "lightbulb_outline";
+    float: left;
+    font: normal normal normal 24px/24px Material Icons;
+    -webkit-font-feature-settings: "liga";
+    -moz-font-feature-settings: "liga";
+    font-feature-settings: "liga";
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    text-transform: none;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    margin-block: 0;
+    margin-inline: -36px 0;
+  }
+  .notice-warn {
+    background-color: #2d2100;
+    color: #cd9543;
+    border-radius: 0.5em;
+    padding: 1em 1em;
+    padding-left: 4em;
+    font-size: 0.9em;
+  }
+  .notice-warn::before {
+    content: "warning";
+    float: left;
+    font: normal normal normal 24px/24px Material Icons;
+    -webkit-font-feature-settings: "liga";
+    -moz-font-feature-settings: "liga";
+    font-feature-settings: "liga";
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    text-transform: none;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    margin-block: 0;
+    margin-inline: -36px 0;
   }
 }

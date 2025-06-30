@@ -60,7 +60,7 @@
 <meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327163736-1p10m54.png">
 <meta property="og:image" content="https://lwenkun.github.io/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327174028-zp05qsw.png">
 <meta property="article:published_time" content="2024-03-29T00:00:00.000Z">
-<meta property="article:modified_time" content="2024-10-19T21:18:33.844Z">
+<meta property="article:modified_time" content="2025-06-30T01:07:18.804Z">
 <meta property="article:author" content="Chance">
 <meta property="article:tag" content="折腾">
 <meta name="twitter:card" content="summary">
@@ -267,7 +267,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-10-19 21:18:33" itemprop="dateModified" datetime="2024-10-19T21:18:33+00:00">2024-10-19</time>
+                <time title="修改时间：2025-06-30 01:07:18" itemprop="dateModified" datetime="2025-06-30T01:07:18+00:00">2025-06-30</time>
               </span>
 
           
@@ -364,13 +364,13 @@
 <p> 点击 lan 接口的 <kbd>Edit</kbd> 按钮，修改其配置：</p>
 <p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326215639-zem4of6.png"></p>
 <p> 如下图所示，将 Device 改成 <kbd>Wireless Network: Master &quot;OpenWrt&quot; (lan)</kbd>，Device 展示的名称和选项列表中的名称不一样，这个不用管。IPv4 address 改成 192.168.110.1。然后点击  <kbd>Save</kbd> 保存。</p>
- <p class="notice-warn">如果你上级路由器的网段不是 192.168.1.0/24，这里 IPv4 address 其实可以不改，我这里之所以改成 192.168.110.1 是避免上级路由器网段冲突。如果你的上级路由器网段刚好也是这个，你可以去买彩票了 😃。</p>
+ <p class="notice-error">如果你上级路由器的网段不是 192.168.1.0/24，这里 IPv4 address 其实可以不改，我这里之所以改成 192.168.110.1 是避免上级路由器网段冲突。如果你的上级路由器网段刚好也是这个，你可以去买彩票了 😃。</p>
 
 <p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327212906-2rovyqk.png"></p>
 <p> 然后我们去到 Network -&gt; Wireless ，点击 <kbd>Edit</kbd> 按钮配置一下无线网络：</p>
 <p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326215538-hwck292.png"></p>
 <p> 如下图所示，把 Channel 改成 44（最开始我用的是 auto，发现 switch 死活连不上，最后按照网上的方法改成 44 就好了），加密方式我选择的是 <kbd>WPA-PSK/WPA2-PSK Mixed Mode</kbd>，兼容性好一点。 Key 自己看着填就行。最后点击 <kbd>Save</kbd>。</p>
- <p class="notice-warn">不要在这个配置页面点击 <kbd>Enable</kbd> ，<kbd>Enable</kbd> 不仅会开启无线网络，还是把之前所有的更改自动应用了，这可能会导致无法再连接上路由器。</p>
+ <p class="notice-error">不要在这个配置页面点击 <kbd>Enable</kbd> ，<kbd>Enable</kbd> 不仅会开启无线网络，还是把之前所有的更改自动应用了，这可能会导致无法再连接上路由器。</p>
 
 <p> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175237-uznxcji.png"></p>
 <p> 退出配置后，回到上级界面，点击 <kbd>Enable</kbd>：<br> <img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326220445-i2vek52.png"></p>
@@ -383,7 +383,7 @@
 <h2 id="更换-OpenWrt-软件源"><a href="#更换-OpenWrt-软件源" class="headerlink" title="更换 OpenWrt 软件源"></a>更换 OpenWrt 软件源</h2><p>在搭 OpenClash 之前我们需要更换一下 OpenWrt 的软件源，否则软件包的下载可能会很慢。去到 System -&gt; Software，点击 <kbd>Configure opkg...</kbd>，如下图所示：</p>
 <p><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240326232628-2vbn56z.png"><br><img src="/img/in-post/post_install_openwrt_with_raspi_3bplus/image-20240327175032-uhrt175.png"></p>
 <p>然后把下面的文本复制到红框中，取代官方的源，点击 <kbd>Save</kbd>。我这里用的是清华的源，速度还可以。</p>
- <p class="notice-warn">确认一下版本和 CPU 架构是否能和你的设备对上，否则需要修改</p>
+ <p class="notice-error">确认一下版本和 CPU 架构是否能和你的设备对上，否则需要修改</p>
 
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">src/gz openwrt_core https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/targets/bcm27xx/bcm2710/packages</span><br><span class="line">src/gz openwrt_base https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/base</span><br><span class="line">src/gz openwrt_luci https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/luci</span><br><span class="line">src/gz openwrt_packages https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/packages</span><br><span class="line">src/gz openwrt_routing https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/routing</span><br><span class="line">src/gz openwrt_telephony https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases/23.05.0/packages/aarch64_cortex-a53/telephony</span><br></pre></td></tr></table></figure>
 
@@ -611,7 +611,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2024</span>
+  <span itemprop="copyrightYear">2025</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
@@ -621,13 +621,13 @@
       <i class="fa fa-area-chart"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">245k</span>
+    <span title="站点总字数">256k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">3:43</span>
+    <span title="站点阅读时长">3:53</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
